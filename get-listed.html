@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Get Listed | Chamber 122</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  
+  <section class="form-wrapper">
+    <h1>Get Listed on Chamber 122</h1>
+    <p>Fill out the form below to have your business featured in our community directory.</p>
+
+    <form id="msme-form" action="#" method="post" enctype="multipart/form-data">
+
+      <!-- Business Info -->
+      <label for="bizName">Business Name *</label>
+      <input type="text" id="bizName" name="bizName" required />
+
+      <label for="ownerName">Owner's Full Name *</label>
+      <input type="text" id="ownerName" name="ownerName" required />
+
+      <label for="email">Email *</label>
+      <input type="email" id="email" name="email" required />
+
+      <label for="phone">Phone Number *</label>
+      <input type="tel" id="phone" name="phone" required />
+
+      <!-- Logo Upload -->
+      <label for="logo">Business Logo (JPG/PNG)</label>
+      <input type="file" id="logo" name="logo" accept="image/*" />
+
+      <!-- Website & Socials -->
+      <label for="website">Website (optional)</label>
+      <input type="url" id="website" name="website" />
+
+      <label for="instagram">Instagram Handle (optional)</label>
+      <input type="text" id="instagram" name="instagram" />
+
+      <!-- Category -->
+      <label for="category">Business Category *</label>
+      <select id="category" name="category" required>
+        <option value="">Select...</option>
+        <option value="food">Food</option>
+        <option value="services">Services</option>
+        <option value="retail">Retail</option>
+        <option value="handmade">Handmade Products</option>
+        <option value="tech">Tech / Digital</option>
+        <option value="other">Other</option>
+      </select>
+
+      <!-- Short Origin Story -->
+      <label for="story">Why Did You Start This Business? *</label>
+      <textarea id="story" name="story" rows="5" required></textarea>
+
+      <!-- Photo Uploads -->
+    <div class="form-group">
+  <label for="photos">Optional Photos (Max 5)</label>
+  <p class="field-note">
+    Adding photos builds trust, makes you look more legit, and increases your visibility.
+  </p>
+  <input type="file" id="photos" name="photos" multiple />
+</div>
+
+      <!-- Submission Info -->
+      <p class="note">
+        Once submitted, your listing will be reviewed by our team within 2–3 business days. We’ll notify you once it’s live.
+      </p>
+
+      <button type="submit">Submit Listing</button>
+    </form>
+  </section>
+
+</body>
+</html>

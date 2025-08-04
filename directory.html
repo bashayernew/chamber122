@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Directory | Chamber 122</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Open Sans', sans-serif;
+      background: #fefbf6;
+      color: #222;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 60px 20px;
+      background: #fffaf0;
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      color: #a97c27;
+      margin-bottom: 10px;
+    }
+
+    .hero-subtext {
+      color: #444;
+      font-size: 1.1rem;
+    }
+
+    .search-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 30px;
+    }
+
+    .search-filter input[type="text"],
+    .search-filter input[list] {
+      padding: 10px 15px;
+      font-size: 1rem;
+      border: 2px solid #c49e57;
+      border-radius: 30px;
+      outline: none;
+      width: 200px;
+    }
+
+    .search-btn {
+      background-color: #a97c27;
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      font-size: 1rem;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .search-btn:hover {
+      background-color: #8a661f;
+    }
+
+    .directory-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      padding: 40px;
+    }
+
+    .listing-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      padding: 20px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .listing-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .listing-card img {
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+
+    .overlay.show {
+      display: flex;
+    }
+
+    .overlay-content {
+      background: white;
+      padding: 30px;
+      width: 90%;
+      max-width: 800px;
+      border-radius: 10px;
+      position: relative;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 2rem;
+      cursor: pointer;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      background: #222;
+      color: #ccc;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Hero Section -->
+  <section class="hero">                                                          
+    <div class="container">
+      <h1>Discover Amazing MSMEs in Chamber 122</h1>
+      <p class="hero-subtext">Search, explore, and connect with businesses shaping Kuwait’s future.</p>
+
+      <!-- Search Bar -->
+      <div class="search-bar">
+        <div class="search-filter">
+          <input list="locations" id="location-select" placeholder="Select Location" />
+          <datalist id="locations">
+            <option value="Kuwait City">
+            <option value="Hawally">
+            <option value="Farwaniya">
+          </datalist>
+        </div>
+
+        <div class="search-filter">
+          <input list="categories" id="category-select" placeholder="Select Category" />
+          <datalist id="categories">
+            <option value="Food & Beverage">
+            <option value="Fashion">
+            <option value="Cleaning">
+            <option value="Tech">
+          </datalist>
+        </div>
+
+        <div class="search-filter">
+          <input type="text" placeholder="Search by business name..." />
+        </div>
+
+        <button class="search-btn">Search</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured MSMEs (Placeholder for Carousel) -->
+  <section class="featured-carousel">
+    <h2 style="text-align:center; margin: 40px 0 10px;">Featured This Week</h2>
+    <!-- Add carousel script and cards here later -->
+    <div class="directory-container">
+      <div class="listing-card" onclick="window.location.href='get-listed.html'">
+        <img src="images/sample-logo.png" alt="Business Logo" />
+        <h2>Want to get featured?</h2>
+        <p class="category">Click to get listed</p>
+        <p class="description">Join Chamber 122 and showcase your business today.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- MSME Listing Grid -->
+  <main class="directory-container">
+    <!-- Example MSME Listing -->
+    <div class="listing-card" id="openProfile">
+      <img src="images/sample-logo.png" alt="Business Logo" />
+      <h2>Al Noor Bakery</h2>
+      <p class="category">Food & Beverage</p>
+      <p class="description">Started with a dream to bring fresh sourdough to Kuwait...</p>
+    </div>
+  </main>
+
+  <!-- MSME Profile Overlay -->
+  <div id="profileOverlay" class="overlay">
+    <div class="overlay-content">
+      <span id="closeOverlay" class="close-btn">&times;</span>
+      <img id="overlayImage" src="images/sample-logo.png" alt="Business Image" style="width:100px;" />
+      <h2 id="overlayName">Al Noor Bakery</h2>
+      <p id="overlayCategory">Food & Beverage</p>
+      <p id="overlayDescription">Started with a dream to bring fresh sourdough to Kuwait using traditional fermentation.</p>
+      <div class="overlay-links">
+        <a id="overlayWebsite" href="https://example.com" target="_blank">Visit Website</a> |
+        <a id="overlayInstagram" href="https://instagram.com" target="_blank">Instagram</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2025 Chamber 122. All Rights Reserved.</p>
+  </footer>
+
+  <!-- JS for Overlay -->
+  <script>
+    const openProfile = document.getElementById('openProfile');
+    const overlay = document.getElementById('profileOverlay');
+    const closeOverlay = document.getElementById('closeOverlay');
+
+    openProfile.addEventListener('click', () => {
+      overlay.classList.add('show');
+    });
+
+    closeOverlay.addEventListener('click', () => {
+      overlay.classList.remove('show');
+    });
+  </script>
+</body>
+</html>
