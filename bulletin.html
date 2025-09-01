@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MSME Bulletin | Chamber122</title>
+  <meta name="description" content="Stay updated with community announcements, job postings, and opportunities for MSMEs in Kuwait.">
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="logo">
+        <img src="images/logo.png" alt="Chamber122 Logo">
+        Chamber122
+      </a>
+      <div class="nav-menu">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="directory.html" class="nav-link">Directory</a>
+        <a href="events.html" class="nav-link">Events</a>
+        <a href="bulletin.html" class="nav-link active">Bulletin</a>
+        <a href="get-listed.html" class="nav-link">Get Listed</a>
+        <a href="about.html" class="nav-link">About</a>
+        <a href="contact.html" class="nav-link">Contact</a>
+      </div>
+      <div class="nav-buttons">
+        <a href="auth.html" class="nav-btn">Sign Up</a>
+        <a href="auth.html" class="nav-btn primary">Login</a>
+      </div>
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+    <div class="mobile-menu" id="mobile-menu">
+      <a href="index.html" class="mobile-link">Home</a>
+      <a href="directory.html" class="mobile-link">Directory</a>
+      <a href="events.html" class="mobile-link">Events</a>
+      <a href="bulletin.html" class="mobile-link">Bulletin</a>
+      <a href="get-listed.html" class="mobile-link">Get Listed</a>
+      <a href="about.html" class="mobile-link">About</a>
+      <a href="contact.html" class="mobile-link">Contact</a>
+    </div>
+  </nav>
+
+  <!-- Bulletin Header -->
+  <section class="bulletin-header">
+    <div class="bulletin-hero">
+      <h1>MSME Bulletin</h1>
+      <p>Community announcements, job opportunities, training programs, and funding alerts</p>
+    </div>
+    
+    <!-- Bulletin Categories -->
+    <div class="bulletin-categories">
+      <button class="category-btn active" onclick="filterBulletin('all')" data-category="all">
+        <i class="fas fa-list"></i> All Posts
+      </button>
+      <button class="category-btn" onclick="filterBulletin('announcements')" data-category="announcements">
+        <i class="fas fa-bullhorn"></i> Announcements
+      </button>
+      <button class="category-btn" onclick="filterBulletin('jobs')" data-category="jobs">
+        <i class="fas fa-briefcase"></i> Job Postings
+      </button>
+      <button class="category-btn" onclick="filterBulletin('training')" data-category="training">
+        <i class="fas fa-graduation-cap"></i> Training
+      </button>
+      <button class="category-btn" onclick="filterBulletin('funding')" data-category="funding">
+        <i class="fas fa-money-bill-wave"></i> Funding
+      </button>
+      <button class="category-btn" onclick="filterBulletin('opportunities')" data-category="opportunities">
+        <i class="fas fa-star"></i> Opportunities
+      </button>
+    </div>
+  </section>
+
+  <!-- Featured Announcement -->
+  <section class="featured-announcement">
+    <div class="announcement-card featured">
+      <div class="announcement-badge">Featured</div>
+      <div class="announcement-header">
+        <div class="announcement-meta">
+          <span class="announcement-category announcements">
+            <i class="fas fa-bullhorn"></i> Government Announcement
+          </span>
+          <span class="announcement-date">Jan 28, 2025</span>
+        </div>
+        <h2>New MSME Support Grant Available</h2>
+      </div>
+      <div class="announcement-content">
+        <p>The Kuwait Ministry of Commerce and Industry announces a new KD 5,000 support grant for eligible MSMEs. Applications open February 1st, 2025.</p>
+        <div class="announcement-actions">
+          <a href="#" class="btn-primary">Learn More</a>
+          <a href="#" class="btn-secondary">Apply Now</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bulletin List -->
+  <section class="bulletin-list-section">
+    <div class="bulletin-list" id="bulletin-list">
+      <!-- Bulletin items will be populated by JavaScript -->
+    </div>
+    
+    <div class="load-more-container">
+      <button class="load-more-btn" onclick="loadMoreBulletins()">
+        <i class="fas fa-plus"></i> Load More Posts
+      </button>
+    </div>
+  </section>
+
+  <!-- Submit Bulletin Modal -->
+  <div class="floating-action">
+    <button class="fab" onclick="openBulletinForm()" title="Submit a bulletin post">
+      <i class="fas fa-plus"></i>
+    </button>
+  </div>
+
+  <!-- Bulletin Submission Form Modal -->
+  <div class="modal-overlay" id="bulletin-form-modal">
+    <div class="modal-content bulletin-form-content">
+      <button class="modal-close" onclick="closeBulletinForm()">&times;</button>
+      <div class="modal-header">
+        <h2>Submit Bulletin Post</h2>
+        <p>Share announcements, job postings, or opportunities with the community</p>
+      </div>
+      <div class="modal-body">
+        <form id="bulletin-submission-form">
+          <div class="form-group">
+            <label for="bulletin-category">Category *</label>
+            <select id="bulletin-category" name="bulletin-category" class="form-input" required>
+              <option value="">Select category...</option>
+              <option value="announcements">Community Announcement</option>
+              <option value="jobs">Job Posting</option>
+              <option value="training">Training Opportunity</option>
+              <option value="funding">Funding/Grant Information</option>
+              <option value="opportunities">Business Opportunity</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="bulletin-title">Title *</label>
+            <input type="text" id="bulletin-title" name="bulletin-title" class="form-input" required placeholder="Enter bulletin title">
+          </div>
+          
+          <div class="form-group">
+            <label for="bulletin-description">Description *</label>
+            <textarea id="bulletin-description" name="bulletin-description" class="form-input" rows="5" required placeholder="Provide detailed information..."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="bulletin-company">Company/Organization *</label>
+            <input type="text" id="bulletin-company" name="bulletin-company" class="form-input" required placeholder="Your company or organization name">
+          </div>
+          
+          <div class="form-group">
+            <label for="bulletin-contact">Contact Information *</label>
+            <input type="text" id="bulletin-contact" name="bulletin-contact" class="form-input" required placeholder="Email, phone, or WhatsApp">
+          </div>
+          
+          <div class="form-group">
+            <label for="bulletin-deadline">Application Deadline (if applicable)</label>
+            <input type="date" id="bulletin-deadline" name="bulletin-deadline" class="form-input">
+          </div>
+          
+          <div class="form-group">
+            <label for="bulletin-link">External Link (if applicable)</label>
+            <input type="url" id="bulletin-link" name="bulletin-link" class="form-input" placeholder="https://example.com">
+          </div>
+          
+          <button type="submit" class="submit-btn">
+            <i class="fas fa-paper-plane"></i> Submit Post
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h3>Chamber122</h3>
+        <p>Connecting Kuwait's MSMEs with opportunities for growth and success. Join our community today.</p>
+      </div>
+      
+      <div class="footer-section">
+        <h3>Quick Links</h3>
+        <p><a href="index.html">Home</a></p>
+        <p><a href="directory.html">Directory</a></p>
+        <p><a href="events.html">Events</a></p>
+        <p><a href="bulletin.html">Bulletin</a></p>
+        <p><a href="get-listed.html">Get Listed</a></p>
+        <p><a href="about.html">About</a></p>
+        <p><a href="contact.html">Contact</a></p>
+      </div>
+      
+      <div class="footer-section">
+        <h3>Connect</h3>
+        <p><a href="#"><i class="fab fa-twitter"></i> Twitter</a></p>
+        <p><a href="#"><i class="fab fa-linkedin"></i> LinkedIn</a></p>
+        <p><a href="#"><i class="fab fa-instagram"></i> Instagram</a></p>
+        <p><a href="mailto:info@chamber122.com"><i class="fas fa-envelope"></i> info@chamber122.com</a></p>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <p>&copy; 2025 Chamber122. All Rights Reserved. | Empowering Kuwait's MSMEs</p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/bulletin.js"></script>
+</body>
+</html>
+

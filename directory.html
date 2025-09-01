@@ -1,230 +1,229 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Directory | Chamber 122</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Open Sans', sans-serif;
-      background: #fefbf6;
-      color: #222;
-    }
-
-    .hero {
-      text-align: center;
-      padding: 60px 20px;
-      background: #fffaf0;
-    }
-
-    .hero h1 {
-      font-size: 3rem;
-      color: #a97c27;
-      margin-bottom: 10px;
-    }
-
-    .hero-subtext {
-      color: #444;
-      font-size: 1.1rem;
-    }
-
-    .search-bar {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 15px;
-      margin-top: 30px;
-    }
-
-    .search-filter input[type="text"],
-    .search-filter input[list] {
-      padding: 10px 15px;
-      font-size: 1rem;
-      border: 2px solid #c49e57;
-      border-radius: 30px;
-      outline: none;
-      width: 200px;
-    }
-
-    .search-btn {
-      background-color: #a97c27;
-      color: white;
-      border: none;
-      padding: 12px 25px;
-      font-size: 1rem;
-      border-radius: 30px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-
-    .search-btn:hover {
-      background-color: #8a661f;
-    }
-
-    .directory-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 20px;
-      padding: 40px;
-    }
-
-    .listing-card {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      padding: 20px;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-
-    .listing-card:hover {
-      transform: translateY(-5px);
-    }
-
-    .listing-card img {
-      width: 60px;
-      height: 60px;
-      object-fit: contain;
-    }
-
-    .overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.8);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 999;
-    }
-
-    .overlay.show {
-      display: flex;
-    }
-
-    .overlay-content {
-      background: white;
-      padding: 30px;
-      width: 90%;
-      max-width: 800px;
-      border-radius: 10px;
-      position: relative;
-    }
-
-    .close-btn {
-      position: absolute;
-      top: 10px;
-      right: 20px;
-      font-size: 2rem;
-      cursor: pointer;
-    }
-
-    footer {
-      text-align: center;
-      padding: 20px;
-      background: #222;
-      color: #ccc;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MSME Directory | Chamber122</title>
+  <meta name="description" content="Browse and discover local MSMEs in Kuwait. Search by category, location, and find the perfect business for your needs.">
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-
 <body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="logo">
+        <img src="images/logo.png" alt="Chamber122 Logo">
+        Chamber122
+      </a>
+      <div class="nav-menu">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="directory.html" class="nav-link active">Directory</a>
+        <a href="events.html" class="nav-link">Events</a>
+        <a href="bulletin.html" class="nav-link">Bulletin</a>
+        <a href="get-listed.html" class="nav-link">Get Listed</a>
+        <a href="about.html" class="nav-link">About</a>
+        <a href="contact.html" class="nav-link">Contact</a>
+      </div>
+      <div class="nav-buttons">
+        <a href="auth.html" class="nav-btn">Sign Up</a>
+        <a href="auth.html" class="nav-btn primary">Login</a>
+      </div>
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+    <div class="mobile-menu" id="mobile-menu">
+      <a href="index.html" class="mobile-link">Home</a>
+      <a href="directory.html" class="mobile-link">Directory</a>
+      <a href="events.html" class="mobile-link">Events</a>
+      <a href="bulletin.html" class="mobile-link">Bulletin</a>
+      <a href="get-listed.html" class="mobile-link">Get Listed</a>
+      <a href="about.html" class="mobile-link">About</a>
+      <a href="contact.html" class="mobile-link">Contact</a>
+    </div>
+  </nav>
 
-  <!-- Hero Section -->
-  <section class="hero">                                                          
-    <div class="container">
-      <h1>Discover Amazing MSMEs in Chamber 122</h1>
-      <p class="hero-subtext">Search, explore, and connect with businesses shaping Kuwait’s future.</p>
-
-      <!-- Search Bar -->
-      <div class="search-bar">
-        <div class="search-filter">
-          <input list="locations" id="location-select" placeholder="Select Location" />
-          <datalist id="locations">
-            <option value="Kuwait City">
-            <option value="Hawally">
-            <option value="Farwaniya">
-          </datalist>
+  <!-- Directory Header -->
+  <section class="directory-header">
+    <div class="directory-hero">
+      <h1>MSME Directory</h1>
+      <p>Discover and connect with Kuwait's growing community of micro, small, and medium enterprises</p>
+    </div>
+    
+    <!-- Advanced Search/Filter Bar -->
+    <div class="filter-container">
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label for="filter-name">Business Name</label>
+          <input type="text" id="filter-name" class="filter-input" placeholder="Search by name..." onkeyup="filterBusinesses()">
         </div>
-
-        <div class="search-filter">
-          <input list="categories" id="category-select" placeholder="Select Category" />
-          <datalist id="categories">
-            <option value="Food & Beverage">
-            <option value="Fashion">
-            <option value="Cleaning">
-            <option value="Tech">
-          </datalist>
+        <div class="filter-group">
+          <label for="filter-location">Location</label>
+          <select id="filter-location" class="filter-input" onchange="filterBusinesses()">
+            <option value="">All Locations</option>
+            <option value="kuwait-city">Kuwait City</option>
+            <option value="hawally">Hawally</option>
+            <option value="farwaniya">Farwaniya</option>
+            <option value="jahra">Jahra</option>
+            <option value="ahmadi">Ahmadi</option>
+            <option value="mubarak-al-kabeer">Mubarak Al-Kabeer</option>
+          </select>
         </div>
-
-        <div class="search-filter">
-          <input type="text" placeholder="Search by business name..." />
+        <div class="filter-group">
+          <label for="filter-category">Category</label>
+          <select id="filter-category" class="filter-input" onchange="filterBusinesses()">
+            <option value="">All Categories</option>
+            <option value="food">Food & Beverage</option>
+            <option value="fashion">Fashion & Beauty</option>
+            <option value="cleaning">Cleaning Services</option>
+            <option value="tech">Technology</option>
+            <option value="home">Home Services</option>
+            <option value="health">Health & Wellness</option>
+            <option value="education">Education</option>
+            <option value="retail">Retail</option>
+            <option value="automotive">Automotive</option>
+            <option value="other">Other</option>
+          </select>
         </div>
-
-        <button class="search-btn">Search</button>
+        <button class="clear-filters-btn" onclick="clearFilters()">
+          <i class="fas fa-times"></i> Clear Filters
+        </button>
+      </div>
+      
+      <div class="results-info">
+        <span id="results-count">Loading businesses...</span>
       </div>
     </div>
   </section>
 
-  <!-- Featured MSMEs (Placeholder for Carousel) -->
-  <section class="featured-carousel">
-    <h2 style="text-align:center; margin: 40px 0 10px;">Featured This Week</h2>
-    <!-- Add carousel script and cards here later -->
-    <div class="directory-container">
-      <div class="listing-card" onclick="window.location.href='get-listed.html'">
-        <img src="images/sample-logo.png" alt="Business Logo" />
-        <h2>Want to get featured?</h2>
-        <p class="category">Click to get listed</p>
-        <p class="description">Join Chamber 122 and showcase your business today.</p>
+  <!-- Featured MSMEs Carousel -->
+  <section class="featured-section">
+    <div class="section-header">
+      <h2 class="section-title">Featured MSMEs</h2>
+      <p class="section-subtitle">Highlighted businesses in our community</p>
+    </div>
+    
+    <div class="featured-carousel">
+      <div class="featured-card" onclick="openBusinessModal('al-kuwaiti-kitchen')">
+        <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=200&fit=crop" alt="Al Kuwaiti Kitchen">
+        <h3>Al Kuwaiti Kitchen</h3>
+        <div class="category">Food & Beverage</div>
+        <div class="tag featured">Featured</div>
+        <div class="explore-btn">Explore</div>
+      </div>
+      
+      <div class="featured-card" onclick="openBusinessModal('desert-rose-boutique')">
+        <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=200&fit=crop" alt="Desert Rose Boutique">
+        <h3>Desert Rose Boutique</h3>
+        <div class="category">Fashion & Beauty</div>
+        <div class="tag featured">Featured</div>
+        <div class="explore-btn">Explore</div>
+      </div>
+      
+      <div class="featured-card" onclick="openBusinessModal('techflow-kuwait')">
+        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=200&fit=crop" alt="TechFlow Kuwait">
+        <h3>TechFlow Kuwait</h3>
+        <div class="category">Technology</div>
+        <div class="tag featured">Featured</div>
+        <div class="explore-btn">Explore</div>
       </div>
     </div>
   </section>
 
-  <!-- MSME Listing Grid -->
-  <main class="directory-container">
-    <!-- Example MSME Listing -->
-    <div class="listing-card" id="openProfile">
-      <img src="images/sample-logo.png" alt="Business Logo" />
-      <h2>Al Noor Bakery</h2>
-      <p class="category">Food & Beverage</p>
-      <p class="description">Started with a dream to bring fresh sourdough to Kuwait...</p>
+  <!-- MSME Grid Directory -->
+  <section class="directory-grid-section">
+    <div class="directory-grid" id="directory-grid">
+      <!-- MSME cards will be populated by JavaScript -->
     </div>
-  </main>
+    
+    <div class="load-more-container">
+      <button class="load-more-btn" id="load-more-btn" onclick="loadMoreBusinesses()">
+        <i class="fas fa-plus"></i> Load More Businesses
+      </button>
+    </div>
+    
+    <div class="cta-section">
+      <h3>Is Your Business Missing?</h3>
+      <p>Join our community and get discovered by customers across Kuwait</p>
+      <a href="get-listed.html" class="cta-btn-large">
+        <i class="fas fa-plus"></i> Add Your Business for Free
+      </a>
+    </div>
+  </section>
 
-  <!-- MSME Profile Overlay -->
-  <div id="profileOverlay" class="overlay">
-    <div class="overlay-content">
-      <span id="closeOverlay" class="close-btn">&times;</span>
-      <img id="overlayImage" src="images/sample-logo.png" alt="Business Image" style="width:100px;" />
-      <h2 id="overlayName">Al Noor Bakery</h2>
-      <p id="overlayCategory">Food & Beverage</p>
-      <p id="overlayDescription">Started with a dream to bring fresh sourdough to Kuwait using traditional fermentation.</p>
-      <div class="overlay-links">
-        <a id="overlayWebsite" href="https://example.com" target="_blank">Visit Website</a> |
-        <a id="overlayInstagram" href="https://instagram.com" target="_blank">Instagram</a>
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h3>Chamber122</h3>
+        <p>Connecting Kuwait's MSMEs with opportunities for growth and success. Join our community today.</p>
+        <div class="newsletter-form">
+          <input type="email" class="newsletter-input" placeholder="Subscribe to our newsletter">
+          <button class="newsletter-btn">Subscribe</button>
+        </div>
+      </div>
+      
+      <div class="footer-section">
+        <h3>Quick Links</h3>
+        <p><a href="index.html">Home</a></p>
+        <p><a href="directory.html">Directory</a></p>
+        <p><a href="events.html">Events</a></p>
+        <p><a href="bulletin.html">Bulletin</a></p>
+        <p><a href="get-listed.html">Get Listed</a></p>
+        <p><a href="about.html">About</a></p>
+        <p><a href="contact.html">Contact</a></p>
+      </div>
+      
+      <div class="footer-section">
+        <h3>Connect</h3>
+        <p><a href="#"><i class="fab fa-twitter"></i> Twitter</a></p>
+        <p><a href="#"><i class="fab fa-linkedin"></i> LinkedIn</a></p>
+        <p><a href="#"><i class="fab fa-instagram"></i> Instagram</a></p>
+        <p><a href="mailto:info@chamber122.com"><i class="fas fa-envelope"></i> info@chamber122.com</a></p>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <p>&copy; 2025 Chamber122. All Rights Reserved. | Empowering Kuwait's MSMEs</p>
+    </div>
+  </footer>
+
+  <!-- Modal Overlay for MSME Details -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+      <div class="modal-header">
+        <img id="modal-image" src="" alt="">
+        <h2 id="modal-title" class="modal-title"></h2>
+        <div id="modal-category" class="modal-category"></div>
+      </div>
+      <div class="modal-body">
+        <p id="modal-description" class="modal-description"></p>
+        <div class="modal-story">
+          <h4>Why We Started</h4>
+          <p id="modal-story"></p>
+        </div>
+        <div class="modal-actions">
+          <a href="#" class="modal-btn primary" id="modal-whatsapp">
+            <i class="fab fa-whatsapp"></i> WhatsApp
+          </a>
+          <a href="#" class="modal-btn secondary" id="modal-email">
+            <i class="fas fa-envelope"></i> Email
+          </a>
+          <a href="#" class="modal-btn secondary" id="modal-website">
+            <i class="fas fa-globe"></i> Website
+          </a>
+          <a href="#" class="modal-btn secondary" id="modal-instagram">
+            <i class="fab fa-instagram"></i> Instagram
+          </a>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer>
-    <p>&copy; 2025 Chamber 122. All Rights Reserved.</p>
-  </footer>
-
-  <!-- JS for Overlay -->
-  <script>
-    const openProfile = document.getElementById('openProfile');
-    const overlay = document.getElementById('profileOverlay');
-    const closeOverlay = document.getElementById('closeOverlay');
-
-    openProfile.addEventListener('click', () => {
-      overlay.classList.add('show');
-    });
-
-    closeOverlay.addEventListener('click', () => {
-      overlay.classList.remove('show');
-    });
-  </script>
+  <script src="js/main.js"></script>
+  <script src="js/directory.js"></script>
 </body>
 </html>

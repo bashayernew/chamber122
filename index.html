@@ -1,64 +1,252 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chamber 122 | Unite. Promote. Grow.</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chamber122 - Discover Amazing MSMEs in Kuwait</title>
+  <meta name="description" content="Search, explore, and connect with businesses shaping Kuwait's future. Join Chamber122's directory of local MSMEs.">
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="logo">
+        <img src="images/logo.png" alt="Chamber122 Logo">
+        Chamber122
+      </a>
+      <div class="nav-menu">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="directory.html" class="nav-link">Directory</a>
+        <a href="events.html" class="nav-link">Events</a>
+        <a href="bulletin.html" class="nav-link">Bulletin</a>
+        <a href="get-listed.html" class="nav-link">Get Listed</a>
+        <a href="about.html" class="nav-link">About</a>
+        <a href="contact.html" class="nav-link">Contact</a>
+      </div>
+      <div class="nav-buttons">
+        <a href="auth.html" class="nav-btn">Sign Up</a>
+        <a href="auth.html" class="nav-btn primary">Login</a>
+      </div>
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+    <div class="mobile-menu" id="mobile-menu">
+      <a href="index.html" class="mobile-link">Home</a>
+      <a href="directory.html" class="mobile-link">Directory</a>
+      <a href="events.html" class="mobile-link">Events</a>
+      <a href="bulletin.html" class="mobile-link">Bulletin</a>
+      <a href="get-listed.html" class="mobile-link">Get Listed</a>
+      <a href="about.html" class="mobile-link">About</a>
+      <a href="contact.html" class="mobile-link">Contact</a>
+    </div>
+  </nav>
 
-  <!-- Hero Section with Background -->
+  <!-- Hero Section -->
   <section class="hero">
-    <div class="overlay"></div>
     <div class="hero-content">
-      <h2 class="subheading">UNITING KUWAIT'S</h2>
-      <h1 class="heading">MSMEs</h1>
-      <p class="description">
-        Discover, support, and grow with local micro, small, and medium businesses near you.
-      </p>
-      <div class="arrow-controls">
-        <button>&lt;</button>
-        <button>&gt;</button>
+      <h1>Unite. Promote. Grow. Together.</h1>
+      <p class="hero-subtitle">Empowering Kuwait's MSMEs through community, collaboration, and shared success. Join Chamber 122 and unlock your business potential.</p>
+      
+      <!-- Quick Search Bar -->
+      <div class="quick-search-container">
+        <h3>Find Local MSMEs</h3>
+        <div class="quick-search-bar">
+          <div class="search-group">
+            <input type="text" id="quick-business-name" class="search-input" placeholder="Business name...">
+          </div>
+          <div class="search-group">
+            <select id="quick-category" class="search-input">
+              <option value="">All Categories</option>
+              <option value="food">Food & Beverage</option>
+              <option value="fashion">Fashion & Beauty</option>
+              <option value="cleaning">Cleaning Services</option>
+              <option value="tech">Technology</option>
+              <option value="home">Home Services</option>
+            </select>
+          </div>
+          <div class="search-group">
+            <select id="quick-area" class="search-input">
+              <option value="">All Areas</option>
+              <option value="kuwait-city">Kuwait City</option>
+              <option value="hawally">Hawally</option>
+              <option value="farwaniya">Farwaniya</option>
+              <option value="jahra">Jahra</option>
+              <option value="ahmadi">Ahmadi</option>
+            </select>
+          </div>
+          <button class="search-btn" onclick="performQuickSearch()">
+            <i class="fas fa-search"></i> Search
+          </button>
+        </div>
+        <p class="search-note">Or <a href="directory.html" class="text-link">browse all MSMEs</a></p>
       </div>
     </div>
   </section>
 
-  <!-- MSME Cards Section -->
-  <section class="msme-preview">
-    <h2>Featured MSMEs</h2>
-    <div class="card-container">
-      <a href="get-listed.html" class="card">
-        <img src="images/sample1.jpg" alt="MSME 1">
-        <p>The Kuwaiti Chef</p>
+  <!-- Featured MSMEs Section -->
+  <section class="featured-section">
+    <div class="section-header">
+      <h2 class="section-title">Featured This Week</h2>
+      <p class="section-subtitle">New businesses joining our community</p>
+    </div>
+    
+    <div class="featured-carousel">
+      <a href="get-listed.html" class="featured-card">
+        <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=200&fit=crop" alt="The Kuwaiti Chef">
+        <h3>The Kuwaiti Chef</h3>
+        <div class="category">Food & Beverage</div>
+        <div class="tag">New</div>
+        <div class="explore-btn">Get Listed</div>
       </a>
-      <a href="get-listed.html" class="card">
-        <img src="images/sample2.jpg" alt="MSME 2">
-        <p>Desert Blossoms</p>
+      
+      <a href="get-listed.html" class="featured-card">
+        <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=200&fit=crop" alt="Desert Blossoms">
+        <h3>Desert Blossoms</h3>
+        <div class="category">Fashion & Beauty</div>
+        <div class="tag">New</div>
+        <div class="explore-btn">Get Listed</div>
       </a>
-      <a href="get-listed.html" class="card">
-        <img src="images/sample3.jpg" alt="MSME 3">
-        <p>FixIt Fast</p>
+      
+      <a href="get-listed.html" class="featured-card">
+        <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&h=200&fit=crop" alt="FixIt Fast">
+        <h3>FixIt Fast</h3>
+        <div class="category">Home Services</div>
+        <div class="tag">New</div>
+        <div class="explore-btn">Get Listed</div>
       </a>
-      <a href="get-listed.html" class="card">
-        <img src="images/sample4.jpg" alt="MSME 4">
-        <p>Sparkle Clean</p>
+      
+      <a href="get-listed.html" class="featured-card">
+        <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=200&fit=crop" alt="Sparkle Clean">
+        <h3>Sparkle Clean</h3>
+        <div class="category">Cleaning Services</div>
+        <div class="tag">New</div>
+        <div class="explore-btn">Get Listed</div>
+      </a>
+      
+      <a href="get-listed.html" class="featured-card">
+        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=200&fit=crop" alt="Tech Solutions KW">
+        <h3>Tech Solutions KW</h3>
+        <div class="category">Technology</div>
+        <div class="tag">New</div>
+        <div class="explore-btn">Get Listed</div>
       </a>
     </div>
   </section>
 
-  <!-- Call to Action -->
-  <section class="get-listed-cta">
-    <p>Are you a business owner? Get listed on Chamber 122 and join a growing community of empowered MSMEs in Kuwait.</p>
-    <a href="get-listed.html" class="cta-btn">List Your Business For Free</a>
+  <!-- This Week's Event Section -->
+  <section class="event-highlight">
+    <div class="section-header">
+      <h2 class="section-title">This Week's Event</h2>
+      <p class="section-subtitle">Don't miss out on the latest community happenings</p>
+    </div>
+    
+    <div class="event-card-featured">
+      <div class="event-image">
+        <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=500&h=300&fit=crop" alt="MSME Networking Night">
+        <div class="event-badge">This Week</div>
+      </div>
+      <div class="event-content">
+        <h3>MSME Networking Night</h3>
+        <div class="event-meta">
+          <span class="event-date"><i class="fas fa-calendar"></i> Friday, Jan 31, 2025</span>
+          <span class="event-time"><i class="fas fa-clock"></i> 7:00 PM - 10:00 PM</span>
+          <span class="event-location"><i class="fas fa-map-marker-alt"></i> Kuwait Chamber of Commerce</span>
+        </div>
+        <p class="event-description">Join fellow MSME owners for an evening of networking, knowledge sharing, and community building. Light refreshments provided.</p>
+        <a href="events.html" class="event-btn">Learn More</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Newest Listings Section -->
+  <section class="newest-listings">
+    <div class="section-header">
+      <h2 class="section-title">Newest Listings</h2>
+      <p class="section-subtitle">Welcome our latest community members</p>
+    </div>
+    
+    <div class="newest-grid" id="newest-grid">
+      <!-- Newest MSME cards will be populated by JavaScript -->
+    </div>
+    
+    <div class="cta-section">
+      <h3>Ready to Join Our Community?</h3>
+      <p>List your business today and connect with customers across Kuwait</p>
+      <a href="get-listed.html" class="cta-btn-large">
+        <i class="fas fa-plus"></i> Add Your Business Today – It's Free!
+      </a>
+    </div>
   </section>
 
   <!-- Footer -->
-  <footer>
-    <p>&copy; 2025 Chamber 122. All Rights Reserved.</p>
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h3>Chamber122</h3>
+        <p>Connecting Kuwait's MSMEs with opportunities for growth and success. Join our community today.</p>
+        <div class="newsletter-form">
+          <input type="email" class="newsletter-input" placeholder="Subscribe to our newsletter">
+          <button class="newsletter-btn">Subscribe</button>
+        </div>
+      </div>
+      
+      <div class="footer-section">
+        <h3>Quick Links</h3>
+        <p><a href="index.html">Home</a></p>
+        <p><a href="about.html">About Us</a></p>
+        <p><a href="contact.html">Contact</a></p>
+        <p><a href="get-listed.html">Get Listed</a></p>
+      </div>
+      
+      <div class="footer-section">
+        <h3>Connect</h3>
+        <p><a href="#"><i class="fab fa-twitter"></i> Twitter</a></p>
+        <p><a href="#"><i class="fab fa-linkedin"></i> LinkedIn</a></p>
+        <p><a href="#"><i class="fab fa-instagram"></i> Instagram</a></p>
+        <p><a href="mailto:info@chamber122.com"><i class="fas fa-envelope"></i> info@chamber122.com</a></p>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <p>&copy; 2025 Chamber122. All Rights Reserved. | Empowering Kuwait's MSMEs</p>
+    </div>
   </footer>
 
+  <!-- Modal Overlay for MSME Details -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+      <div class="modal-header">
+        <img id="modal-image" src="" alt="">
+        <h2 id="modal-title" class="modal-title"></h2>
+        <div id="modal-category" class="modal-category"></div>
+      </div>
+      <div class="modal-body">
+        <p id="modal-description" class="modal-description"></p>
+        <div class="modal-story">
+          <h4>Why We Started</h4>
+          <p id="modal-story"></p>
+        </div>
+        <div class="modal-actions">
+          <a href="#" class="modal-btn primary" id="modal-email">
+            <i class="fas fa-envelope"></i> Email
+          </a>
+          <a href="#" class="modal-btn secondary" id="modal-whatsapp">
+            <i class="fab fa-whatsapp"></i> WhatsApp
+          </a>
+          <a href="#" class="modal-btn secondary" id="modal-website">
+            <i class="fas fa-globe"></i> Website
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
 </body>
 </html>
 

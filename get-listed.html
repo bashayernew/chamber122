@@ -1,76 +1,191 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Get Listed | Chamber 122</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Get Listed | Chamber122</title>
+  <meta name="description" content="Join Chamber122's directory of local MSMEs. Get your business listed for free and connect with customers in Kuwait.">
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-  
-  <section class="form-wrapper">
-    <h1>Get Listed on Chamber 122</h1>
-    <p>Fill out the form below to have your business featured in our community directory.</p>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="logo">
+        <img src="images/logo.png" alt="Chamber122 Logo">
+        Chamber122
+      </a>
+      <div class="nav-buttons">
+        <a href="index.html" class="nav-btn">Home</a>
+        <a href="get-listed.html" class="nav-btn primary">Get Listed</a>
+      </div>
+    </div>
+  </nav>
 
-    <form id="msme-form" action="#" method="post" enctype="multipart/form-data">
+  <!-- Form Section -->
+  <section class="form-section">
+    <div class="form-wrapper">
+      <div class="form-header">
+        <h1>Get Listed on Chamber122</h1>
+        <p>Join our growing community of local MSMEs and connect with customers in Kuwait. It's completely free!</p>
+      </div>
 
-      <!-- Business Info -->
-      <label for="bizName">Business Name *</label>
-      <input type="text" id="bizName" name="bizName" required />
+      <form id="msme-form" action="#" method="post" enctype="multipart/form-data">
+        <!-- Business Information -->
+        <div class="form-section-group">
+          <h3><i class="fas fa-building"></i> Business Information</h3>
+          
+          <div class="form-group">
+            <label for="bizName">Business Name *</label>
+            <input type="text" id="bizName" name="bizName" class="form-input" required placeholder="Enter your business name">
+          </div>
 
-      <label for="ownerName">Owner's Full Name *</label>
-      <input type="text" id="ownerName" name="ownerName" required />
+          <div class="form-group">
+            <label for="ownerName">Owner's Full Name *</label>
+            <input type="text" id="ownerName" name="ownerName" class="form-input" required placeholder="Enter owner's full name">
+          </div>
 
-      <label for="email">Email *</label>
-      <input type="email" id="email" name="email" required />
+          <div class="form-group">
+            <label for="email">Email Address *</label>
+            <input type="email" id="email" name="email" class="form-input" required placeholder="your@email.com">
+          </div>
 
-      <label for="phone">Phone Number *</label>
-      <input type="tel" id="phone" name="phone" required />
+          <div class="form-group">
+            <label for="phone">Phone Number *</label>
+            <input type="tel" id="phone" name="phone" class="form-input" required placeholder="+965-12345678">
+          </div>
+        </div>
 
-      <!-- Logo Upload -->
-      <label for="logo">Business Logo (JPG/PNG)</label>
-      <input type="file" id="logo" name="logo" accept="image/*" />
+        <!-- Business Details -->
+        <div class="form-section-group">
+          <h3><i class="fas fa-info-circle"></i> Business Details</h3>
+          
+          <div class="form-group">
+            <label for="category">Business Category *</label>
+            <select id="category" name="category" class="form-input" required>
+              <option value="">Select a category...</option>
+              <option value="food">Food & Beverage</option>
+              <option value="fashion">Fashion & Beauty</option>
+              <option value="cleaning">Cleaning Services</option>
+              <option value="tech">Technology</option>
+              <option value="home">Home Services</option>
+              <option value="health">Health & Wellness</option>
+              <option value="education">Education</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
 
-      <!-- Website & Socials -->
-      <label for="website">Website (optional)</label>
-      <input type="url" id="website" name="website" />
+          <div class="form-group">
+            <label for="location">Location *</label>
+            <select id="location" name="location" class="form-input" required>
+              <option value="">Select your location...</option>
+              <option value="kuwait-city">Kuwait City</option>
+              <option value="hawally">Hawally</option>
+              <option value="farwaniya">Farwaniya</option>
+              <option value="jahra">Jahra</option>
+              <option value="mubarak-al-kabeer">Mubarak Al-Kabeer</option>
+              <option value="ahmadi">Ahmadi</option>
+            </select>
+          </div>
 
-      <label for="instagram">Instagram Handle (optional)</label>
-      <input type="text" id="instagram" name="instagram" />
+          <div class="form-group">
+            <label for="description">Business Description *</label>
+            <textarea id="description" name="description" class="form-input" rows="4" required placeholder="Tell us about your business, what you offer, and what makes you unique..."></textarea>
+          </div>
+        </div>
 
-      <!-- Category -->
-      <label for="category">Business Category *</label>
-      <select id="category" name="category" required>
-        <option value="">Select...</option>
-        <option value="food">Food</option>
-        <option value="services">Services</option>
-        <option value="retail">Retail</option>
-        <option value="handmade">Handmade Products</option>
-        <option value="tech">Tech / Digital</option>
-        <option value="other">Other</option>
-      </select>
+        <!-- Story Section -->
+        <div class="form-section-group">
+          <h3><i class="fas fa-heart"></i> Your Story</h3>
+          
+          <div class="form-group">
+            <label for="story">Why Did You Start This Business? *</label>
+            <textarea id="story" name="story" class="form-input" rows="4" required placeholder="Share your journey, inspiration, and what drives you..."></textarea>
+            <p class="field-note">This helps customers connect with your brand and understand your mission.</p>
+          </div>
+        </div>
 
-      <!-- Short Origin Story -->
-      <label for="story">Why Did You Start This Business? *</label>
-      <textarea id="story" name="story" rows="5" required></textarea>
+        <!-- Media & Links -->
+        <div class="form-section-group">
+          <h3><i class="fas fa-link"></i> Media & Links</h3>
+          
+          <div class="form-group">
+            <label for="logo">Business Logo</label>
+            <input type="file" id="logo" name="logo" class="form-input" accept="image/*">
+            <p class="field-note">Upload your business logo (JPG, PNG, max 2MB)</p>
+          </div>
 
-      <!-- Photo Uploads -->
-    <div class="form-group">
-  <label for="photos">Optional Photos (Max 5)</label>
-  <p class="field-note">
-    Adding photos builds trust, makes you look more legit, and increases your visibility.
-  </p>
-  <input type="file" id="photos" name="photos" multiple />
-</div>
+          <div class="form-group">
+            <label for="photos">Business Photos (Optional)</label>
+            <input type="file" id="photos" name="photos" class="form-input" multiple accept="image/*">
+            <p class="field-note">Add up to 5 photos of your business, products, or services</p>
+          </div>
 
-      <!-- Submission Info -->
-      <p class="note">
-        Once submitted, your listing will be reviewed by our team within 2–3 business days. We’ll notify you once it’s live.
-      </p>
+          <div class="form-group">
+            <label for="website">Website (Optional)</label>
+            <input type="url" id="website" name="website" class="form-input" placeholder="https://yourwebsite.com">
+          </div>
 
-      <button type="submit">Submit Listing</button>
-    </form>
+          <div class="form-group">
+            <label for="instagram">Instagram Handle (Optional)</label>
+            <input type="text" id="instagram" name="instagram" class="form-input" placeholder="@yourbusiness">
+          </div>
+        </div>
+
+        <!-- Submission -->
+        <div class="form-section-group">
+          <div class="form-note">
+            <i class="fas fa-info-circle"></i>
+            <div>
+              <strong>What happens next?</strong><br>
+              Once submitted, your listing will be reviewed by our team within 2-3 business days. 
+              We'll notify you via email once it's live on our directory.
+            </div>
+          </div>
+
+          <button type="submit" class="submit-btn">
+            <i class="fas fa-paper-plane"></i> Submit Listing
+          </button>
+        </div>
+      </form>
+    </div>
   </section>
 
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h3>Chamber122</h3>
+        <p>Connecting Kuwait's MSMEs with opportunities for growth and success. Join our community today.</p>
+      </div>
+      
+      <div class="footer-section">
+        <h3>Quick Links</h3>
+        <p><a href="index.html">Home</a></p>
+        <p><a href="about.html">About Us</a></p>
+        <p><a href="contact.html">Contact</a></p>
+        <p><a href="get-listed.html">Get Listed</a></p>
+      </div>
+      
+      <div class="footer-section">
+        <h3>Connect</h3>
+        <p><a href="#"><i class="fab fa-twitter"></i> Twitter</a></p>
+        <p><a href="#"><i class="fab fa-linkedin"></i> LinkedIn</a></p>
+        <p><a href="#"><i class="fab fa-instagram"></i> Instagram</a></p>
+        <p><a href="mailto:info@chamber122.com"><i class="fas fa-envelope"></i> info@chamber122.com</a></p>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <p>&copy; 2025 Chamber122. All Rights Reserved. | Empowering Kuwait's MSMEs</p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/config.js"></script>
+  <script type="module" src="js/supabase-client.js"></script>
+  <script type="module" src="js/listing.js"></script>
 </body>
 </html>

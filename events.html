@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Events & Promotions | Chamber122</title>
+  <meta name="description" content="Discover MSME events, promotions, training sessions, and networking opportunities in Kuwait.">
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="logo">
+        <img src="images/logo.png" alt="Chamber122 Logo">
+        Chamber122
+      </a>
+      <div class="nav-menu">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="directory.html" class="nav-link">Directory</a>
+        <a href="events.html" class="nav-link active">Events</a>
+        <a href="bulletin.html" class="nav-link">Bulletin</a>
+        <a href="get-listed.html" class="nav-link">Get Listed</a>
+        <a href="about.html" class="nav-link">About</a>
+        <a href="contact.html" class="nav-link">Contact</a>
+      </div>
+      <div class="nav-buttons">
+        <a href="auth.html" class="nav-btn">Sign Up</a>
+        <a href="auth.html" class="nav-btn primary">Login</a>
+      </div>
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+    <div class="mobile-menu" id="mobile-menu">
+      <a href="index.html" class="mobile-link">Home</a>
+      <a href="directory.html" class="mobile-link">Directory</a>
+      <a href="events.html" class="mobile-link">Events</a>
+      <a href="bulletin.html" class="mobile-link">Bulletin</a>
+      <a href="get-listed.html" class="mobile-link">Get Listed</a>
+      <a href="about.html" class="mobile-link">About</a>
+      <a href="contact.html" class="mobile-link">Contact</a>
+    </div>
+  </nav>
+
+  <!-- Events Header -->
+  <section class="events-header">
+    <div class="events-hero">
+      <h1>Events & Promotions</h1>
+      <p>Stay connected with MSME community events, training sessions, and special promotions</p>
+    </div>
+    
+    <!-- Event Filters -->
+    <div class="events-filter-container">
+      <div class="events-filter-bar">
+        <div class="filter-group">
+          <label for="date-filter">Date</label>
+          <select id="date-filter" class="filter-input" onchange="filterEvents()">
+            <option value="">All Dates</option>
+            <option value="today">Today</option>
+            <option value="this-week">This Week</option>
+            <option value="this-month">This Month</option>
+            <option value="upcoming">Upcoming</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="type-filter">Type</label>
+          <select id="type-filter" class="filter-input" onchange="filterEvents()">
+            <option value="">All Types</option>
+            <option value="sale">Sale</option>
+            <option value="training">Training</option>
+            <option value="networking">Networking</option>
+            <option value="market">Market</option>
+            <option value="workshop">Workshop</option>
+            <option value="promotion">Promotion</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="location-filter">Location</label>
+          <select id="location-filter" class="filter-input" onchange="filterEvents()">
+            <option value="">All Locations</option>
+            <option value="kuwait-city">Kuwait City</option>
+            <option value="hawally">Hawally</option>
+            <option value="farwaniya">Farwaniya</option>
+            <option value="jahra">Jahra</option>
+            <option value="ahmadi">Ahmadi</option>
+            <option value="online">Online</option>
+          </select>
+        </div>
+        <button class="add-event-btn" onclick="openEventForm()">
+          <i class="fas fa-plus"></i> Add Event
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Calendar View Toggle -->
+  <section class="view-controls">
+    <div class="view-toggle">
+      <button class="view-btn active" onclick="switchView('grid')" id="grid-view-btn">
+        <i class="fas fa-th"></i> Grid View
+      </button>
+      <button class="view-btn" onclick="switchView('calendar')" id="calendar-view-btn">
+        <i class="fas fa-calendar"></i> Calendar View
+      </button>
+    </div>
+  </section>
+
+  <!-- Events Grid -->
+  <section class="events-grid-section" id="events-grid-view">
+    <div class="events-grid" id="events-grid">
+      <!-- Event cards will be populated by JavaScript -->
+    </div>
+  </section>
+
+  <!-- Calendar View -->
+  <section class="events-calendar-section hidden" id="events-calendar-view">
+    <div class="calendar-container">
+      <div class="calendar-header">
+        <button class="calendar-nav" onclick="previousMonth()"><i class="fas fa-chevron-left"></i></button>
+        <h3 id="calendar-month-year">January 2025</h3>
+        <button class="calendar-nav" onclick="nextMonth()"><i class="fas fa-chevron-right"></i></button>
+      </div>
+      <div class="calendar-grid" id="calendar-grid">
+        <!-- Calendar will be populated by JavaScript -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Event Submission Form Modal -->
+  <div class="modal-overlay" id="event-form-modal">
+    <div class="modal-content event-form-content">
+      <button class="modal-close" onclick="closeEventForm()">&times;</button>
+      <div class="modal-header">
+        <h2>Submit Your Event</h2>
+        <p>Share your event or promotion with the Chamber122 community</p>
+      </div>
+      <div class="modal-body">
+        <form id="event-submission-form">
+          <div class="form-group">
+            <label for="event-title">Event Title *</label>
+            <input type="text" id="event-title" name="event-title" class="form-input" required placeholder="Enter event title">
+          </div>
+          
+          <div class="form-group">
+            <label for="event-type">Event Type *</label>
+            <select id="event-type" name="event-type" class="form-input" required>
+              <option value="">Select type...</option>
+              <option value="sale">Sale/Promotion</option>
+              <option value="training">Training Session</option>
+              <option value="networking">Networking Event</option>
+              <option value="market">Market/Fair</option>
+              <option value="workshop">Workshop</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="event-date">Date *</label>
+              <input type="date" id="event-date" name="event-date" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label for="event-time">Time *</label>
+              <input type="time" id="event-time" name="event-time" class="form-input" required>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="event-location">Location *</label>
+            <input type="text" id="event-location" name="event-location" class="form-input" required placeholder="Event location or 'Online'">
+          </div>
+          
+          <div class="form-group">
+            <label for="event-description">Description *</label>
+            <textarea id="event-description" name="event-description" class="form-input" rows="4" required placeholder="Describe your event..."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="event-image">Event Image</label>
+            <input type="file" id="event-image" name="event-image" class="form-input" accept="image/*">
+          </div>
+          
+          <div class="form-group">
+            <label for="contact-info">Contact Information *</label>
+            <input type="text" id="contact-info" name="contact-info" class="form-input" required placeholder="Phone, email, or WhatsApp">
+          </div>
+          
+          <button type="submit" class="submit-btn">
+            <i class="fas fa-paper-plane"></i> Submit Event
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h3>Chamber122</h3>
+        <p>Connecting Kuwait's MSMEs with opportunities for growth and success. Join our community today.</p>
+      </div>
+      
+      <div class="footer-section">
+        <h3>Quick Links</h3>
+        <p><a href="index.html">Home</a></p>
+        <p><a href="directory.html">Directory</a></p>
+        <p><a href="events.html">Events</a></p>
+        <p><a href="bulletin.html">Bulletin</a></p>
+        <p><a href="get-listed.html">Get Listed</a></p>
+        <p><a href="about.html">About</a></p>
+        <p><a href="contact.html">Contact</a></p>
+      </div>
+      
+      <div class="footer-section">
+        <h3>Connect</h3>
+        <p><a href="#"><i class="fab fa-twitter"></i> Twitter</a></p>
+        <p><a href="#"><i class="fab fa-linkedin"></i> LinkedIn</a></p>
+        <p><a href="#"><i class="fab fa-instagram"></i> Instagram</a></p>
+        <p><a href="mailto:info@chamber122.com"><i class="fas fa-envelope"></i> info@chamber122.com</a></p>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <p>&copy; 2025 Chamber122. All Rights Reserved. | Empowering Kuwait's MSMEs</p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/events.js"></script>
+</body>
+</html>
+

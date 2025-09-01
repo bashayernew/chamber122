@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us | Chamber122</title>
+  <meta name="description" content="Get in touch with Chamber122. Contact us for support, partnerships, or any questions about our MSME community platform.">
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="logo">
+        <img src="images/logo.png" alt="Chamber122 Logo">
+        Chamber122
+      </a>
+      <div class="nav-menu">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="directory.html" class="nav-link">Directory</a>
+        <a href="events.html" class="nav-link">Events</a>
+        <a href="bulletin.html" class="nav-link">Bulletin</a>
+        <a href="get-listed.html" class="nav-link">Get Listed</a>
+        <a href="about.html" class="nav-link">About</a>
+        <a href="contact.html" class="nav-link active">Contact</a>
+      </div>
+      <div class="nav-buttons">
+        <a href="get-listed.html" class="nav-btn">Sign Up</a>
+        <a href="get-listed.html" class="nav-btn primary">Login</a>
+      </div>
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+    <div class="mobile-menu" id="mobile-menu">
+      <a href="index.html" class="mobile-link">Home</a>
+      <a href="directory.html" class="mobile-link">Directory</a>
+      <a href="events.html" class="mobile-link">Events</a>
+      <a href="bulletin.html" class="mobile-link">Bulletin</a>
+      <a href="get-listed.html" class="mobile-link">Get Listed</a>
+      <a href="about.html" class="mobile-link">About</a>
+      <a href="contact.html" class="mobile-link">Contact</a>
+    </div>
+  </nav>
+
+  <!-- Contact Hero -->
+  <section class="contact-hero">
+    <div class="contact-hero-content">
+      <h1>Contact Us</h1>
+      <p class="hero-subtitle">We're here to help you succeed. Reach out for support, partnerships, or any questions about Chamber122.</p>
+    </div>
+  </section>
+
+  <!-- Contact Content -->
+  <section class="contact-content">
+    <div class="contact-grid">
+      <!-- Contact Form -->
+      <div class="contact-form-section">
+        <h2>Send Us a Message</h2>
+        <p>Fill out the form below and we'll get back to you within 24 hours.</p>
+        
+        <form id="contact-form" class="contact-form">
+          <div class="form-group">
+            <label for="contact-name">Full Name *</label>
+            <input type="text" id="contact-name" name="contact-name" class="form-input" required placeholder="Enter your full name">
+          </div>
+          
+          <div class="form-group">
+            <label for="contact-email">Email Address *</label>
+            <input type="email" id="contact-email" name="contact-email" class="form-input" required placeholder="your@email.com">
+          </div>
+          
+          <div class="form-group">
+            <label for="contact-phone">Phone Number</label>
+            <input type="tel" id="contact-phone" name="contact-phone" class="form-input" placeholder="+965-12345678">
+          </div>
+          
+          <div class="form-group">
+            <label for="contact-subject">Subject *</label>
+            <select id="contact-subject" name="contact-subject" class="form-input" required>
+              <option value="">Select a subject...</option>
+              <option value="general">General Inquiry</option>
+              <option value="business-listing">Business Listing Support</option>
+              <option value="partnership">Partnership Opportunity</option>
+              <option value="technical">Technical Support</option>
+              <option value="event">Event Collaboration</option>
+              <option value="feedback">Feedback & Suggestions</option>
+              <option value="volunteer">Volunteer Opportunity</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="contact-message">Message *</label>
+            <textarea id="contact-message" name="contact-message" class="form-input" rows="6" required placeholder="Tell us how we can help you..."></textarea>
+          </div>
+          
+          <button type="submit" class="submit-btn">
+            <i class="fas fa-paper-plane"></i> Send Message
+          </button>
+        </form>
+      </div>
+      
+      <!-- Contact Information -->
+      <div class="contact-info-section">
+        <h2>Get In Touch</h2>
+        <p>Choose the best way to reach us for your specific needs.</p>
+        
+        <div class="contact-methods">
+          <div class="contact-method">
+            <div class="contact-icon">
+              <i class="fab fa-whatsapp"></i>
+            </div>
+            <div class="contact-details">
+              <h3>WhatsApp</h3>
+              <p>Quick responses for urgent matters</p>
+              <a href="https://wa.me/96512345678" class="contact-link">+965 1234 5678</a>
+            </div>
+          </div>
+          
+          <div class="contact-method">
+            <div class="contact-icon">
+              <i class="fas fa-envelope"></i>
+            </div>
+            <div class="contact-details">
+              <h3>Email</h3>
+              <p>For detailed inquiries and support</p>
+              <a href="mailto:info@chamber122.com" class="contact-link">info@chamber122.com</a>
+            </div>
+          </div>
+          
+          <div class="contact-method">
+            <div class="contact-icon">
+              <i class="fab fa-instagram"></i>
+            </div>
+            <div class="contact-details">
+              <h3>Instagram</h3>
+              <p>Follow us for updates and community highlights</p>
+              <a href="#" class="contact-link">@chamber122_kw</a>
+            </div>
+          </div>
+          
+          <div class="contact-method">
+            <div class="contact-icon">
+              <i class="fab fa-linkedin"></i>
+            </div>
+            <div class="contact-details">
+              <h3>LinkedIn</h3>
+              <p>Professional networking and partnerships</p>
+              <a href="#" class="contact-link">Chamber122 Kuwait</a>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+          <h3>Quick Actions</h3>
+          <div class="action-buttons">
+            <a href="get-listed.html" class="action-btn">
+              <i class="fas fa-plus"></i>
+              <span>List Your Business</span>
+            </a>
+            <a href="events.html" class="action-btn">
+              <i class="fas fa-calendar"></i>
+              <span>Submit an Event</span>
+            </a>
+            <a href="bulletin.html" class="action-btn">
+              <i class="fas fa-bullhorn"></i>
+              <span>Post to Bulletin</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="faq-section">
+    <div class="faq-content">
+      <h2>Frequently Asked Questions</h2>
+      <div class="faq-grid">
+        <div class="faq-item">
+          <h3>How much does it cost to list my business?</h3>
+          <p>Chamber122 is completely free for all MSMEs in Kuwait. We're a nonprofit organization committed to supporting our local business community.</p>
+        </div>
+        
+        <div class="faq-item">
+          <h3>How long does it take to get my business approved?</h3>
+          <p>Most business listings are reviewed and approved within 2-3 business days. We'll notify you via email once your listing is live.</p>
+        </div>
+        
+        <div class="faq-item">
+          <h3>Can I update my business information after listing?</h3>
+          <p>Yes! Once you create an account, you can log in anytime to update your business information, photos, and contact details.</p>
+        </div>
+        
+        <div class="faq-item">
+          <h3>How can I promote my events or special offers?</h3>
+          <p>Use our Events page to submit upcoming events, sales, or promotions. You can also post announcements on our Bulletin board.</p>
+        </div>
+        
+        <div class="faq-item">
+          <h3>Do you offer business support or consulting?</h3>
+          <p>While we don't provide direct consulting, we regularly host training sessions and networking events. We also share funding and training opportunities through our Bulletin.</p>
+        </div>
+        
+        <div class="faq-item">
+          <h3>How can I volunteer or partner with Chamber122?</h3>
+          <p>We welcome volunteers and strategic partners! Contact us using the form above or reach out directly via WhatsApp to discuss opportunities.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h3>Chamber122</h3>
+        <p>Connecting Kuwait's MSMEs with opportunities for growth and success. Join our community today.</p>
+        <div class="newsletter-form">
+          <input type="email" class="newsletter-input" placeholder="Subscribe to our newsletter">
+          <button class="newsletter-btn">Subscribe</button>
+        </div>
+      </div>
+      
+      <div class="footer-section">
+        <h3>Quick Links</h3>
+        <p><a href="index.html">Home</a></p>
+        <p><a href="directory.html">Directory</a></p>
+        <p><a href="events.html">Events</a></p>
+        <p><a href="bulletin.html">Bulletin</a></p>
+        <p><a href="get-listed.html">Get Listed</a></p>
+        <p><a href="about.html">About</a></p>
+        <p><a href="contact.html">Contact</a></p>
+      </div>
+      
+      <div class="footer-section">
+        <h3>Connect</h3>
+        <p><a href="#"><i class="fab fa-twitter"></i> Twitter</a></p>
+        <p><a href="#"><i class="fab fa-linkedin"></i> LinkedIn</a></p>
+        <p><a href="#"><i class="fab fa-instagram"></i> Instagram</a></p>
+        <p><a href="mailto:info@chamber122.com"><i class="fas fa-envelope"></i> info@chamber122.com</a></p>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <p>&copy; 2025 Chamber122. All Rights Reserved. | Empowering Kuwait's MSMEs</p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    // Contact form handling
+    document.getElementById('contact-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // Show loading state
+      const submitBtn = document.querySelector('.submit-btn');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+      submitBtn.disabled = true;
+      
+      // Simulate form submission
+      setTimeout(() => {
+        alert('Thank you for your message! We\'ll get back to you within 24 hours.');
+        this.reset();
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+      }, 2000);
+    });
+  </script>
+</body>
+</html>
+
