@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Login Debug Test • Chamber122</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { color-scheme: dark }
+    body { margin:0; background:#0b0c12; color:#e9e9f1; font-family:system-ui,sans-serif; }
+    .wrap { max-width: 900px; margin: 40px auto; padding: 20px; }
+    .card { background:#101321; border:1px solid #222640; border-radius:16px; padding:16px; }
+    input,button { width:100%; padding:12px 14px; margin:8px 0 12px; border-radius:12px; border:1px solid #262b45; background:#0c1022; color:#f2f3ff; }
+    button { background:#6f75ff; border:0; font-weight:700; cursor:pointer; }
+    pre { white-space:pre-wrap; word-break:break-word; margin:0; }
+    .row { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+    h1 { margin:0 0 14px 0; }
+  </style>
+
+  <!-- Inject your Supabase env (DEV ONLY) -->
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
+    const sb = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
+      auth: { autoRefreshToken:true, persistSession:true, detectSessionInUrl:true },
+      global: { headers: { 'x-client-info': 'chamber122-debug' } }
+    });
+    const $ = (id) => document.getElementById(id);
+    async function print(title, obj) {
+      $('out').textContent += `\n\n=== ${title} ===\n` + JSON.stringify(obj, null, 2);
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      $('status').textContent = 'Ready';
+      await print('Config', { url: window.SUPABASE_URL, anonKeyShort: window.SUPABASE_ANON_KEY.slice(0,12)+'...' });
+      const { data } = await sb.auth.getSession();
+      await print('getSession()', data);
+      window._sb = sb;
+    });
+
+    window.signIn = async () => {
+      $('status').textContent = 'Signing in…';
+      $('out').textContent = '';
+      await print('Attempt', { email: $('email').value.trim() });
+      try {
+        const { data, error } = await _sb.auth.signInWithPassword({
+          email: $('email').value.trim(),
+          password: $('password').value
+        });
+        await print('Result', { data, error });
+        $('status').textContent = error ? `❌ ${error.message}` : '✅ Logged in';
+        if (!error) setTimeout(()=>location.href='/dashboard.html', 1000);
+      } catch (e) {
+        await print('Exception', { message: String(e), stack: e?.stack });
+        $('status').textContent = `❌ ${String(e)}`;
+      }
+    };
+
+    window.whoAmI = async () => {
+      const { data, error } = await _sb.auth.getUser();
+      await print('getUser()', { data, error });
+    };
+
+    window.logout = async () => {
+      await _sb.auth.signOut();
+      $('status').textContent = 'Signed out';
+    };
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Login Debug Test</h1>
+
+    <div class="card">
+      <div class="row">
+        <div><label>Email</label><input id="email" type="email" placeholder="you@example.com" /></div>
+        <div><label>Password</label><input id="password" type="password" placeholder="••••••••" /></div>
+      </div>
+      <button onclick="signIn()">Sign In (direct SDK)</button>
+      <button onclick="whoAmI()">Who am I?</button>
+      <button onclick="logout()">Sign Out</button>
+      <div id="status" style="margin-top:8px"></div>
+    </div>
+
+    <h3 style="margin-top:20px">Output</h3>
+    <div class="card"><pre id="out"></pre></div>
+  </div>
+</body>
+</html>
