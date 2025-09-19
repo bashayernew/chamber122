@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Bulletins | Chamber122</title>
+  <meta name="description" content="Manage your bulletin posts and announcements.">
+  <script>
+    // DEV: inject from .env or hardcode for local only
+    window.SUPABASE_URL = 'https://gidbvemmqffogakcepka.supabase.co';
+    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w';
+  </script>
+  <link rel="stylesheet" href="css/style.css?v=19">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="/bulletin/bulletin.css" />
+</head>
+<body>
+  <!-- Global Header -->
+  <div id="siteHeader"></div>
+  <link rel="stylesheet" href="/shared/header.css" />
+  <script type="module" src="/shared/header-mount.js"></script>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="logo site-logo">
+        <img src="images/logo.png" alt="Chamber122 Logo">
+      </a>
+      <div class="nav-menu">
+        <a href="index.html" class="nav-link" data-i18n="nav.home">Home</a>
+        <a href="directory.html" class="nav-link" data-i18n="nav.directory">Directory</a>
+        <a href="events.html" class="nav-link" data-i18n="nav.events">Events</a>
+        <a href="bulletin.html" class="nav-link" data-i18n="nav.bulletin">Bulletin</a>
+        <a href="about.html" class="nav-link" data-i18n="nav.about">About</a>
+        <a href="contact.html" class="nav-link" data-i18n="nav.contact">Contact</a>
+      </div>
+      <div class="nav-actions">
+        <div id="account-menu" class="relative">
+          <button id="account-btn" class="btn btn-outline flex items-center gap-2">
+            <span id="account-name" data-i18n="nav.account">Account</span>
+            <svg class="h-4 w-4 opacity-70" viewBox="0 0 20 20"><path d="M5 7l5 6 5-6"/></svg>
+          </button>
+          <div id="account-dropdown" class="menu hidden">
+            <a href="owner-activities.html" data-testid="menu-my-activities" data-i18n="nav.myActivities">My Activities</a>
+            <a href="admin-dashboard.html" id="menu-admin" class="hidden" data-testid="menu-admin" data-i18n="nav.admin">Admin Panel</a>
+            <a href="#" id="btn-logout" data-testid="logout" data-i18n="nav.logout">Logout</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Page Header -->
+  <section class="page-header">
+    <div class="container">
+      <h1>My Bulletins</h1>
+      <p>Manage your bulletin posts and announcements</p>
+    </div>
+  </section>
+
+  <!-- Bulletin Management -->
+  <section class="bulletin-management">
+    <div class="container">
+      <div class="bulletin-actions">
+        <button id="createBulletinBtn" class="btn btn-primary">
+          <i class="fas fa-plus"></i> Create New Bulletin
+        </button>
+      </div>
+      
+      <div id="myBulletinsList" class="bulletin-list-container">
+        <!-- User's bulletins will be loaded here -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Bulletin Modal -->
+  <div id="bulletinModal" hidden></div>
+
+  <!-- Scripts -->
+  <script src="js/main.js?v=7"></script>
+  
+  <script type="module">
+    import { supabase } from '/js/supabase-client.js';
+    
+    let currentUser = null;
+    
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initializePage();
+    });
+    
+    async function initializePage() {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      currentUser = user;
+      
+      if (!user) {
+        window.location.href = '/auth.html#login';
+        return;
+      }
+      
+      // Load user's bulletins
+      await loadMyBulletins();
+      
+      // Setup create button
+      const createBtn = document.getElementById('createBulletinBtn');
+      if (createBtn) {
+        createBtn.addEventListener('click', () => {
+          // Redirect to bulletin page with FAB
+          window.location.href = '/bulletin.html';
+        });
+      }
+    }
+    
+    async function loadMyBulletins() {
+      if (!currentUser) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('bulletins')
+          .select('*')
+          .eq('owner_user_id', currentUser.id)
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        renderMyBulletins(data || []);
+      } catch (error) {
+        console.error('Error loading bulletins:', error);
+      }
+    }
+    
+    function renderMyBulletins(bulletins) {
+      const container = document.getElementById('myBulletinsList');
+      if (!container) return;
+      
+      if (bulletins.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 40px; color: #666;">
+            <i class="fas fa-bullhorn" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+            <h3 style="color: #aaa; margin: 0 0 8px 0;">No bulletins yet</h3>
+            <p style="margin: 0; font-size: 14px;">Create your first bulletin to share with the community!</p>
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = bulletins.map(bulletin => createMyBulletinCard(bulletin)).join('');
+    }
+    
+    function createMyBulletinCard(bulletin) {
+      const typeLabels = {
+        announcement: 'Announcement',
+        job: 'Job',
+        training: 'Training',
+        funding: 'Funding'
+      };
+      
+      const statusColors = {
+        draft: '#f59e0b',
+        published: '#10b981',
+        archived: '#6b7280'
+      };
+      
+      return `
+        <div class="bulletin-card">
+          <div class="bulletin-header">
+            <div>
+              <h3 class="bulletin-title">${escapeHtml(bulletin.title)}</h3>
+              <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <span class="type-pill type-${bulletin.type}">
+                  ${typeLabels[bulletin.type] || 'Announcement'}
+                </span>
+                <span style="background: ${statusColors[bulletin.status]}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;">
+                  ${bulletin.status.charAt(0).toUpperCase() + bulletin.status.slice(1)}
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <p class="bulletin-description">${escapeHtml(bulletin.description.substring(0, 200))}${bulletin.description.length > 200 ? '...' : ''}</p>
+          
+          <div class="bulletin-meta">
+            ${bulletin.location ? `<span><i class="fas fa-map-marker-alt"></i> ${escapeHtml(bulletin.location)}</span>` : ''}
+            ${bulletin.deadline ? `<span><i class="fas fa-calendar"></i> Deadline: ${formatDate(bulletin.deadline)}</span>` : ''}
+            <span><i class="fas fa-clock"></i> ${formatDate(bulletin.created_at)}</span>
+          </div>
+          
+          <div style="margin-top: 16px; display: flex; gap: 8px;">
+            <button class="btn btn-secondary" onclick="editBulletin('${bulletin.id}')">
+              <i class="fas fa-edit"></i> Edit
+            </button>
+            <button class="btn btn-danger" onclick="deleteBulletin('${bulletin.id}')">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          </div>
+        </div>
+      `;
+    }
+    
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // Global functions
+    window.editBulletin = (id) => {
+      // For now, redirect to bulletin page
+      window.location.href = '/bulletin.html';
+    };
+    
+    window.deleteBulletin = async (id) => {
+      if (!confirm('Are you sure you want to delete this bulletin?')) return;
+      
+      try {
+        const { error } = await supabase
+          .from('bulletins')
+          .delete()
+          .eq('id', id);
+        
+        if (error) throw error;
+        
+        await loadMyBulletins();
+        alert('Bulletin deleted successfully');
+      } catch (error) {
+        console.error('Error deleting bulletin:', error);
+        alert('Failed to delete bulletin');
+      }
+    };
+  </script>
+</body>
+</html>
