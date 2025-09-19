@@ -2243,7 +2243,8 @@ html[dir="rtl"] .inline-dir .ltr { direction: ltr; }
 }
 
 /* Bulletin Page Circular + Button - Shiny Pinkish Red (ONLY for bulletin page) */
-.floating-action .fab {
+.floating-action .fab,
+.fab-red {
   background: linear-gradient(135deg, #EF4444, #DC2626, #B91C1C);
   border: 2px solid #EF4444;
   color: #FFFFFF;
@@ -2263,7 +2264,8 @@ html[dir="rtl"] .inline-dir .ltr { direction: ltr; }
   cursor: pointer;
 }
 
-.floating-action .fab::before {
+.floating-action .fab::before,
+.fab-red::before {
   content: '';
   position: absolute;
   top: 0;
@@ -2274,18 +2276,21 @@ html[dir="rtl"] .inline-dir .ltr { direction: ltr; }
   transition: left 0.5s ease;
 }
 
-.floating-action .fab:hover {
+.floating-action .fab:hover,
+.fab-red:hover {
   background: linear-gradient(135deg, #DC2626, #B91C1C, #991B1B);
   border-color: #DC2626;
   transform: translateY(-3px) scale(1.05);
   box-shadow: 0 10px 30px rgba(239, 68, 68, 0.6);
 }
 
-.floating-action .fab:hover::before {
+.floating-action .fab:hover::before,
+.fab-red:hover::before {
   left: 100%;
 }
 
-.floating-action .fab:active {
+.floating-action .fab:active,
+.fab-red:active {
   transform: translateY(-1px) scale(1.02);
   box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
 }
