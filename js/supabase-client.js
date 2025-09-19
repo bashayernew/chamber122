@@ -1,26 +1,33 @@
-// Initializes Supabase in the browser if config is provided
-// Include js/config.js (your credentials) before this script
-// This file is a module (imported with type="module")
+// /public/js/supabase-client.js
+// Single source of truth for the client. Uses CDN import for non-bundled site.
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
+import { SUPABASE_URL as CONFIG_URL, SUPABASE_ANON_KEY as CONFIG_ANON_KEY } from './config.js';
 
-export let supabaseClient = null;
-export let SUPABASE_ENABLED = false;
+const SUPABASE_URL = window.SUPABASE_URL || CONFIG_URL || import.meta?.env?.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || CONFIG_ANON_KEY || import.meta?.env?.VITE_SUPABASE_ANON_KEY;
 
-try {
-  const url = window.SUPABASE_URL;
-  const key = window.SUPABASE_ANON_KEY;
-  if (url && key) {
-    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
-    supabaseClient = createClient(url, key);
-    SUPABASE_ENABLED = true;
-  } else {
-    console.warn('Supabase config missing. Create js/config.js from js/config.sample.js');
-  }
-} catch (err) {
-  console.warn('Supabase init failed:', err);
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.warn('[Supabase] Missing URL or ANON key on window or env.');
 }
 
-// Expose globals for non-module scripts if needed
-window.SUPABASE_ENABLED = SUPABASE_ENABLED;
-window.supabaseClient = supabaseClient;
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+  },
+  global: { headers: { 'x-client-info': 'chamber122-web' } }
+});
 
+// convenience for quick console tests:
+window._sb = supabase;
 
+// Export getCurrentAccountState function
+export async function getCurrentAccountState() {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error) {
+    console.error('Error getting user:', error);
+    return { user: null, error };
+  }
+  return { user, error: null };
+}
