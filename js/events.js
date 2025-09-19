@@ -94,7 +94,7 @@ async function loadEvents() {
       .from('activities')
       .select('*')
       .eq('status', 'published')
-      .order('date', { ascending: true });
+      .order('created_at', { ascending: true });
 
     if (error) throw error;
 

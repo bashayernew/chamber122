@@ -89,7 +89,7 @@ async function loadBulletins() {
           logo_url
         )
       `)
-      .eq('owner_user_id', currentUser.id)
+      .eq('owner_id', currentUser.id)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -236,7 +236,7 @@ async function deleteBulletin(bulletinId) {
       .from('bulletins')
       .delete()
       .eq('id', bulletinId)
-      .eq('owner_user_id', currentUser.id);
+      .eq('owner_id', currentUser.id);
     
     if (error) throw error;
     
@@ -258,7 +258,7 @@ async function publishBulletin(bulletinId) {
         published_at: new Date().toISOString()
       })
       .eq('id', bulletinId)
-      .eq('owner_user_id', currentUser.id);
+      .eq('owner_id', currentUser.id);
     
     if (error) throw error;
     
@@ -289,7 +289,7 @@ async function saveBulletin(status) {
     const { data: business } = await supabase
       .from('businesses')
       .select('id')
-      .eq('owner_user_id', currentUser.id)
+      .eq('owner_id', currentUser.id)
       .single();
     
     const bulletinData = {
@@ -329,7 +329,7 @@ async function saveBulletin(status) {
         .from('bulletins')
         .update(bulletinData)
         .eq('id', editingBulletinId)
-        .eq('owner_user_id', currentUser.id)
+        .eq('owner_id', currentUser.id)
         .select()
         .single();
     } else {

@@ -37,7 +37,7 @@ export async function onCompleteSignup({ business, account, docs }) {
   const { data: bizRes, error: bizErr } = await supabase
     .from('businesses')
     .insert({
-      owner_user_id: user.id,
+      owner_id: user.id,
       legal_name: business.legal_name,
       display_name: business.display_name,
       industry: business.industry,
