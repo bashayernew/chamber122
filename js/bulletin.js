@@ -1,104 +1,62 @@
 // Bulletin page functionality
+import { supabase } from '/js/supabase-client.js';
 
-// Sample bulletin data
-const bulletinData = [
-  {
-    id: 1,
-    category: 'funding',
-    title: 'Kuwait Development Fund - MSME Support Program',
-    description: 'The Kuwait Development Fund announces a new KD 10,000 grant program for innovative MSMEs. Applications are now open for technology, healthcare, and sustainable business ventures.',
-    company: 'Kuwait Development Fund',
-    contact: 'grants@kdf.gov.kw',
-    date: '2025-01-27',
-    deadline: '2025-03-15',
-    link: 'https://kdf.gov.kw/msme-grants'
-  },
-  {
-    id: 2,
-    category: 'jobs',
-    title: 'Digital Marketing Specialist - Remote',
-    description: 'Growing e-commerce MSME seeks experienced digital marketing specialist. Must have experience with social media marketing, Google Ads, and content creation. Flexible hours, competitive salary.',
-    company: 'Kuwait Online Store',
-    contact: '+965-99887766',
-    date: '2025-01-26',
-    deadline: '2025-02-10',
-    link: null
-  },
-  {
-    id: 3,
-    category: 'training',
-    title: 'Free Business Plan Writing Workshop',
-    description: 'Learn to write a compelling business plan that attracts investors and helps you grow your MSME. Includes templates, one-on-one mentoring, and pitch practice.',
-    company: 'Chamber122 Training',
-    contact: 'training@chamber122.com',
-    date: '2025-01-25',
-    deadline: '2025-02-05',
-    link: null
-  },
-  {
-    id: 4,
-    category: 'announcements',
-    title: 'New MSME Tax Incentives Announced',
-    description: 'The Ministry of Finance has announced new tax incentives for MSMEs with annual revenue under KD 100,000. Reduced corporate tax rates and simplified filing procedures now available.',
-    company: 'Ministry of Finance',
-    contact: 'info@mof.gov.kw',
-    date: '2025-01-24',
-    deadline: null,
-    link: 'https://mof.gov.kw/msme-incentives'
-  },
-  {
-    id: 5,
-    category: 'opportunities',
-    title: 'Kuwait International Fair - Vendor Applications',
-    description: 'Kuwait International Fair 2025 is now accepting applications from local MSMEs. Subsidized booth rates available for registered small businesses. Great opportunity for international exposure.',
-    company: 'Kuwait International Fair',
-    contact: 'vendors@kif2025.com',
-    date: '2025-01-23',
-    deadline: '2025-02-28',
-    link: 'https://kif2025.com/vendors'
-  },
-  {
-    id: 6,
-    category: 'jobs',
-    title: 'Part-time Graphic Designer',
-    description: 'Local fashion MSME needs creative graphic designer for social media content, product photography editing, and marketing materials. Portfolio required.',
-    company: 'Desert Rose Boutique',
-    contact: 'careers@desertrose.kw',
-    date: '2025-01-22',
-    deadline: '2025-02-15',
-    link: null
-  },
-  {
-    id: 7,
-    category: 'training',
-    title: 'Export Readiness Program',
-    description: 'Free 3-day program to help MSMEs prepare for international markets. Covers export regulations, shipping, international payments, and market research.',
-    company: 'Kuwait Chamber of Commerce',
-    contact: 'export@kcci.org.kw',
-    date: '2025-01-21',
-    deadline: '2025-02-12',
-    link: 'https://kcci.org.kw/export-program'
-  },
-  {
-    id: 8,
-    category: 'funding',
-    title: 'Women Entrepreneurs Grant - Round 2',
-    description: 'Special funding opportunity for women-led MSMEs in Kuwait. Grants up to KD 15,000 available for business expansion, equipment purchase, or working capital.',
-    company: 'Kuwait Women\'s Association',
-    contact: 'grants@kwa.org.kw',
-    date: '2025-01-20',
-    deadline: '2025-03-01',
-    link: 'https://kwa.org.kw/entrepreneur-grants'
-  }
-];
+// Real bulletin data from Supabase
+let bulletinData = [];
 
 let currentBulletinFilter = 'all';
 let filteredBulletins = [...bulletinData];
 
 // Initialize bulletin page
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+  await loadBulletinsFromSupabase();
   displayBulletins(filteredBulletins);
 });
+
+// Load bulletins from Supabase
+async function loadBulletinsFromSupabase() {
+  try {
+    const { data, error } = await supabase
+      .from('bulletins')
+      .select(`
+        *,
+        businesses:owner_business_id (
+          business_name,
+          logo_url
+        ),
+        profiles:owner_user_id (
+          full_name
+        )
+      `)
+      .eq('status', 'published')
+      .order('published_at', { ascending: false });
+
+    if (error) throw error;
+    
+    // Transform Supabase data to match expected format
+    bulletinData = (data || []).map(bulletin => ({
+      id: bulletin.id,
+      category: bulletin.type,
+      title: bulletin.title,
+      description: bulletin.description,
+      company: bulletin.businesses?.business_name || bulletin.profiles?.full_name || 'Anonymous',
+      contact: bulletin.location || 'Contact via Chamber122',
+      date: bulletin.published_at || bulletin.created_at,
+      deadline: bulletin.deadline_date,
+      link: bulletin.attachment_url,
+      attachment_name: bulletin.attachment_name,
+      location: bulletin.location
+    }));
+    
+    filteredBulletins = [...bulletinData];
+    
+  } catch (error) {
+    console.error('Error loading bulletins from Supabase:', error);
+    // Keep empty array if there's an error
+    bulletinData = [];
+    filteredBulletins = [];
+  }
+}
 
 // Filter bulletins by category
 function filterBulletin(category) {
@@ -122,7 +80,12 @@ function filterBulletin(category) {
 
 // Display bulletins
 function displayBulletins(bulletins) {
-  const bulletinList = document.getElementById('bulletin-list');
+  const bulletinList = document.getElementById('bulletin-grid');
+  if (!bulletinList) {
+    console.warn('Bulletin list element not found');
+    return;
+  }
+  
   bulletinList.innerHTML = '';
   
   if (bulletins.length === 0) {
@@ -235,17 +198,62 @@ function loadMoreBulletins() {
   alert('Loading more bulletins... (This would load additional posts in a real application)');
 }
 
-// Open bulletin form modal
-function openBulletinForm() {
-  document.getElementById('bulletin-form-modal').classList.add('active');
-  document.body.style.overflow = 'hidden';
+// Open bulletin form modal - redirect to bulletin management for providers
+async function openBulletinForm() {
+  try {
+    // Check if user is a provider
+    const { supabase } = await import('/js/supabase-client.js');
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      // Not logged in - show login prompt
+      window.location.href = '/auth.html#login';
+      return;
+    }
+    
+    // Check user role
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+    
+    const isProvider = profile?.role === 'provider_individual' || profile?.role === 'provider_company';
+    
+    if (isProvider) {
+      // Provider - redirect to bulletin management
+      window.location.href = '/owner-bulletins.html';
+    } else {
+      // Customer - show message about becoming a provider
+      alert('Only MSME providers can post bulletins. Please upgrade to a provider account to access this feature.');
+      window.location.href = '/auth.html#signup';
+    }
+    
+  } catch (error) {
+    console.error('Error checking user role:', error);
+    // Fallback to old modal if there's an error
+    const modal = document.getElementById('bulletin-form-modal');
+    if (modal) {
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+  }
 }
+
+// Make function available globally
+window.openBulletinForm = openBulletinForm;
+
+// Debug: log that the function is available
+console.log('Bulletin.js loaded, openBulletinForm function available:', typeof window.openBulletinForm);
 
 // Close bulletin form modal
 function closeBulletinForm() {
   document.getElementById('bulletin-form-modal').classList.remove('active');
   document.body.style.overflow = 'auto';
 }
+
+// Make function available globally
+window.closeBulletinForm = closeBulletinForm;
 
 // Handle bulletin form submission
 document.getElementById('bulletin-submission-form').addEventListener('submit', function(e) {

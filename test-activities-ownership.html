@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activities Ownership Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: white; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 8px; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+        button { padding: 10px 20px; margin: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2563eb; }
+        pre { background: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        .warning { color: #f59e0b; }
+    </style>
+</head>
+<body>
+    <h1>🔐 Activities Ownership Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Test Activities Query (Current User)</h2>
+        <p>Verify that activities can be queried by created_by for the current user</p>
+        <button onclick="testActivitiesQuery()">Test Activities Query</button>
+        <div id="query-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test Activities Insert</h2>
+        <p>Verify that new activities are automatically assigned created_by</p>
+        <button onclick="testActivitiesInsert()">Test Activities Insert</button>
+        <div id="insert-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test RLS Policies</h2>
+        <p>Verify that users can only see their own activities</p>
+        <button onclick="testRLSPolicies()">Test RLS Policies</button>
+        <div id="rls-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Admin Access</h2>
+        <p>Verify that admins can see all activities</p>
+        <button onclick="testAdminAccess()">Test Admin Access</button>
+        <div id="admin-result"></div>
+    </div>
+
+    <script type="module">
+        import { supabase } from './js/supabase-client.js';
+
+        // Test 1: Activities Query
+        window.testActivitiesQuery = async () => {
+            const resultDiv = document.getElementById('query-result');
+            resultDiv.innerHTML = '<p class="info">Testing activities query...</p>';
+            
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                if (!user) {
+                    resultDiv.innerHTML = '<p class="warning">⚠️ No user logged in. Please log in first.</p>';
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('activities')
+                    .select('id, title, created_at, created_by, business_id')
+                    .eq('created_by', user.id)
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+
+                if (error) {
+                    resultDiv.innerHTML = `
+                        <p class="error">❌ Error querying activities:</p>
+                        <pre>${error.message}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Activities query successful</p>
+                        <p class="info">Found ${data.length} activities for user ${user.id}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error in activities query test:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 2: Activities Insert
+        window.testActivitiesInsert = async () => {
+            const resultDiv = document.getElementById('insert-result');
+            resultDiv.innerHTML = '<p class="info">Testing activities insert...</p>';
+            
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                if (!user) {
+                    resultDiv.innerHTML = '<p class="warning">⚠️ No user logged in. Please log in first.</p>';
+                    return;
+                }
+
+                // Get user's business ID
+                const { data: business } = await supabase
+                    .from('businesses')
+                    .select('id')
+                    .eq('owner_id', user.id)
+                    .limit(1)
+                    .single();
+
+                if (!business) {
+                    resultDiv.innerHTML = '<p class="warning">⚠️ No business found for user. Please create a business first.</p>';
+                    return;
+                }
+
+                const testActivity = {
+                    business_id: business.id,
+                    title: `Test Activity ${Date.now()}`,
+                    content: 'This is a test activity created by the ownership test.',
+                    status: 'draft'
+                };
+
+                const { data, error } = await supabase
+                    .from('activities')
+                    .insert([testActivity])
+                    .select('id, title, created_by, created_at')
+                    .single();
+
+                if (error) {
+                    resultDiv.innerHTML = `
+                        <p class="error">❌ Error inserting activity:</p>
+                        <pre>${error.message}</pre>
+                    `;
+                } else {
+                    const createdByMatches = data.created_by === user.id;
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Activity inserted successfully</p>
+                        <p class="info">Activity ID: ${data.id}</p>
+                        <p class="info">Created by: ${data.created_by}</p>
+                        <p class="info">User ID: ${user.id}</p>
+                        <p class="${createdByMatches ? 'success' : 'error'}">${createdByMatches ? '✅' : '❌'} created_by matches user ID</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error in activities insert test:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 3: RLS Policies
+        window.testRLSPolicies = async () => {
+            const resultDiv = document.getElementById('rls-result');
+            resultDiv.innerHTML = '<p class="info">Testing RLS policies...</p>';
+            
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                if (!user) {
+                    resultDiv.innerHTML = '<p class="warning">⚠️ No user logged in. Please log in first.</p>';
+                    return;
+                }
+
+                // Try to query all activities (should only return user's own)
+                const { data, error } = await supabase
+                    .from('activities')
+                    .select('id, title, created_by')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) {
+                    resultDiv.innerHTML = `
+                        <p class="error">❌ Error testing RLS:</p>
+                        <pre>${error.message}</pre>
+                    `;
+                } else {
+                    const allOwnedByUser = data.every(activity => activity.created_by === user.id);
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ RLS policies working</p>
+                        <p class="info">Found ${data.length} activities</p>
+                        <p class="info">User ID: ${user.id}</p>
+                        <p class="${allOwnedByUser ? 'success' : 'error'}">${allOwnedByUser ? '✅' : '❌'} All activities belong to current user</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error in RLS test:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 4: Admin Access
+        window.testAdminAccess = async () => {
+            const resultDiv = document.getElementById('admin-result');
+            resultDiv.innerHTML = '<p class="info">Testing admin access...</p>';
+            
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                if (!user) {
+                    resultDiv.innerHTML = '<p class="warning">⚠️ No user logged in. Please log in first.</p>';
+                    return;
+                }
+
+                // Check if user is admin
+                const { data: adminCheck } = await supabase
+                    .from('admins')
+                    .select('user_id')
+                    .eq('user_id', user.id)
+                    .single();
+
+                if (!adminCheck) {
+                    resultDiv.innerHTML = '<p class="warning">⚠️ User is not an admin. Admin access test skipped.</p>';
+                    return;
+                }
+
+                // Try to query all activities (admin should see all)
+                const { data, error } = await supabase
+                    .from('activities')
+                    .select('id, title, created_by')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) {
+                    resultDiv.innerHTML = `
+                        <p class="error">❌ Error testing admin access:</p>
+                        <pre>${error.message}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Admin access working</p>
+                        <p class="info">Found ${data.length} activities (admin can see all)</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error in admin access test:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Auto-run on load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🔐 Activities Ownership Test loaded');
+            console.log('Click the buttons above to test activities ownership');
+        });
+    </script>
+</body>
+</html>

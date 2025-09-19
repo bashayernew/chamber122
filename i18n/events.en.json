@@ -1,0 +1,22 @@
+{
+  "page": {
+    "title": "Events & Promotions",
+    "subtitle": "Discover upcoming events, training sessions, and promotional activities from Kuwait's MSME community"
+  },
+  "search": {
+    "label": "Search Events",
+    "placeholder": "Search by title, description, or business..."
+  },
+  "filters": {
+    "dateRange": "Date Range",
+    "allEvents": "All Events",
+    "upcoming": "Upcoming Events",
+    "past": "Past Events"
+  },
+  "buttons": {
+    "addEvent": "Add Event"
+  },
+  "results": {
+    "noResults": "No events found matching your criteria"
+  }
+}

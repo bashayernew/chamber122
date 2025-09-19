@@ -1,0 +1,16 @@
+{
+  "page": {
+    "title": "أنشطتي",
+    "subtitle": "تتبع وإدارة أنشطة مشروعك"
+  },
+  "sections": {
+    "recent": "الأنشطة الأخيرة",
+    "events": "فعالياتي",
+    "announcements": "إعلاناتي"
+  },
+  "actions": {
+    "createEvent": "إنشاء فعالية",
+    "postAnnouncement": "نشر إعلان",
+    "viewAll": "عرض الكل"
+  }
+}

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <script type="module" src="/js/supabase-client.js?v=20"></script>
+  <script type="module" src="/js/site-header.js?v=1"></script>
+  <title>Auth Verification</title>
+  <link rel="stylesheet" href="/css/header.css?v=1">
+  <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+</head>
+<body>
+  <div id="site-header"></div>
+  <h1>Auth Verification</h1>
+  <div id="status">Loading...</div>
+  
+  <script type="module">
+    try {
+      const { supabase } = await import('./src/lib/supabase-client.js');
+      document.getElementById('status').innerHTML = '✅ Supabase client loaded successfully<br>';
+      
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        document.getElementById('status').innerHTML += `❌ Auth error: ${error.message}`;
+      } else if (user) {
+        document.getElementById('status').innerHTML += `✅ User signed in: ${user.email}`;
+      } else {
+        document.getElementById('status').innerHTML += 'ℹ️ No user signed in';
+      }
+      
+      // Test auth state change
+      supabase.auth.onAuthStateChange((event, session) => {
+        console.log('Auth state change:', event, session?.user?.email);
+        document.getElementById('status').innerHTML += `<br>🔄 Auth state changed: ${event}`;
+      });
+      
+    } catch (error) {
+      document.getElementById('status').innerHTML = `❌ Error: ${error.message}`;
+      console.error('Verification error:', error);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "hero": {
+    "title": "Get Your Business Listed",
+    "subtitle": "Join our community and showcase your MSME to potential customers"
+  },
+  "form": {
+    "businessInfo": "Business Information",
+    "businessName": "Business Name",
+    "businessNamePlaceholder": "Enter your business name",
+    "category": "Category",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe your business...",
+    "contactInfo": "Contact Information",
+    "email": "Email",
+    "emailPlaceholder": "your@email.com",
+    "phone": "Phone",
+    "phonePlaceholder": "+965 XXXX XXXX",
+    "address": "Address",
+    "addressPlaceholder": "Enter your business address",
+    "submit": "Submit Application"
+  }
+}

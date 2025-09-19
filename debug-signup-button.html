@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Signup Button</title>
+    <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+    <meta name="supabase-anon" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: white; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 8px; }
+        button { padding: 10px 20px; margin: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2563eb; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+        .form-input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #555; border-radius: 4px; background: #333; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Debug Signup Button</h1>
+    
+    <div class="test-section">
+        <h2>Step 1: Business Information</h2>
+        <input type="text" name="country" class="form-input" placeholder="Country" value="Test Country">
+        <input type="text" name="city" class="form-input" placeholder="City" value="Test City">
+        <input type="text" name="business_name" class="form-input" placeholder="Business Name" value="Test Business">
+        <input type="text" name="industry" class="form-input" placeholder="Industry" value="Technology">
+        <textarea name="short_description" class="form-input" placeholder="Description">Test description</textarea>
+        
+        <div class="step-navigation">
+            <button type="button" class="btn btn-secondary">Back</button>
+            <button type="button" id="signup-next-1" class="btn btn-primary">Next</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Console Output</h2>
+        <div id="console-output"></div>
+    </div>
+
+    <!-- Simple click test -->
+    <script>
+        console.log("[Debug] Page loaded");
+        
+        // Test 1: Direct event listener
+        document.getElementById('signup-next-1').addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log("[Debug] Direct click handler fired");
+            document.getElementById('console-output').innerHTML += '<p class="success">✅ Direct click handler fired</p>';
+        });
+        
+        // Test 2: Event delegation
+        document.addEventListener('click', function(e) {
+            if (e.target.id === 'signup-next-1') {
+                console.log("[Debug] Event delegation fired");
+                document.getElementById('console-output').innerHTML += '<p class="info">ℹ️ Event delegation fired</p>';
+            }
+        });
+        
+        // Test 3: Check for overlays
+        function checkOverlay() {
+            const btn = document.getElementById('signup-next-1');
+            const rect = btn.getBoundingClientRect();
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height / 2;
+            const element = document.elementFromPoint(x, y);
+            
+            if (element === btn) {
+                console.log("[Debug] No overlay detected");
+                document.getElementById('console-output').innerHTML += '<p class="success">✅ No overlay detected</p>';
+            } else {
+                console.warn("[Debug] Overlay detected:", element);
+                document.getElementById('console-output').innerHTML += '<p class="error">❌ Overlay detected: ' + element.tagName + '</p>';
+                element.style.outline = '2px solid red';
+            }
+        }
+        
+        // Run overlay check on load
+        window.addEventListener('load', checkOverlay);
+        
+        // Test 4: Button properties
+        window.addEventListener('load', function() {
+            const btn = document.getElementById('signup-next-1');
+            console.log("[Debug] Button properties:", {
+                id: btn.id,
+                type: btn.type,
+                disabled: btn.disabled,
+                style: btn.style.cssText,
+                computedStyle: window.getComputedStyle(btn).pointerEvents
+            });
+        });
+    </script>
+</body>
+</html>

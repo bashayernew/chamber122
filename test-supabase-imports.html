@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Imports Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: white; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 8px; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+        button { padding: 10px 20px; margin: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2563eb; }
+        pre { background: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Supabase Imports Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Test Supabase Client Import</h2>
+        <p>Verify supabase-client.js loads correctly from CDN</p>
+        <button onclick="testSupabaseClient()">Test Supabase Client</button>
+        <div id="client-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test Supabase.js Import</h2>
+        <p>Verify supabase.js imports from supabase-client.js correctly</p>
+        <button onclick="testSupabaseJS()">Test Supabase.js</button>
+        <div id="supabase-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test Auth Functions</h2>
+        <p>Verify auth functions work with the new imports</p>
+        <button onclick="testAuthFunctions()">Test Auth Functions</button>
+        <div id="auth-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Business Functions</h2>
+        <p>Verify business functions work with the new imports</p>
+        <button onclick="testBusinessFunctions()">Test Business Functions</button>
+        <div id="business-result"></div>
+    </div>
+
+    <script type="module">
+        // Test 1: Supabase Client Import
+        window.testSupabaseClient = async () => {
+            const resultDiv = document.getElementById('client-result');
+            resultDiv.innerHTML = '<p class="info">Testing supabase-client.js import...</p>';
+            
+            try {
+                const { supabase } = await import('./js/supabase-client.js');
+                
+                if (supabase && typeof supabase.auth === 'object') {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Supabase client imported successfully</p>
+                        <p class="info">Auth module: ${typeof supabase.auth}</p>
+                        <p class="info">Storage module: ${typeof supabase.storage}</p>
+                        <p class="info">Database module: ${typeof supabase.from}</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ Supabase client not properly initialized</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error importing supabase-client:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 2: Supabase.js Import
+        window.testSupabaseJS = async () => {
+            const resultDiv = document.getElementById('supabase-result');
+            resultDiv.innerHTML = '<p class="info">Testing supabase.js import...</p>';
+            
+            try {
+                const supabaseModule = await import('./js/supabase.js');
+                
+                const expectedFunctions = ['getMyBusiness', 'getAccountAndCompleteness', 'isAuthenticated', 'getUser'];
+                const availableFunctions = Object.keys(supabaseModule).filter(key => typeof supabaseModule[key] === 'function');
+                
+                const missingFunctions = expectedFunctions.filter(fn => !availableFunctions.includes(fn));
+                
+                if (missingFunctions.length === 0) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Supabase.js imported successfully</p>
+                        <p class="info">Available functions: ${availableFunctions.join(', ')}</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="error">❌ Missing functions: ${missingFunctions.join(', ')}</p>
+                        <p class="info">Available functions: ${availableFunctions.join(', ')}</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error importing supabase.js:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 3: Auth Functions
+        window.testAuthFunctions = async () => {
+            const resultDiv = document.getElementById('auth-result');
+            resultDiv.innerHTML = '<p class="info">Testing auth functions...</p>';
+            
+            try {
+                const { isAuthenticated, getUser } = await import('./js/supabase.js');
+                
+                const authResult = await isAuthenticated();
+                const userResult = await getUser();
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Auth functions work correctly</p>
+                    <p class="info">isAuthenticated(): ${authResult}</p>
+                    <p class="info">getUser(): ${userResult ? 'User found' : 'No user'}</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error testing auth functions:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 4: Business Functions
+        window.testBusinessFunctions = async () => {
+            const resultDiv = document.getElementById('business-result');
+            resultDiv.innerHTML = '<p class="info">Testing business functions...</p>';
+            
+            try {
+                const { getMyBusiness, getAccountAndCompleteness } = await import('./js/supabase.js');
+                
+                const businessResult = await getMyBusiness();
+                const accountResult = await getAccountAndCompleteness();
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Business functions work correctly</p>
+                    <p class="info">getMyBusiness() format: ${businessResult && typeof businessResult === 'object' && 'business' in businessResult ? '✅' : '❌'}</p>
+                    <p class="info">getAccountAndCompleteness() format: ${accountResult && typeof accountResult === 'object' && 'business' in accountResult ? '✅' : '❌'}</p>
+                    <pre>${JSON.stringify(businessResult, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error testing business functions:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Auto-run on load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🔧 Supabase Imports Test loaded');
+            console.log('Click the buttons above to test the imports');
+        });
+    </script>
+</body>
+</html>

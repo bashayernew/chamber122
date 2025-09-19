@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <script type="module" src="/js/supabase-client.js?v=20"></script>
+  <script type="module" src="/js/site-header.js?v=1"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Storage Policies - Chamber122</title>
+  <link rel="stylesheet" href="/css/header.css?v=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+            border: 1px solid #444;
+        }
+        h1 {
+            color: #f2c64b;
+            text-align: center;
+        }
+        .step {
+            background: #333;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #f2c64b;
+        }
+        .step h3 {
+            color: #f2c64b;
+            margin-top: 0;
+        }
+        .code-block {
+            background: #000;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .warning {
+            background: #4a1a1a;
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .success {
+            background: #1a4a1a;
+            border: 1px solid #4caf50;
+            color: #4caf50;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .button {
+            background: #f2c64b;
+            color: #000;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 10px 5px;
+        }
+        .button:hover {
+            background: #e6b800;
+        }
+    </style>
+</head>
+<body>
+  <div id="site-header"></div>
+    <div class="container">
+        <h1>🔧 Storage Policies Setup</h1>
+        
+        <div class="warning">
+            <strong>⚠️ IMPORTANT:</strong> The signup form is currently failing because the storage bucket doesn't have the proper RLS policies. Follow these steps to fix it.
+        </div>
+
+        <div class="step">
+            <h3>Step 1: Go to Supabase Dashboard</h3>
+            <p>Open your Supabase project dashboard:</p>
+            <div class="code-block">
+                <a href="https://supabase.com/dashboard/project/gidbvemmqffogakcepka" target="_blank" style="color: #f2c64b;">
+                    https://supabase.com/dashboard/project/gidbvemmqffogakcepka
+                </a>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Navigate to Storage</h3>
+            <p>In the left sidebar, click on <strong>Storage</strong></p>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Create/Configure business-files Bucket</h3>
+            <p>If the bucket doesn't exist, create it with these settings:</p>
+            <ul>
+                <li><strong>Name:</strong> business-files</li>
+                <li><strong>Public:</strong> No (Private bucket)</li>
+                <li><strong>File size limit:</strong> 25MB</li>
+                <li><strong>Allowed MIME types:</strong> application/pdf, image/jpeg, image/jpg, image/png, image/gif, image/webp</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>Step 4: Set Up RLS Policies</h3>
+            <p>Click on the <strong>Policies</strong> tab in the Storage section, then create these policies:</p>
+            
+            <h4>Policy 1: Upload to own folder</h4>
+            <div class="code-block">
+                Name: Users can upload to their own folder<br>
+                Target: storage.objects<br>
+                Operation: INSERT<br>
+                Definition: bucket_id = 'business-files' AND auth.uid()::text = (storage.foldername(name))[1]
+            </div>
+
+            <h4>Policy 2: Upload to temp folder</h4>
+            <div class="code-block">
+                Name: Users can upload to temp folder<br>
+                Target: storage.objects<br>
+                Operation: INSERT<br>
+                Definition: bucket_id = 'business-files' AND (storage.foldername(name))[1] = 'temp'
+            </div>
+
+            <h4>Policy 3: View files</h4>
+            <div class="code-block">
+                Name: Users can view their own files<br>
+                Target: storage.objects<br>
+                Operation: SELECT<br>
+                Definition: bucket_id = 'business-files' AND (auth.uid()::text = (storage.foldername(name))[1] OR (storage.foldername(name))[1] = 'temp')
+            </div>
+
+            <h4>Policy 4: Update files</h4>
+            <div class="code-block">
+                Name: Users can update their own files<br>
+                Target: storage.objects<br>
+                Operation: UPDATE<br>
+                Definition: bucket_id = 'business-files' AND (auth.uid()::text = (storage.foldername(name))[1] OR (storage.foldername(name))[1] = 'temp')
+            </div>
+
+            <h4>Policy 5: Delete files</h4>
+            <div class="code-block">
+                Name: Users can delete their own files<br>
+                Target: storage.objects<br>
+                Operation: DELETE<br>
+                Definition: bucket_id = 'business-files' AND (auth.uid()::text = (storage.foldername(name))[1] OR (storage.foldername(name))[1] = 'temp')
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>Step 5: Test the Fix</h3>
+            <p>After setting up the policies, test the signup form:</p>
+            <button class="button" onclick="window.open('auth.html#signup', '_blank')">Test Signup Form</button>
+        </div>
+
+        <div class="success">
+            <strong>✅ Expected Result:</strong> After setting up these policies, the signup form should work without RLS errors, and file uploads should succeed.
+        </div>
+
+        <div class="step">
+            <h3>Alternative: Quick Fix (Temporary)</h3>
+            <p>If you want to test immediately without setting up policies, you can temporarily make the bucket public:</p>
+            <ol>
+                <li>Go to Storage → Settings for business-files bucket</li>
+                <li>Toggle "Public bucket" to ON</li>
+                <li>Test the signup form</li>
+                <li>Remember to set it back to private and add the RLS policies for security</li>
+            </ol>
+        </div>
+    </div>
+</body>
+</html>
+

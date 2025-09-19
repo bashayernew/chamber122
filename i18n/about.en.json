@@ -1,0 +1,110 @@
+{
+  "page": {
+    "title": "About Chamber122",
+    "subtitle": "Empowering Kuwait's MSME community through connection, support, and growth opportunities."
+  },
+  "badge": {
+    "nonprofit": "Nonprofit Organization"
+  },
+  "stats": {
+    "msmes": "MSMEs",
+    "events": "Events",
+    "members": "Members"
+  },
+  "purpose": {
+    "title": "Our Purpose",
+    "mission": {
+      "title": "Our Mission",
+      "subtitle": "Building a stronger business community, one connection at a time"
+    },
+    "vision": {
+      "title": "Our Vision",
+      "description": "Chamber122 is dedicated to creating a thriving ecosystem for Micro, Small, and Medium Enterprises (MSMEs) in Kuwait. We believe that by connecting businesses, sharing resources, and providing opportunities for growth, we can strengthen the entire business community."
+    },
+    "approach": {
+      "title": "Our Approach",
+      "description": "Our platform serves as a bridge between established businesses and emerging entrepreneurs, fostering collaboration, innovation, and sustainable economic development."
+    },
+    "impact": {
+      "title": "Our Impact",
+      "description": "We measure our success by the growth and success of our members, creating measurable impact through partnerships, mentorship, and community building."
+    }
+  },
+  "whyChoose": {
+    "title": "Why Choose Us",
+    "subtitle": "Why Chamber122?",
+    "description": "Four pillars for your business success",
+    "networking": {
+      "title": "Networking",
+      "description": "Connect with entrepreneurs and industry experts to expand your network.",
+      "features": ["Events", "Meetups", "Partnerships"]
+    },
+    "growth": {
+      "title": "Growth Opportunities",
+      "description": "Access exclusive events, training programs, and business development opportunities.",
+      "features": ["Training", "Mentorship", "Resources"]
+    },
+    "support": {
+      "title": "Support",
+      "description": "Get guidance and support from experienced business leaders and entrepreneurs.",
+      "features": ["24/7 Help", "Community", "Expertise"]
+    }
+  },
+  "leadership": {
+    "title": "Leadership",
+    "subtitle": "A Message from Our Founder",
+    "description": "Hear from the visionary behind Chamber122",
+    "founder": {
+      "name": "Jasim Al-Mutawa",
+      "title": "Founder & CEO",
+      "company": "Chamber122",
+      "roles": ["Entrepreneur", "Business Leader", "Community Advocate"],
+      "message": "Having started my own business journey in Kuwait, I understand the challenges that MSMEs face. Chamber122 was born from the belief that together, we are stronger. By creating a platform where businesses can connect, learn, and grow together, we're not just building individual success stories – we're building a stronger economy for all of Kuwait."
+    }
+  },
+  "results": {
+    "title": "Our Results",
+    "subtitle": "Our Impact",
+    "description": "Numbers that speak to our commitment to your success",
+    "businessGrowth": {
+      "percentage": "75%",
+      "title": "Business Growth",
+      "description": "of our members report increased revenue within 6 months of joining"
+    },
+    "partnerships": {
+      "number": "200+",
+      "title": "Partnerships",
+      "description": "successful business partnerships formed through our platform"
+    },
+    "satisfaction": {
+      "percentage": "95%",
+      "title": "Satisfaction",
+      "description": "member satisfaction rate with our services and community"
+    }
+  },
+  "getInvolved": {
+    "title": "Get Involved",
+    "subtitle": "Join Our Mission",
+    "description": "Be part of something bigger than yourself",
+    "intro": "We're always looking for passionate individuals who want to make a difference in Kuwait's business community. Whether you're an experienced entrepreneur, a business professional, or someone who believes in the power of community, we'd love to have you on board.",
+    "mentor": {
+      "title": "Mentor",
+      "description": "Share your expertise and guide emerging entrepreneurs on their journey.",
+      "features": ["Make an Impact", "Build Network", "Give Back"]
+    },
+    "organizer": {
+      "title": "Event Organizer",
+      "description": "Help us organize workshops, networking events, and business development sessions.",
+      "features": ["Leadership", "Event Planning", "Community"]
+    },
+    "ambassador": {
+      "title": "Community Ambassador",
+      "description": "Represent Chamber122 in your industry and help grow our community.",
+      "features": ["Representation", "Growth", "Influence"]
+    },
+    "cta": {
+      "title": "Get Involved Today",
+      "subtitle": "Join hundreds of volunteers making a difference"
+    }
+  }
+}

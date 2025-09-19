@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stepper Auth Test</title>
+    <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+    <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: white; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 8px; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+        .warning { color: #f59e0b; }
+        button { padding: 10px 20px; margin: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2563eb; }
+        pre { background: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        .step { margin: 10px 0; padding: 10px; background: #2a2a2a; border-radius: 4px; }
+        .step h3 { margin-top: 0; color: #60a5fa; }
+    </style>
+</head>
+<body>
+    <h1>🔐 Stepper Auth Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Steps</h2>
+        <div class="step">
+            <h3>Step 1: Test Auth State Initialization</h3>
+            <p>Check if auth state is properly initialized</p>
+            <button onclick="testAuthInit()">Test Auth Init</button>
+            <div id="auth-init-result"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Test Sign-in Modal</h3>
+            <p>Test the sign-in modal functionality</p>
+            <button onclick="testSignInModal()">Test Sign-in Modal</button>
+            <div id="signin-modal-result"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Test Stepper with Auth</h3>
+            <p>Test the stepper Next button with authentication</p>
+            <button onclick="testStepperAuth()">Test Stepper Auth</button>
+            <div id="stepper-auth-result"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 4: Test Data Collection</h3>
+            <p>Test form data collection functions</p>
+            <button onclick="testDataCollection()">Test Data Collection</button>
+            <div id="data-collection-result"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Console Output</h2>
+        <p>Check the browser console for detailed logs. You should see:</p>
+        <ul>
+            <li>✅ "SUPABASE_ENABLED is: true"</li>
+            <li>✅ "AuthStateManager] Initializing auth state..."</li>
+            <li>✅ "AuthStateManager] Initial user: [email or none]"</li>
+        </ul>
+    </div>
+
+    <script type="module">
+        // Test 1: Auth State Initialization
+        window.testAuthInit = async () => {
+            const resultDiv = document.getElementById('auth-init-result');
+            resultDiv.innerHTML = '<p class="info">Testing auth initialization...</p>';
+            
+            try {
+                const { initAuthState, getCurrentUser } = await import('./js/auth-state-manager.js');
+                
+                // Initialize auth
+                initAuthState();
+                
+                // Wait a moment for initialization
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const user = getCurrentUser();
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Auth initialization test complete</p>
+                    <p class="info">Current user: ${user ? user.email : 'Not signed in'}</p>
+                    <p class="info">User ID: ${user ? user.id : 'N/A'}</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error testing auth init:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 2: Sign-in Modal
+        window.testSignInModal = async () => {
+            const resultDiv = document.getElementById('signin-modal-result');
+            resultDiv.innerHTML = '<p class="info">Testing sign-in modal...</p>';
+            
+            try {
+                const { ensureSignedIn } = await import('./js/signup-utils.js');
+                
+                resultDiv.innerHTML = `
+                    <p class="info">Click the button below to test the sign-in modal:</p>
+                    <button onclick="testSignInModalActual()">Open Sign-in Modal</button>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error loading signup utils:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 2b: Actual sign-in modal test
+        window.testSignInModalActual = async () => {
+            try {
+                const { ensureSignedIn } = await import('./js/signup-utils.js');
+                const user = await ensureSignedIn();
+                
+                if (user) {
+                    document.getElementById('signin-modal-result').innerHTML = `
+                        <p class="success">✅ Sign-in successful!</p>
+                        <p class="info">User: ${user.email}</p>
+                    `;
+                } else {
+                    document.getElementById('signin-modal-result').innerHTML = `
+                        <p class="warning">⚠️ Sign-in cancelled or failed</p>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('signin-modal-result').innerHTML = `
+                    <p class="error">❌ Sign-in error:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 3: Stepper with Auth
+        window.testStepperAuth = async () => {
+            const resultDiv = document.getElementById('stepper-auth-result');
+            resultDiv.innerHTML = '<p class="info">Testing stepper with auth...</p>';
+            
+            try {
+                const { ensureSignedIn, collectStepOneFields } = await import('./js/signup-utils.js');
+                const { supabase } = await import('./js/supabase-client.js');
+                
+                // Test data collection
+                const stepData = collectStepOneFields();
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Stepper auth test complete</p>
+                    <p class="info">Data collection working: ${Object.keys(stepData).length} fields</p>
+                    <p class="info">Supabase client available: ${typeof supabase === 'object'}</p>
+                    <p class="info">ensureSignedIn function available: ${typeof ensureSignedIn === 'function'}</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error testing stepper auth:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 4: Data Collection
+        window.testDataCollection = async () => {
+            const resultDiv = document.getElementById('data-collection-result');
+            resultDiv.innerHTML = '<p class="info">Testing data collection functions...</p>';
+            
+            try {
+                const { 
+                    collectStepOneFields, 
+                    collectStepTwoFields, 
+                    collectStepThreeFields, 
+                    collectStepFourFields 
+                } = await import('./js/signup-utils.js');
+                
+                const step1 = collectStepOneFields();
+                const step2 = collectStepTwoFields();
+                const step3 = collectStepThreeFields();
+                const step4 = collectStepFourFields();
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Data collection functions working</p>
+                    <p class="info">Step 1 fields: ${Object.keys(step1).join(', ')}</p>
+                    <p class="info">Step 2 fields: ${Object.keys(step2).join(', ')}</p>
+                    <p class="info">Step 3 fields: ${Object.keys(step3).join(', ')}</p>
+                    <p class="info">Step 4 fields: ${Object.keys(step4).join(', ')}</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error testing data collection:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Auto-run on load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🔐 Stepper Auth Test loaded');
+            console.log('Click the buttons above to test the stepper authentication flow');
+        });
+    </script>
+</body>
+</html>

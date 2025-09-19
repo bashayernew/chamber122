@@ -99,14 +99,18 @@ document.addEventListener('DOMContentLoaded', function() {
 // Setup event listeners
 function setupEventListeners() {
   // Search functionality
-  searchBtn.addEventListener('click', searchBusinesses);
+  if (searchBtn) {
+    searchBtn.addEventListener('click', searchBusinesses);
+  }
   
   // Modal close on overlay click
-  modalOverlay.addEventListener('click', function(e) {
-    if (e.target === modalOverlay) {
-      closeModal();
-    }
-  });
+  if (modalOverlay) {
+    modalOverlay.addEventListener('click', function(e) {
+      if (e.target === modalOverlay) {
+        closeModal();
+      }
+    });
+  }
   
   // Close modal on escape key
   document.addEventListener('keydown', function(e) {
@@ -124,6 +128,8 @@ function setupEventListeners() {
 
 // Display MSMEs in the directory grid
 function displayMSMEs(msmes) {
+  if (!directoryGrid) return;
+  
   directoryGrid.innerHTML = '';
   
   msmes.forEach(msme => {
@@ -190,14 +196,18 @@ function openModal(msme) {
   document.getElementById('modal-whatsapp').href = `https://wa.me/${msme.whatsapp.replace(/[^0-9]/g, '')}`;
   document.getElementById('modal-website').href = msme.website;
   
-  modalOverlay.classList.add('active');
-  document.body.style.overflow = 'hidden';
+  if (modalOverlay) {
+    modalOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
 }
 
 // Close modal
 function closeModal() {
-  modalOverlay.classList.remove('active');
-  document.body.style.overflow = 'auto';
+  if (modalOverlay) {
+    modalOverlay.classList.remove('active');
+    document.body.style.overflow = 'auto';
+  }
 }
 
 // Newsletter subscription
@@ -222,18 +232,30 @@ function isValidEmail(email) {
 }
 
 // Smooth scroll for navigation links
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-  anchor.addEventListener('click', function (e) {
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href]');
+  if (!a) return;
+
+  const href = a.getAttribute('href');
+
+  // If it's just "#", do nothing but prevent jump
+  if (href === '#') {
     e.preventDefault();
-    const target = document.querySelector(this.getAttribute('href'));
-    if (target) {
-      target.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      });
+    return;
+  }
+
+  // Only try querySelector for real IDs like "#section-1"
+  if (href && href.startsWith('#') && href.length > 1) {
+    e.preventDefault();
+    const el = document.querySelector(href);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  });
-});
+    return;
+  }
+
+  // otherwise let the link behave normally (external/internal nav)
+}, { passive: false });
 
 // Add scroll effect to navbar
 window.addEventListener('scroll', function() {
@@ -309,6 +331,24 @@ function toggleMobileMenu() {
   }
 }
 
+// User dropdown toggle
+function toggleUserMenu() {
+  const userDropdownContainer = document.querySelector('.user-dropdown');
+  if (userDropdownContainer) {
+    userDropdownContainer.classList.toggle('active');
+  }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+  const userDropdownContainer = document.querySelector('.user-dropdown');
+  const userMenuBtn = document.querySelector('.user-menu-btn');
+  
+  if (userDropdownContainer && userMenuBtn && !userMenuBtn.contains(event.target) && !userDropdownContainer.contains(event.target)) {
+    userDropdownContainer.classList.remove('active');
+  }
+});
+
 // Enhanced modal functionality
 function openBusinessModal(businessId) {
   const business = msmeData.find(b => 
@@ -325,4 +365,5 @@ window.searchBusinesses = searchBusinesses;
 window.closeModal = closeModal;
 window.performQuickSearch = performQuickSearch;
 window.toggleMobileMenu = toggleMobileMenu;
+window.toggleUserMenu = toggleUserMenu;
 window.openBusinessModal = openBusinessModal;

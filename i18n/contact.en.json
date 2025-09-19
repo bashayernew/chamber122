@@ -1,0 +1,94 @@
+{
+  "page": {
+    "title": "Contact Us",
+    "subtitle": "We're here to help you succeed. Reach out for support, partnerships, or any questions about Chamber122."
+  },
+  "getInTouch": {
+    "title": "Get In Touch",
+    "subtitle": "Connect with us through your preferred channel",
+    "phone": {
+      "title": "Phone",
+      "description": "Quick responses for urgent matters",
+      "number": "+965 22396999"
+    },
+    "email": {
+      "title": "Email",
+      "description": "For detailed inquiries and support",
+      "address": "info@chamber122.com"
+    },
+    "instagram": {
+      "title": "Instagram",
+      "description": "Follow us for updates and community highlights",
+      "handle": "@chamber_122_kw"
+    },
+    "tiktok": {
+      "title": "TikTok",
+      "description": "Watch our latest content and updates",
+      "handle": "@Chamber 122"
+    }
+  },
+  "form": {
+    "title": "Send Us a Message",
+    "subtitle": "Fill out the form below and we'll get back to you within 24 hours.",
+    "fullName": {
+      "label": "Full Name *",
+      "placeholder": "Enter your full name"
+    },
+    "email": {
+      "label": "Email Address *",
+      "placeholder": "your@email.com"
+    },
+    "phone": {
+      "label": "Phone Number",
+      "placeholder": "+965-12345678"
+    },
+    "subject": {
+      "label": "Subject *",
+      "placeholder": "Select a subject...",
+      "options": {
+        "general": "General Inquiry",
+        "business-listing": "Business Listing Support",
+        "partnership": "Partnership Opportunity",
+        "technical": "Technical Support",
+        "event": "Event Collaboration",
+        "feedback": "Feedback & Suggestions",
+        "volunteer": "Volunteer Opportunity",
+        "other": "Other"
+      }
+    },
+    "message": {
+      "label": "Message *",
+      "placeholder": "Tell us how we can help you..."
+    },
+    "submit": "Send Message"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "questions": {
+      "cost": {
+        "question": "How much does it cost to list my business?",
+        "answer": "Chamber122 is completely free for all MSMEs in Kuwait. We're a nonprofit organization committed to supporting our local business community."
+      },
+      "approval": {
+        "question": "How long does it take to get my business approved?",
+        "answer": "Most business listings are reviewed and approved within 2-3 business days. We'll notify you via email once your listing is live."
+      },
+      "update": {
+        "question": "Can I update my business information after listing?",
+        "answer": "Yes! Once you create an account, you can log in anytime to update your business information, photos, and contact details."
+      },
+      "promote": {
+        "question": "How can I promote my events or special offers?",
+        "answer": "Use our Events page to submit upcoming events, sales, or promotions. You can also post announcements on our Bulletin board."
+      },
+      "support": {
+        "question": "Do you offer business support or consulting?",
+        "answer": "While we don't provide direct consulting, we regularly host training sessions and networking events. We also share funding and training opportunities through our Bulletin."
+      },
+      "volunteer": {
+        "question": "How can I volunteer or partner with Chamber122?",
+        "answer": "We welcome volunteers and strategic partners! Contact us using the form above or reach out directly via WhatsApp to discuss opportunities."
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "page": {
+    "title": "Admin Panel",
+    "subtitle": "Manage the Chamber122 platform"
+  },
+  "sections": {
+    "users": "Users",
+    "businesses": "Businesses",
+    "events": "Events",
+    "announcements": "Announcements",
+    "settings": "Settings"
+  },
+  "actions": {
+    "approve": "Approve",
+    "reject": "Reject",
+    "edit": "Edit",
+    "delete": "Delete",
+    "view": "View"
+  }
+}

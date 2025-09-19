@@ -5,11 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MSME Bulletin | Chamber122</title>
   <meta name="description" content="Stay updated with community announcements, job postings, and opportunities for MSMEs in Kuwait.">
-  <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
-  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
   <link rel="stylesheet" href="css/style.css?v=16">
+  <link rel="stylesheet" href="/css/header.css?v=1">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script type="module" src="/js/supabase-client.js?v=20"></script>
+  <script type="module" src="/js/site-header.js?v=1"></script>
   <style>
     /* Bulletin List Styling */
     .bulletin-list-container {
@@ -316,10 +321,7 @@
   </style>
 </head>
 <body data-type="announcement">
-  <!-- Global Header -->
-  <div id="siteHeader"></div>
-  <link rel="stylesheet" href="/shared/header.css" />
-  <script type="module" src="/shared/header-mount.js"></script>
+  <div id="site-header"></div>
 
   <!-- Navigation -->
   <nav class="navbar">

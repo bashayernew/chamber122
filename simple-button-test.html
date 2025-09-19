@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Button Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: white; }
+        button { padding: 10px 20px; margin: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2563eb; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Simple Button Test</h1>
+    
+    <div>
+        <h2>Test Buttons</h2>
+        <button id="test-btn-1" type="button">Test Button 1</button>
+        <button id="test-btn-2" type="button">Test Button 2</button>
+        <button id="signup-next-1" type="button">Next Button (like auth.html)</button>
+    </div>
+
+    <div id="output"></div>
+
+    <script>
+        console.log("[Test] Page loaded");
+        
+        // Test 1: Direct event listener
+        document.getElementById('test-btn-1').addEventListener('click', function() {
+            console.log("[Test] Button 1 clicked");
+            document.getElementById('output').innerHTML += '<p class="success">✅ Button 1 clicked</p>';
+        });
+        
+        // Test 2: Event delegation
+        document.addEventListener('click', function(e) {
+            if (e.target.id === 'test-btn-2') {
+                console.log("[Test] Button 2 clicked via delegation");
+                document.getElementById('output').innerHTML += '<p class="info">ℹ️ Button 2 clicked via delegation</p>';
+            }
+        });
+        
+        // Test 3: Multiple handlers on same button
+        const nextBtn = document.getElementById('signup-next-1');
+        
+        nextBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log("[Test] Next button - Handler 1");
+            document.getElementById('output').innerHTML += '<p class="success">✅ Next button - Handler 1</p>';
+        });
+        
+        nextBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log("[Test] Next button - Handler 2");
+            document.getElementById('output').innerHTML += '<p class="info">ℹ️ Next button - Handler 2</p>';
+        });
+        
+        // Test 4: Check button properties
+        console.log("[Test] Next button properties:", {
+            id: nextBtn.id,
+            type: nextBtn.type,
+            disabled: nextBtn.disabled,
+            onclick: nextBtn.onclick,
+            style: nextBtn.style.cssText
+        });
+        
+        // Test 5: Simulate click programmatically
+        setTimeout(() => {
+            console.log("[Test] Simulating click on next button");
+            nextBtn.click();
+        }, 2000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "home": "Home",
+    "directory": "Directory", 
+    "events": "Events",
+    "bulletin": "Bulletin",
+    "about": "About",
+    "contact": "Contact"
+  },
+  "account": {
+    "menu": "Account",
+    "myBusiness": "My Business",
+    "myActivities": "My Activities", 
+    "adminPanel": "Admin Panel",
+    "login": "Login",
+    "signup": "Sign Up & Get Listed"
+  },
+  "footer": {
+    "support": "Support",
+    "quick": "Quick Links",
+    "aboutTitle": "Chamber122",
+    "about": "Connecting Kuwait's MSMEs with opportunities for growth and success. Join our community today.",
+    "contactInfo": "Connect",
+    "empowering": "Empowering Kuwait's MSMEs"
+  },
+  "auth": {
+    "loginRequired": "Login required",
+    "loginRequiredDesc": "You need to be signed in to continue.",
+    "continueAsGuest": "Continue as Guest",
+    "signIn": "Sign in",
+    "cancel": "Cancel",
+    "guestEmailPrompt": "Enter your email. Your submission will be reviewed before publishing.",
+    "guestEmailPlaceholder": "you@example.com",
+    "continue": "Continue"
+  },
+  "status": {
+    "published": "Published",
+    "draft": "Draft", 
+    "pending": "Pending Review",
+    "archived": "Archived",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "suspended": "Suspended"
+  },
+  "msme": {
+    "viewProfile": "View Profile",
+    "contact": "Contact",
+    "about": "About",
+    "services": "Services",
+    "gallery": "Gallery",
+    "events": "Events",
+    "bulletins": "Bulletins",
+    "views": "views",
+    "lastUpdated": "Last updated",
+    "phone": "Phone",
+    "whatsapp": "WhatsApp",
+    "email": "Email",
+    "website": "Website",
+    "address": "Address",
+    "businessHours": "Business Hours"
+  },
+  "overlay": {
+    "close": "Close",
+    "share": "Share",
+    "like": "Like",
+    "back": "Back"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidEmail": "Invalid email address",
+    "invalidPhone": "Invalid phone number",
+    "minLength": "Minimum {min} characters required",
+    "maxLength": "Maximum {max} characters allowed"
+  },
+  "time": {
+    "now": "just now",
+    "minute": "minute ago",
+    "minutes": "minutes ago", 
+    "hour": "hour ago",
+    "hours": "hours ago",
+    "day": "day ago",
+    "days": "days ago",
+    "week": "week ago",
+    "weeks": "weeks ago",
+    "month": "month ago",
+    "months": "months ago",
+    "year": "year ago",
+    "years": "years ago"
+  },
+  "buttons": {
+    "addEvent": "Add Event",
+    "addPost": "Add Post",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "approve": "Approve",
+    "reject": "Reject",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous"
+  },
+  "messages": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success!",
+    "noResults": "No results found",
+    "tryAgain": "Please try again",
+    "comingSoon": "Coming soon"
+  }
+}

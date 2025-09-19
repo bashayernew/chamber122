@@ -1,0 +1,56 @@
+{
+  "page": {
+    "title": "MSME Directory",
+    "subtitle": "Discover and connect with Kuwait's growing community of micro, small, and medium enterprises"
+  },
+  "search": {
+    "label": "Search",
+    "placeholder": "Search by name or description..."
+  },
+  "filter": {
+    "category": "Category",
+    "allCategories": "All Categories",
+    "categories": {
+      "food": "Food & Beverage",
+      "fashion": "Fashion & Beauty",
+      "cleaning": "Cleaning Services",
+      "technology": "Technology",
+      "home": "Home Services",
+      "health": "Health & Wellness",
+      "education": "Education",
+      "retail": "Retail",
+      "automotive": "Automotive",
+      "other": "Other"
+    }
+  },
+  "results": {
+    "noResults": "No businesses found matching your criteria",
+    "loadMore": "Load More"
+  },
+  "sections": {
+    "featured": "Featured MSMEs",
+    "featuredSubtitle": "Highlighted businesses in our community"
+  },
+  "cta": {
+    "businessMissing": "Is Your Business Missing?",
+    "joinCommunity": "Join our community and get discovered by customers across Kuwait",
+    "joinToday": "Join Our Community Today"
+  },
+  "msme": {
+    "viewProfile": "View Profile",
+    "contact": "Contact",
+    "about": "About",
+    "services": "Services",
+    "gallery": "Gallery",
+    "events": "Events",
+    "bulletins": "Bulletins",
+    "views": "views",
+    "lastUpdated": "Last updated",
+    "phone": "Phone",
+    "whatsapp": "WhatsApp",
+    "email": "Email",
+    "website": "Website",
+    "address": "Address",
+    "businessHours": "Business Hours"
+  }
+}

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Verification Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: white; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 8px; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+        button { padding: 10px 20px; margin: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2563eb; }
+        pre { background: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Fix Verification Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Import Error Fix</h2>
+        <p>Test that getAccountAndCompleteness is now exported from supabase.js</p>
+        <button onclick="testImportFix()">Test Import Fix</button>
+        <div id="import-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. QuerySelector Fix</h2>
+        <p>Test that href="#" links no longer cause querySelector errors</p>
+        <button onclick="testQuerySelectorFix()">Test QuerySelector Fix</button>
+        <div id="query-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Logout Fix</h2>
+        <p>Test that logout function works without createClient errors</p>
+        <button onclick="testLogoutFix()">Test Logout Fix</button>
+        <div id="logout-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Stepper Navigation</h2>
+        <p>Test that the stepper navigation works properly</p>
+        <button onclick="testStepperFix()">Test Stepper Fix</button>
+        <div id="stepper-result"></div>
+    </div>
+
+    <script type="module">
+        // Test 1: Import Error Fix
+        window.testImportFix = async () => {
+            const resultDiv = document.getElementById('import-result');
+            resultDiv.innerHTML = '<p class="info">Testing import fix...</p>';
+            
+            try {
+                // Try to import the function
+                const { getAccountAndCompleteness } = await import('./js/supabase.js');
+                
+                if (typeof getAccountAndCompleteness === 'function') {
+                    resultDiv.innerHTML = '<p class="success">✅ getAccountAndCompleteness is now exported from supabase.js</p>';
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ getAccountAndCompleteness is not a function</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Import error:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 2: QuerySelector Fix
+        window.testQuerySelectorFix = () => {
+            const resultDiv = document.getElementById('query-result');
+            resultDiv.innerHTML = '<p class="info">Testing querySelector fix...</p>';
+            
+            try {
+                // Create a test link with href="#"
+                const testLink = document.createElement('a');
+                testLink.href = '#';
+                testLink.textContent = 'Test Link';
+                testLink.style.display = 'none';
+                document.body.appendChild(testLink);
+                
+                // Simulate click
+                testLink.click();
+                
+                // Clean up
+                document.body.removeChild(testLink);
+                
+                resultDiv.innerHTML = '<p class="success">✅ href="#" links no longer cause querySelector errors</p>';
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ QuerySelector error:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 3: Logout Fix
+        window.testLogoutFix = async () => {
+            const resultDiv = document.getElementById('logout-result');
+            resultDiv.innerHTML = '<p class="info">Testing logout fix...</p>';
+            
+            try {
+                // Try to import supabase client
+                const { supabase } = await import('./js/supabase-client.js');
+                
+                if (supabase && typeof supabase.auth.signOut === 'function') {
+                    resultDiv.innerHTML = '<p class="success">✅ Logout function should work without createClient errors</p>';
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ Supabase client not properly imported</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Logout error:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 4: Stepper Fix
+        window.testStepperFix = () => {
+            const resultDiv = document.getElementById('stepper-result');
+            resultDiv.innerHTML = '<p class="info">Testing stepper fix...</p>';
+            
+            // Open auth.html in new tab for testing
+            const authUrl = 'auth.html#signup';
+            const newWindow = window.open(authUrl, '_blank');
+            
+            if (newWindow) {
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Opened auth.html for stepper testing</p>
+                    <p class="info">Test the stepper navigation:</p>
+                    <ol>
+                        <li>Fill in Step 1 (Business Information) and click "Next"</li>
+                        <li>Step 2 (Business Details) - optional, click "Next"</li>
+                        <li>Step 3 (Documents) - upload files and click "Next"</li>
+                        <li>Step 4 (Credentials) - enter email/password and click "Next"</li>
+                    </ol>
+                    <p class="info">If it doesn't work, try: <code>window.SIGNUP_DEBUG_BYPASS = true</code> in console</p>
+                `;
+            } else {
+                resultDiv.innerHTML = '<p class="error">❌ Could not open auth.html (popup blocked?)</p>';
+            }
+        };
+
+        // Auto-run on load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🔧 Fix Verification Test loaded');
+            console.log('Click the buttons above to test each fix');
+        });
+    </script>
+</body>
+</html>

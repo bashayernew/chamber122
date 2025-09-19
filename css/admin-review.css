@@ -1,0 +1,589 @@
+/* Admin Review Dashboard Styles */
+/* Dark theme with gold accents, consistent with Chamber122 design */
+
+.page-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.page-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: #9ca3af;
+  margin-top: 0.5rem;
+}
+
+.page-description {
+  color: #d1d5db;
+  font-size: 1.1rem;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.page-description-ar {
+  display: block;
+  color: #9ca3af;
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: rgba(31, 41, 55, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+  opacity: 0.8;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 0.25rem;
+}
+
+.stat-label {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Filters Section */
+.filters-section {
+  background: rgba(31, 41, 55, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  gap: 1.5rem;
+  align-items: end;
+  flex-wrap: wrap;
+  backdrop-filter: blur(10px);
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 200px;
+}
+
+.filter-label {
+  color: #d1d5db;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.filter-select,
+.filter-input {
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.5);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: white;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.filter-select:focus,
+.filter-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Table Container */
+.table-container {
+  background: rgba(31, 41, 55, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  border-radius: 12px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.businesses-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.businesses-table th {
+  background: rgba(17, 24, 39, 0.8);
+  color: #d1d5db;
+  font-weight: 600;
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(75, 85, 99, 0.3);
+  font-size: 0.9rem;
+}
+
+.businesses-table td {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(75, 85, 99, 0.2);
+  color: #e5e7eb;
+  vertical-align: top;
+}
+
+.businesses-table tr:hover {
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.business-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.business-name {
+  font-weight: 600;
+  color: white;
+}
+
+.business-email {
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.status-pending {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.status-badge.status-approved {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-badge.status-changes-requested {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.status-badge.status-rejected {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.status-badge.status-deactivated {
+  background: rgba(107, 114, 128, 0.2);
+  color: #6b7280;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+.documents-count {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.documents-count .icon {
+  font-size: 1.2rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-review {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-review:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+/* Loading and Empty States */
+.loading-state,
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #9ca3af;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(59, 130, 246, 0.2);
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  color: #d1d5db;
+  margin-bottom: 0.5rem;
+}
+
+/* Review Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: rgba(31, 41, 55, 0.95);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  border-radius: 12px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  backdrop-filter: blur(20px);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+.modal-header h3 {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: color 0.3s ease;
+}
+
+.modal-close:hover {
+  color: white;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.review-section {
+  margin-bottom: 2rem;
+}
+
+.review-section h4 {
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.info-label {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.info-value {
+  color: #d1d5db;
+  font-size: 1rem;
+}
+
+.documents-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.document-item {
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.document-item.uploaded {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.document-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.document-name {
+  color: white;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.document-link {
+  color: #3b82f6;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.document-link:hover {
+  text-decoration: underline;
+}
+
+/* Review Form */
+.review-form {
+  max-width: 600px;
+}
+
+.decision-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.decision-option {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.decision-option:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.decision-option input[type="radio"] {
+  margin: 0;
+}
+
+.decision-option input[type="radio"]:checked + .decision-text {
+  color: #3b82f6;
+}
+
+.decision-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.decision-title {
+  color: white;
+  font-weight: 600;
+}
+
+.decision-desc {
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
+.reasons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.reason-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.reason-item:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.reason-item input[type="checkbox"] {
+  margin: 0;
+}
+
+.reason-item input[type="checkbox"]:checked + span {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 2rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .filters-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-group {
+    min-width: auto;
+  }
+  
+  .businesses-table {
+    font-size: 0.9rem;
+  }
+  
+  .businesses-table th,
+  .businesses-table td {
+    padding: 0.75rem 0.5rem;
+  }
+  
+  .modal-content {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+  
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .documents-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .decision-options {
+    gap: 0.75rem;
+  }
+  
+  .decision-option {
+    padding: 0.75rem;
+  }
+  
+  .reasons-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+}
+
+/* Animation for table rows */
+.businesses-table tbody tr {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Debug Auth</title>
+  <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2rem; }
+    .error { color: red; background: #fee; padding: 1rem; margin: 1rem 0; border-radius: 4px; }
+    .success { color: green; background: #efe; padding: 1rem; margin: 1rem 0; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Debug Auth Console Errors</h1>
+  <div id="status">Loading...</div>
+  <div id="errors"></div>
+
+  <script type="module">
+    const statusDiv = document.getElementById('status');
+    const errorsDiv = document.getElementById('errors');
+    
+    // Capture console errors
+    const originalError = console.error;
+    const errors = [];
+    
+    console.error = function(...args) {
+      errors.push(args.join(' '));
+      errorsDiv.innerHTML += `<div class="error">${args.join(' ')}</div>`;
+      originalError.apply(console, args);
+    };
+    
+    try {
+      statusDiv.innerHTML = '<div class="success">Testing imports...</div>';
+      
+      // Test supabase client
+      const { supabase } = await import('/js/supabase-client.js');
+      statusDiv.innerHTML += '<div class="success">✅ Supabase client loaded</div>';
+      
+      // Test auth utils
+      const { signupWithEmailPassword } = await import('/js/auth-signup-utils.js');
+      statusDiv.innerHTML += '<div class="success">✅ Auth utils loaded</div>';
+      
+      // Test nav auth
+      const { initNavAuthState } = await import('/js/nav-auth-state.js');
+      statusDiv.innerHTML += '<div class="success">✅ Nav auth loaded</div>';
+      
+      // Test signup with documents
+      const { initSignupPage } = await import('/js/signup-with-documents.js');
+      statusDiv.innerHTML += '<div class="success">✅ Signup with documents loaded</div>';
+      
+      statusDiv.innerHTML += '<div class="success">🎉 All imports successful!</div>';
+      
+    } catch (error) {
+      statusDiv.innerHTML += `<div class="error">❌ Error: ${error.message}</div>`;
+      console.error('Import error:', error);
+    }
+  </script>
+</body>
+</html>

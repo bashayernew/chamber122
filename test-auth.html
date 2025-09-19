@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auth Test | Chamber122</title>
+  <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; }
+    .test-section { margin: 2rem 0; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; }
+    .btn { padding: 0.5rem 1rem; margin: 0.5rem; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-danger { background: #ef4444; color: white; }
+    .status { padding: 1rem; margin: 1rem 0; border-radius: 4px; }
+    .success { background: #d1fae5; color: #065f46; }
+    .error { background: #fee2e2; color: #991b1b; }
+    .info { background: #dbeafe; color: #1e40af; }
+  </style>
+</head>
+<body>
+  <h1>Supabase Auth Test</h1>
+  
+  <div class="test-section">
+    <h2>Current Auth State</h2>
+    <div id="auth-status" class="status info">Loading...</div>
+    <button id="refresh-status" class="btn btn-primary">Refresh Status</button>
+  </div>
+  
+  <div class="test-section">
+    <h2>Test Sign Up</h2>
+    <form id="test-signup">
+      <div style="margin: 1rem 0;">
+        <label>Email:</label><br>
+        <input type="email" id="signup-email" placeholder="test@example.com" style="width: 300px; padding: 0.5rem;">
+      </div>
+      <div style="margin: 1rem 0;">
+        <label>Password:</label><br>
+        <input type="password" id="signup-password" placeholder="password123" style="width: 300px; padding: 0.5rem;">
+      </div>
+      <button type="submit" class="btn btn-primary">Test Sign Up</button>
+    </form>
+  </div>
+  
+  <div class="test-section">
+    <h2>Test Sign In</h2>
+    <form id="test-signin">
+      <div style="margin: 1rem 0;">
+        <label>Email:</label><br>
+        <input type="email" id="signin-email" placeholder="test@example.com" style="width: 300px; padding: 0.5rem;">
+      </div>
+      <div style="margin: 1rem 0;">
+        <label>Password:</label><br>
+        <input type="password" id="signin-password" placeholder="password123" style="width: 300px; padding: 0.5rem;">
+      </div>
+      <button type="submit" class="btn btn-primary">Test Sign In</button>
+    </form>
+  </div>
+  
+  <div class="test-section">
+    <h2>Actions</h2>
+    <button id="sign-out" class="btn btn-danger">Sign Out</button>
+    <button id="test-callback" class="btn btn-primary">Test Callback Page</button>
+  </div>
+  
+  <div class="test-section">
+    <h2>Console Test</h2>
+    <p>Open browser console and run:</p>
+    <code>
+      (await supabase.auth.getUser()).data.user?.id
+    </code>
+  </div>
+
+  <script type="module">
+    import { supabase, getCurrentUser } from './src/lib/supabase-client.js';
+    import { signupWithEmailPassword, signInWithPassword, signOut } from './src/lib/auth-signup-utils.js';
+    
+    // Make supabase available globally for console testing
+    window.supabase = supabase;
+    
+    const authStatus = document.getElementById('auth-status');
+    const refreshBtn = document.getElementById('refresh-status');
+    const signOutBtn = document.getElementById('sign-out');
+    const testCallbackBtn = document.getElementById('test-callback');
+    
+    async function updateAuthStatus() {
+      try {
+        const user = await getCurrentUser();
+        if (user) {
+          authStatus.className = 'status success';
+          authStatus.innerHTML = `
+            <strong>Signed In</strong><br>
+            Email: ${user.email}<br>
+            ID: ${user.id}<br>
+            Created: ${new Date(user.created_at).toLocaleString()}
+          `;
+        } else {
+          authStatus.className = 'status info';
+          authStatus.textContent = 'Not signed in';
+        }
+      } catch (error) {
+        authStatus.className = 'status error';
+        authStatus.textContent = 'Error: ' + error.message;
+      }
+    }
+    
+    // Initial status update
+    updateAuthStatus();
+    
+    // Listen for auth state changes
+    supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session?.user?.email);
+      updateAuthStatus();
+    });
+    
+    // Event listeners
+    refreshBtn.addEventListener('click', updateAuthStatus);
+    
+    signOutBtn.addEventListener('click', async () => {
+      try {
+        await signOut();
+        updateAuthStatus();
+      } catch (error) {
+        alert('Sign out error: ' + error.message);
+      }
+    });
+    
+    testCallbackBtn.addEventListener('click', () => {
+      window.open('/auth-callback.html', '_blank');
+    });
+    
+    // Sign up form
+    document.getElementById('test-signup').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('signup-email').value;
+      const password = document.getElementById('signup-password').value;
+      
+      try {
+        const { requiresConfirm } = await signupWithEmailPassword(email, password);
+        if (requiresConfirm) {
+          alert('Account created! Check your email for confirmation link.');
+        } else {
+          alert('Account created and signed in!');
+        }
+        updateAuthStatus();
+      } catch (error) {
+        alert('Sign up error: ' + error.message);
+      }
+    });
+    
+    // Sign in form
+    document.getElementById('test-signin').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('signin-email').value;
+      const password = document.getElementById('signin-password').value;
+      
+      try {
+        await signInWithPassword(email, password);
+        alert('Signed in successfully!');
+        updateAuthStatus();
+      } catch (error) {
+        alert('Sign in error: ' + error.message);
+      }
+    });
+  </script>
+</body>
+</html>

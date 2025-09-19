@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal Working Stepper</title>
+    <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+    <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: white; }
+        .step { display: none; padding: 20px; border: 1px solid #333; border-radius: 8px; margin: 10px 0; }
+        .step.active { display: block; }
+        button { padding: 10px 20px; margin: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2563eb; }
+        button:disabled { background: #666; cursor: not-allowed; }
+        .form-input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #555; border-radius: 4px; background: #333; color: white; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Minimal Working Stepper</h1>
+    
+    <div id="step-1" class="step active">
+        <h2>Step 1: Business Information</h2>
+        <input type="text" name="country" class="form-input" placeholder="Country" required>
+        <input type="text" name="city" class="form-input" placeholder="City" required>
+        <input type="text" name="business_name" class="form-input" placeholder="Business Name" required>
+        <input type="text" name="industry" class="form-input" placeholder="Industry" required>
+        <textarea name="short_description" class="form-input" placeholder="Description"></textarea>
+        
+        <div>
+            <button type="button" id="next-1" class="btn btn-primary">Next</button>
+        </div>
+    </div>
+
+    <div id="step-2" class="step">
+        <h2>Step 2: Documents</h2>
+        <p>Document upload step (placeholder)</p>
+        
+        <div>
+            <button type="button" id="back-2" class="btn btn-secondary">Back</button>
+            <button type="button" id="next-2" class="btn btn-primary">Next</button>
+        </div>
+    </div>
+
+    <div id="step-3" class="step">
+        <h2>Step 3: Account</h2>
+        <p>Account creation step (placeholder)</p>
+        
+        <div>
+            <button type="button" id="back-3" class="btn btn-secondary">Back</button>
+            <button type="button" id="next-3" class="btn btn-primary">Next</button>
+        </div>
+    </div>
+
+    <div id="step-4" class="step">
+        <h2>Step 4: Complete</h2>
+        <p>Signup complete!</p>
+        
+        <div>
+            <button type="button" id="back-4" class="btn btn-secondary">Back</button>
+            <button type="button" id="finish" class="btn btn-primary">Finish</button>
+        </div>
+    </div>
+
+    <div id="console-output"></div>
+
+    <script>
+        console.log("[MinimalStepper] Page loaded");
+        
+        let currentStep = 1;
+        const totalSteps = 4;
+        
+        function showStep(stepNumber) {
+            console.log(`[MinimalStepper] Showing step ${stepNumber}`);
+            
+            // Hide all steps
+            document.querySelectorAll('.step').forEach(step => {
+                step.classList.remove('active');
+            });
+            
+            // Show current step
+            const step = document.getElementById(`step-${stepNumber}`);
+            if (step) {
+                step.classList.add('active');
+                currentStep = stepNumber;
+                console.log(`[MinimalStepper] Step ${stepNumber} is now active`);
+            }
+        }
+        
+        function validateStep(stepNumber) {
+            console.log(`[MinimalStepper] Validating step ${stepNumber}`);
+            
+            if (stepNumber === 1) {
+                const country = document.querySelector('[name="country"]').value.trim();
+                const city = document.querySelector('[name="city"]').value.trim();
+                const businessName = document.querySelector('[name="business_name"]').value.trim();
+                const industry = document.querySelector('[name="industry"]').value.trim();
+                
+                if (!country || !city || !businessName || !industry) {
+                    alert('Please fill in all required fields');
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        function handleNextClick(e) {
+            e.preventDefault();
+            console.log(`[MinimalStepper] Next clicked on step ${currentStep}`);
+            
+            // Validate current step
+            if (!validateStep(currentStep)) {
+                return;
+            }
+            
+            // Move to next step
+            if (currentStep < totalSteps) {
+                showStep(currentStep + 1);
+            } else {
+                console.log('[MinimalStepper] Signup complete!');
+                alert('Signup complete!');
+            }
+        }
+        
+        function handleBackClick(e) {
+            e.preventDefault();
+            console.log(`[MinimalStepper] Back clicked on step ${currentStep}`);
+            
+            if (currentStep > 1) {
+                showStep(currentStep - 1);
+            }
+        }
+        
+        // Bind all Next buttons
+        document.querySelectorAll('[id^="next-"]').forEach(btn => {
+            btn.addEventListener('click', handleNextClick);
+            console.log(`[MinimalStepper] Bound next button: ${btn.id}`);
+        });
+        
+        // Bind all Back buttons
+        document.querySelectorAll('[id^="back-"]').forEach(btn => {
+            btn.addEventListener('click', handleBackClick);
+            console.log(`[MinimalStepper] Bound back button: ${btn.id}`);
+        });
+        
+        // Test button functionality
+        setTimeout(() => {
+            console.log('[MinimalStepper] Testing button functionality...');
+            const nextBtn = document.getElementById('next-1');
+            if (nextBtn) {
+                console.log('[MinimalStepper] Next button found:', nextBtn);
+                console.log('[MinimalStepper] Button properties:', {
+                    id: nextBtn.id,
+                    type: nextBtn.type,
+                    disabled: nextBtn.disabled,
+                    onclick: nextBtn.onclick
+                });
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

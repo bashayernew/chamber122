@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <script type="module" src="/js/supabase-client.js?v=20"></script>
+  <script type="module" src="/js/site-header.js?v=1"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compliance & Verification | Chamber122</title>
+  <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+  <link rel="stylesheet" href="css/style.css?v=16">
+  <link rel="stylesheet" href="css/compliance.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+  <!-- Global Header -->
+  <div id="site-header"></div>
+  <link rel="stylesheet" href="/shared/header.css" />
+  <link rel="stylesheet" href="/css/header.css?v=1">
+  <script type="module" src="/shared/header-mount.js"></script>
+  <!-- Header -->
+  <header class="header">
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <script type="module" src="/js/supabase-client.js?v=20"></script>
+  <script type="module" src="/js/site-header.js?v=1"></script>
+    <div class="header-content">
+      <div class="header-brand">
+        <img src="images/logo.png" alt="Chamber122" />
+      </div>
+      <nav class="header-nav">
+        <a href="index.html" class="nav-link" data-i18n="global.home">Home</a>
+        <a href="directory.html" class="nav-link" data-i18n="global.directory">Directory</a>
+        <a href="events.html" class="nav-link" data-i18n="global.events">Events</a>
+        <a href="bulletin.html" class="nav-link" data-i18n="global.bulletin">Bulletin</a>
+        <a href="owner.html" class="nav-link" data-i18n="global.dashboard">Dashboard</a>
+        <button id="logout-btn" class="btn btn-outline" style="display: none;">Logout</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Compliance Status Banner -->
+  <div id="compliance-banner" class="compliance-banner" style="display: none;">
+    <div class="banner-content">
+      <div class="banner-icon">📋</div>
+      <div class="banner-text">
+        <div class="banner-title" id="banner-title">Compliance Status</div>
+        <div class="banner-subtitle" id="banner-subtitle">Status message</div>
+      </div>
+      <button id="banner-action" class="btn btn-primary">Update Now</button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container">
+      <!-- Page Header -->
+      <div class="page-header">
+        <h1 class="page-title">
+          Compliance & Verification
+          <span class="page-subtitle">الامتثال والتحقق</span>
+        </h1>
+        <p class="page-description">
+          Complete your business information and upload required documents for verification.
+          <span class="page-description-ar">أكمل معلومات عملك وارفع المستندات المطلوبة للتحقق.</span>
+        </p>
+      </div>
+
+      <!-- Compliance Status Card -->
+      <div class="compliance-status-card">
+        <div class="status-header">
+          <h3>Current Status | الحالة الحالية</h3>
+          <div id="status-chip" class="status-chip status-pending">
+            <span class="status-text">Under Review | قيد المراجعة</span>
+          </div>
+        </div>
+        <div id="status-details" class="status-details">
+          <!-- Status details will be populated by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Compliance Form -->
+      <div class="compliance-form-container">
+        <!-- Step Navigation -->
+        <div class="step-navigation">
+          <div class="step-item active" data-step="1">
+            <div class="step-number">1</div>
+            <div class="step-label">Business Info | معلومات العمل</div>
+          </div>
+          <div class="step-item" data-step="2">
+            <div class="step-number">2</div>
+            <div class="step-label">Documents | المستندات</div>
+          </div>
+        </div>
+
+        <!-- Step 1: Business Information -->
+        <div id="step-1" class="compliance-step active">
+          <div class="step-header">
+            <h3>Business Information | معلومات العمل</h3>
+            <p>Provide your business details and contact information.</p>
+          </div>
+
+          <form id="business-form" class="compliance-form">
+            <div class="form-grid">
+              <!-- Business Name -->
+              <div class="form-group">
+                <label for="business-name" class="form-label">
+                  Business Name | اسم المنشأة
+                  <span class="required">*</span>
+                </label>
+                <input type="text" id="business-name" name="name" class="form-input" required>
+              </div>
+
+              <!-- Industry -->
+              <div class="form-group">
+                <label for="business-industry" class="form-label">
+                  Industry | الصناعة
+                </label>
+                <select id="business-industry" name="industry" class="form-select">
+                  <option value="">Select Industry | اختر الصناعة</option>
+                  <option value="retail">Retail | تجارة التجزئة</option>
+                  <option value="restaurant">Restaurant | مطعم</option>
+                  <option value="services">Services | خدمات</option>
+                  <option value="manufacturing">Manufacturing | تصنيع</option>
+                  <option value="technology">Technology | تكنولوجيا</option>
+                  <option value="healthcare">Healthcare | رعاية صحية</option>
+                  <option value="education">Education | تعليم</option>
+                  <option value="other">Other | أخرى</option>
+                </select>
+              </div>
+
+              <!-- Country -->
+              <div class="form-group">
+                <label for="business-country" class="form-label">
+                  Country | الدولة
+                </label>
+                <select id="business-country" name="country" class="form-select">
+                  <option value="">Select Country | اختر الدولة</option>
+                  <option value="UAE">United Arab Emirates | الإمارات العربية المتحدة</option>
+                  <option value="SA">Saudi Arabia | المملكة العربية السعودية</option>
+                  <option value="KW">Kuwait | الكويت</option>
+                  <option value="QA">Qatar | قطر</option>
+                  <option value="BH">Bahrain | البحرين</option>
+                  <option value="OM">Oman | عمان</option>
+                  <option value="other">Other | أخرى</option>
+                </select>
+              </div>
+
+              <!-- Contact Email -->
+              <div class="form-group">
+                <label for="contact-email" class="form-label">
+                  Contact Email | البريد الإلكتروني
+                </label>
+                <input type="email" id="contact-email" name="contact_email" class="form-input">
+              </div>
+
+              <!-- Phone -->
+              <div class="form-group">
+                <label for="phone" class="form-label">
+                  Phone | رقم الهاتف
+                </label>
+                <input type="tel" id="phone" name="phone" class="form-input">
+              </div>
+
+              <!-- WhatsApp -->
+              <div class="form-group">
+                <label for="whatsapp" class="form-label">
+                  WhatsApp | واتساب
+                </label>
+                <input type="tel" id="whatsapp" name="whatsapp" class="form-input">
+              </div>
+
+              <!-- Languages -->
+              <div class="form-group">
+                <label class="form-label">
+                  Languages | اللغات
+                </label>
+                <div class="language-chips">
+                  <label class="language-chip">
+                    <input type="checkbox" name="languages" value="ar" checked>
+                    <span>العربية</span>
+                  </label>
+                  <label class="language-chip">
+                    <input type="checkbox" name="languages" value="en" checked>
+                    <span>English</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- About Short -->
+              <div class="form-group full-width">
+                <label for="about-short" class="form-label">
+                  Business Description | وصف العمل
+                </label>
+                <textarea id="about-short" name="about_short" class="form-textarea" rows="3" placeholder="Brief description of your business..."></textarea>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" id="next-step-1" class="btn btn-primary">Next | التالي</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Step 2: Documents Upload -->
+        <div id="step-2" class="compliance-step">
+          <div class="step-header">
+            <h3>Required Documents | المستندات المطلوبة</h3>
+            <p>Upload the required documents for verification.</p>
+          </div>
+
+          <div class="documents-grid">
+            <!-- Business License -->
+            <div class="document-card" data-document="license">
+              <div class="document-header">
+                <h4>Business License | رخصة العمل</h4>
+                <div class="document-status">
+                  <span class="status-icon">❌</span>
+                  <span class="status-text">Not Uploaded</span>
+                </div>
+              </div>
+              <div class="document-upload">
+                <input type="file" id="license-file" accept=".pdf,.jpg,.jpeg,.png" class="file-input">
+                <label for="license-file" class="file-label">
+                  <span class="file-icon">📄</span>
+                  <span class="file-text">Choose File | اختر ملف</span>
+                </label>
+              </div>
+              <div class="document-preview" id="license-preview" style="display: none;">
+                <a href="#" class="file-link" target="_blank">View File | عرض الملف</a>
+                <button type="button" class="remove-file">Remove | إزالة</button>
+              </div>
+            </div>
+
+            <!-- Articles of Incorporation -->
+            <div class="document-card" data-document="incorporation">
+              <div class="document-header">
+                <h4>Articles of Incorporation | عقد التأسيس</h4>
+                <div class="document-status">
+                  <span class="status-icon">❌</span>
+                  <span class="status-text">Not Uploaded</span>
+                </div>
+              </div>
+              <div class="document-upload">
+                <input type="file" id="incorporation-file" accept=".pdf,.jpg,.jpeg,.png" class="file-input">
+                <label for="incorporation-file" class="file-label">
+                  <span class="file-icon">📄</span>
+                  <span class="file-text">Choose File | اختر ملف</span>
+                </label>
+              </div>
+              <div class="document-preview" id="incorporation-preview" style="display: none;">
+                <a href="#" class="file-link" target="_blank">View File | عرض الملف</a>
+                <button type="button" class="remove-file">Remove | إزالة</button>
+              </div>
+            </div>
+
+            <!-- Signature Authorization -->
+            <div class="document-card" data-document="signature_auth">
+              <div class="document-header">
+                <h4>Signature Authorization | تفويض التوقيع</h4>
+                <div class="document-status">
+                  <span class="status-icon">❌</span>
+                  <span class="status-text">Not Uploaded</span>
+                </div>
+              </div>
+              <div class="document-upload">
+                <input type="file" id="signature-file" accept=".pdf,.jpg,.jpeg,.png" class="file-input">
+                <label for="signature-file" class="file-label">
+                  <span class="file-icon">📄</span>
+                  <span class="file-text">Choose File | اختر ملف</span>
+                </label>
+              </div>
+              <div class="document-preview" id="signature-preview" style="display: none;">
+                <a href="#" class="file-link" target="_blank">View File | عرض الملف</a>
+                <button type="button" class="remove-file">Remove | إزالة</button>
+              </div>
+            </div>
+
+            <!-- IBAN Certificate -->
+            <div class="document-card" data-document="iban">
+              <div class="document-header">
+                <h4>IBAN Certificate | شهادة الـIBAN</h4>
+                <div class="document-status">
+                  <span class="status-icon">❌</span>
+                  <span class="status-text">Not Uploaded</span>
+                </div>
+              </div>
+              <div class="document-upload">
+                <input type="file" id="iban-file" accept=".pdf,.jpg,.jpeg,.png" class="file-input">
+                <label for="iban-file" class="file-label">
+                  <span class="file-icon">📄</span>
+                  <span class="file-text">Choose File | اختر ملف</span>
+                </label>
+              </div>
+              <div class="document-preview" id="iban-preview" style="display: none;">
+                <a href="#" class="file-link" target="_blank">View File | عرض الملف</a>
+                <button type="button" class="remove-file">Remove | إزالة</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" id="prev-step-2" class="btn btn-secondary">Back | رجوع</button>
+            <button type="button" id="save-documents" class="btn btn-primary">Save Documents | حفظ المستندات</button>
+            <button type="button" id="submit-review" class="btn btn-success" style="display: none;">Submit for Review | إرسال للمراجعة</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script type="module" src="js/config.js"></script>
+  <script type="module" src="js/supabase-client.js"></script>
+  <script type="module" src="js/file-upload.js"></script>
+  <script type="module" src="js/compliance.js"></script>
+  <script type="module" src="js/auth-state-manager.js"></script>
+</body>
+</html>

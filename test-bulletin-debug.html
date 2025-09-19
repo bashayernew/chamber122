@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Bulletin Debug</title>
+  <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+</head>
+<body>
+  <h1>Bulletin Debug Test</h1>
+  <button id="testBtn">Test FAB Button Function</button>
+  <div id="results"></div>
+
+  <script type="module">
+    import { supabase } from '/js/supabase-client.js';
+    
+    const testBtn = document.getElementById('testBtn');
+    const results = document.getElementById('results');
+    
+    testBtn.addEventListener('click', async () => {
+      results.innerHTML = '<p>Testing...</p>';
+      
+      try {
+        // Test 1: Check if user is logged in
+        const { data: { user } } = await supabase.auth.getUser();
+        results.innerHTML += `<p>User logged in: ${user ? 'Yes' : 'No'}</p>`;
+        
+        if (user) {
+          results.innerHTML += `<p>User email: ${user.email}</p>`;
+          
+          // Test 2: Check user role
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('user_id', user.id)
+            .single();
+          
+          results.innerHTML += `<p>User role: ${profile?.role || 'No role'}</p>`;
+          
+          // Test 3: Check if bulletins table exists
+          const { data: bulletins, error } = await supabase
+            .from('bulletins')
+            .select('id')
+            .limit(1);
+          
+          if (error) {
+            results.innerHTML += `<p style="color: red;">Bulletins table error: ${error.message}</p>`;
+          } else {
+            results.innerHTML += `<p style="color: green;">Bulletins table exists, found ${bulletins?.length || 0} records</p>`;
+          }
+        }
+        
+        // Test 4: Check if openBulletinForm function exists
+        results.innerHTML += `<p>openBulletinForm function: ${typeof window.openBulletinForm}</p>`;
+        
+      } catch (error) {
+        results.innerHTML += `<p style="color: red;">Error: ${error.message}</p>`;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Cleanup Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: white; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 8px; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+        button { padding: 10px 20px; margin: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2563eb; }
+        pre { background: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧹 Supabase Cleanup Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Test Single getMyBusiness Definition</h2>
+        <p>Verify there's only one getMyBusiness function and it works correctly</p>
+        <button onclick="testSingleGetMyBusiness()">Test Single getMyBusiness</button>
+        <div id="single-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test getAccountAndCompleteness Alias</h2>
+        <p>Test that the alias function works correctly</p>
+        <button onclick="testAlias()">Test Alias Function</button>
+        <div id="alias-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test Return Format</h2>
+        <p>Verify both functions return the correct format</p>
+        <button onclick="testReturnFormat()">Test Return Format</button>
+        <div id="format-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test No Duplicate Exports</h2>
+        <p>Verify there are no duplicate function exports</p>
+        <button onclick="testNoDuplicates()">Test No Duplicates</button>
+        <div id="duplicate-result"></div>
+    </div>
+
+    <script type="module">
+        // Test 1: Single getMyBusiness Definition
+        window.testSingleGetMyBusiness = async () => {
+            const resultDiv = document.getElementById('single-result');
+            resultDiv.innerHTML = '<p class="info">Testing single getMyBusiness definition...</p>';
+            
+            try {
+                const { getMyBusiness } = await import('./js/supabase.js');
+                
+                if (typeof getMyBusiness === 'function') {
+                    const result = await getMyBusiness();
+                    
+                    if (result && typeof result === 'object' && 'business' in result && 'completeness' in result) {
+                        resultDiv.innerHTML = `
+                            <p class="success">✅ Single getMyBusiness function works correctly</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = '<p class="error">❌ getMyBusiness returned unexpected format</p>';
+                    }
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ getMyBusiness is not a function</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error testing getMyBusiness:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 2: Alias Function
+        window.testAlias = async () => {
+            const resultDiv = document.getElementById('alias-result');
+            resultDiv.innerHTML = '<p class="info">Testing getAccountAndCompleteness alias...</p>';
+            
+            try {
+                const { getAccountAndCompleteness } = await import('./js/supabase.js');
+                
+                if (typeof getAccountAndCompleteness === 'function') {
+                    const result = await getAccountAndCompleteness();
+                    
+                    if (result && typeof result === 'object' && 'business' in result && 'completeness' in result) {
+                        resultDiv.innerHTML = `
+                            <p class="success">✅ getAccountAndCompleteness alias works correctly</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = '<p class="error">❌ getAccountAndCompleteness returned unexpected format</p>';
+                    }
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ getAccountAndCompleteness is not a function</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error testing alias:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 3: Return Format
+        window.testReturnFormat = async () => {
+            const resultDiv = document.getElementById('format-result');
+            resultDiv.innerHTML = '<p class="info">Testing return format consistency...</p>';
+            
+            try {
+                const { getMyBusiness, getAccountAndCompleteness } = await import('./js/supabase.js');
+                
+                const result1 = await getMyBusiness();
+                const result2 = await getAccountAndCompleteness();
+                
+                // Check if both return the same format
+                const format1 = typeof result1 === 'object' && 'business' in result1 && 'completeness' in result1;
+                const format2 = typeof result2 === 'object' && 'business' in result2 && 'completeness' in result2;
+                
+                if (format1 && format2) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Both functions return consistent format</p>
+                        <p class="info">getMyBusiness format: ${format1 ? '✅' : '❌'}</p>
+                        <p class="info">getAccountAndCompleteness format: ${format2 ? '✅' : '❌'}</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ Functions return inconsistent formats</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error testing return format:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 4: No Duplicate Exports
+        window.testNoDuplicates = async () => {
+            const resultDiv = document.getElementById('duplicate-result');
+            resultDiv.innerHTML = '<p class="info">Testing for duplicate exports...</p>';
+            
+            try {
+                const module = await import('./js/supabase.js');
+                const exports = Object.keys(module);
+                
+                // Check for duplicate function names
+                const functionNames = exports.filter(name => typeof module[name] === 'function');
+                const duplicates = functionNames.filter((name, index) => functionNames.indexOf(name) !== index);
+                
+                if (duplicates.length === 0) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ No duplicate function exports found</p>
+                        <p class="info">Total functions exported: ${functionNames.length}</p>
+                        <p class="info">Functions: ${functionNames.join(', ')}</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="error">❌ Duplicate function exports found:</p>
+                        <pre>${duplicates.join(', ')}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error checking for duplicates:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Auto-run on load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🧹 Supabase Cleanup Test loaded');
+            console.log('Click the buttons above to test the cleanup');
+        });
+    </script>
+</body>
+</html>

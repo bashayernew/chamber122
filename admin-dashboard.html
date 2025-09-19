@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | Chamber122</title>
+  <meta name="description" content="Admin dashboard for managing MSMEs, events, bulletins, and guest submissions">
+  <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+  <link rel="stylesheet" href="css/style.css?v=16">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+  <!-- Global Header -->
+  <div id="site-header"></div>
+  <link rel="stylesheet" href="/shared/header.css" />
+  <script type="module" src="/shared/header-mount.js"></script>
+  
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="logo site-logo">
+        <img src="images/logo.png" alt="Chamber122 Logo">
+      </a>
+      <div class="nav-menu">
+        <a href="index.html" class="nav-link" data-i18n="nav.home">Home</a>
+        <a href="directory.html" class="nav-link" data-i18n="nav.directory">Directory</a>
+        <a href="events.html" class="nav-link" data-i18n="nav.events">Events</a>
+        <a href="bulletin.html" class="nav-link" data-i18n="nav.bulletin">Bulletin</a>
+        <a href="about.html" class="nav-link" data-i18n="nav.about">About</a>
+        <a href="contact.html" class="nav-link" data-i18n="nav.contact">Contact</a>
+      </div>
+      <div class="nav-actions">
+        <!-- Language toggle -->
+        <span id="lang-toggle" class="lang-toggle" aria-label="Language">
+          <button data-lang="en" class="lang-btn" data-testid="lang-switch-en">EN</button> |
+          <button data-lang="ar" class="lang-btn" data-testid="lang-switch-ar">AR</button>
+        </span>
+        <!-- Auth CTAs (shown when NOT logged in) -->
+        <div id="auth-cta" class="flex items-center gap-3" data-testid="auth-cta">
+          <a href="auth.html#login" class="btn btn-ghost text-sm" data-testid="login-cta" data-i18n="nav.login">Login</a>
+          <a href="auth.html#signup" class="btn btn-primary text-sm px-4 py-2 rounded-2xl shadow-sm" data-testid="signup-cta" data-i18n="nav.signup">
+            Sign Up & Get Listed
+          </a>
+        </div>
+
+        <!-- Account menu (shown ONLY when logged in) -->
+        <div id="account-menu" class="relative hidden" data-testid="account-menu">
+          <button id="account-btn" class="btn btn-outline flex items-center gap-2">
+            <img id="account-avatar" src="" alt="" class="h-7 w-7 rounded-full object-cover hidden">
+            <span id="account-name" data-i18n="nav.account">Account</span>
+            <svg class="h-4 w-4 opacity-70" viewBox="0 0 20 20"><path d="M5 7l5 6 5-6"/></svg>
+          </button>
+          <div id="account-dropdown" class="menu hidden">
+            <a href="owner-activities.html" data-testid="menu-my-activities" data-i18n="nav.myActivities">My Activities</a>
+            <a href="admin-dashboard.html" id="menu-admin" class="hidden" data-testid="menu-admin" data-i18n="nav.admin">Admin Panel</a>
+            <a href="#" id="btn-logout" data-testid="logout" data-i18n="nav.logout">Logout</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Admin Dashboard Content -->
+  <main class="admin-dashboard" data-testid="admin-dashboard">
+    <div class="admin-container">
+      <!-- Dashboard Header -->
+      <div class="admin-header">
+        <h1>Admin Dashboard</h1>
+        <p>Manage MSMEs, events, bulletins, and guest submissions</p>
+      </div>
+
+      <!-- Stats Overview -->
+      <div class="admin-stats">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="fas fa-building"></i>
+          </div>
+          <div class="stat-content">
+            <h3 id="total-msmes">0</h3>
+            <p>Total MSMEs</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="fas fa-clock"></i>
+          </div>
+          <div class="stat-content">
+            <h3 id="pending-approvals">0</h3>
+            <p>Pending Approvals</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="fas fa-calendar"></i>
+          </div>
+          <div class="stat-content">
+            <h3 id="total-events">0</h3>
+            <p>Total Events</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="fas fa-bullhorn"></i>
+          </div>
+          <div class="stat-content">
+            <h3 id="total-bulletins">0</h3>
+            <p>Total Bulletins</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Tabs -->
+      <div class="admin-tabs">
+        <button class="admin-tab active" data-tab="approvals">MSME Approvals</button>
+        <button class="admin-tab" data-tab="needs-setup">Needs Setup</button>
+        <button class="admin-tab" data-tab="guest-submissions">Guest Submissions</button>
+        <button class="admin-tab" data-tab="content">Content Management</button>
+        <button class="admin-tab" data-tab="analytics">Analytics</button>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="admin-content">
+        <!-- MSME Approvals Tab -->
+        <div class="admin-tab-content active" id="approvals-tab">
+          <div class="admin-section">
+            <h2>Pending MSME Approvals</h2>
+            <div class="approvals-list" id="approvals-list">
+              <!-- Approvals will be loaded here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Needs Setup Tab -->
+        <div class="admin-tab-content" id="needs-setup-tab">
+          <div class="admin-section">
+            <h2>Users Needing Setup Assistance</h2>
+            <p>Users who tried to publish bulletins but have incomplete accounts.</p>
+            <div class="needs-setup-list" id="needs-setup">
+              <!-- Needs setup items will be loaded here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Guest Submissions Tab -->
+        <div class="admin-tab-content" id="guest-submissions-tab">
+          <div class="admin-section">
+            <h2>Event Suggestions</h2>
+            <div class="submissions-list" id="event-suggestions-list">
+              <!-- Event suggestions will be loaded here -->
+            </div>
+          </div>
+          <div class="admin-section">
+            <h2>Bulletin Submissions</h2>
+            <div class="submissions-list" id="bulletin-submissions-list">
+              <!-- Bulletin submissions will be loaded here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Content Management Tab -->
+        <div class="admin-tab-content" id="content-tab">
+          <div class="admin-section">
+            <h2>Content Management</h2>
+            <p>Manage published content, moderate comments, and handle reports.</p>
+          </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div class="admin-tab-content" id="analytics-tab">
+          <div class="admin-section">
+            <h2>System Analytics</h2>
+            <p>View system-wide analytics and performance metrics.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h3 data-i18n="footer.aboutTitle">Chamber122</h3>
+        <p data-i18n="footer.about">Connecting Kuwait's MSMEs with opportunities for growth and success. Join our community today.</p>
+      </div>
+      
+      <div class="footer-section">
+        <h3 data-i18n="footer.quick">Quick Links</h3>
+        <div class="quick-links">
+          <ul class="quick-links-list">
+            <li><a href="index.html" data-i18n="nav.home">Home</a></li>
+            <li><a href="directory.html" data-i18n="nav.directory">Directory</a></li>
+            <li><a href="events.html" data-i18n="nav.events">Events</a></li>
+            <li><a href="bulletin.html" data-i18n="nav.bulletin">Bulletin</a></li>
+            <li><a href="about.html" data-i18n="nav.about">About</a></li>
+            <li><a href="contact.html" data-i18n="nav.contact">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="footer-section">
+        <h3 data-i18n="footer.contactInfo">Connect</h3>
+        <p><a href="https://instagram.com/chamber_122_kw"><i class="fab fa-instagram"></i> Instagram</a></p>
+        <p><a href="https://www.tiktok.com/@chamber122"><i class="fab fa-tiktok"></i> TikTok</a></p>
+        <p><a href="https://wa.me/96522396999"><i class="fab fa-whatsapp"></i> Phone</a></p>
+        <p><a href="mailto:info@chamber122.com"><i class="fas fa-envelope"></i> info@chamber122.com</a></p>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <p>&copy; 2025 Chamber122. All Rights Reserved. | <span data-i18n="footer.empowering">Empowering Kuwait's MSMEs</span></p>
+    </div>
+  </footer>
+
+  <script src="js/main.js?v=7"></script>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <script type="module" src="/js/supabase-client.js?v=20"></script>
+  <script type="module" src="/js/require-auth.js?v=1"></script>
+  <script type="module" src="/js/site-header.js?v=1"></script>
+  <script type="module" src="js/supabase-client.js"></script>
+  <script type="module" src="/js/admin-dashboard.js"></script>
+  <script type="module" src="./js/i18n.js"></script>
+  <!-- Import authentication scripts -->
+  <script type="module" src="js/modal-login-required.js"></script>
+  <script type="module" src="js/guest.js"></script>
+  <script type="module">
+    import { initNavAuthState } from '/js/nav-auth-state.js';
+    initNavAuthState();
+  </script>
+  
+  <!-- Auth Guard -->
+  <script type="module">
+    import { requireAuth } from '/shared/auth-guard.js';
+    const user = await requireAuth(); // redirects if not logged in
+  </script>
+  <link rel="stylesheet" href="css/modal.css">
+  <link rel="stylesheet" href="/css/header.css?v=1">
+</body>
+</html>

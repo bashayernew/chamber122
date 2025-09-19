@@ -1,0 +1,29 @@
+{
+  "name": "chamber122-website",
+  "version": "1.0.0",
+  "description": "Chamber122 - Kuwait MSME Community Platform",
+  "main": "index.html",
+  "scripts": {
+    "dev": "python -m http.server 3000",
+    "start": "python -m http.server 3000",
+    "build": "echo 'Static site - no build required'",
+    "test:e2e": "playwright test --config=e2e/playwright.config.ts",
+    "test:e2e:ui": "playwright test --ui --config=e2e/playwright.config.ts",
+    "test:e2e:headed": "playwright test --headed --config=e2e/playwright.config.ts",
+    "test:e2e:report": "playwright show-report",
+    "seed:e2e": "tsx e2e/fixtures/seed.ts seed",
+    "clean:e2e": "tsx e2e/fixtures/seed.ts clean",
+    "seed:demo": "node tools/seed-demo.mjs seed",
+    "clean:demo": "node tools/seed-demo.mjs clean"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "dotenv": "^16.3.1",
+    "@supabase/supabase-js": "^2.38.0",
+    "tsx": "^4.6.0",
+    "wait-on": "^7.2.0"
+  },
+  "keywords": ["msme", "kuwait", "chamber", "business", "community"],
+  "author": "Chamber122",
+  "license": "MIT"
+}

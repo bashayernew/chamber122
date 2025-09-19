@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: white; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 8px; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+        pre { background: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Import Debug Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <p>Check the browser console for debug output. You should see:</p>
+        <ul>
+            <li>✅ "SUPABASE_ENABLED is: true" - from auth-state-manager.js</li>
+            <li>✅ No "SyntaxError: The requested module does not provide an export" errors</li>
+        </ul>
+        <p>If you see the debug message, the import is working correctly!</p>
+    </div>
+
+    <div class="test-section">
+        <h2>Console Output</h2>
+        <p>Open your browser's Developer Tools (F12) and check the Console tab for:</p>
+        <pre>SUPABASE_ENABLED is: true</pre>
+    </div>
+
+    <script type="module">
+        // Test the import directly
+        try {
+            const { SUPABASE_ENABLED, supabase } = await import('./js/supabase-client.js');
+            console.log('✅ Direct import test successful');
+            console.log('SUPABASE_ENABLED:', SUPABASE_ENABLED);
+            console.log('supabase client:', typeof supabase);
+        } catch (error) {
+            console.error('❌ Direct import test failed:', error);
+        }
+
+        // Test auth-state-manager import
+        try {
+            const authModule = await import('./js/auth-state-manager.js');
+            console.log('✅ AuthStateManager import test successful');
+        } catch (error) {
+            console.error('❌ AuthStateManager import test failed:', error);
+        }
+    </script>
+</body>
+</html>

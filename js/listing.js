@@ -1,5 +1,7 @@
 // Handle Get Listed form submission to Supabase
 
+import { supabase } from './supabase-client.js';
+
 async function handleListingSubmit(e) {
   e.preventDefault();
   const form = e.target;
@@ -9,12 +11,7 @@ async function handleListingSubmit(e) {
   submitBtn.disabled = true;
 
   try {
-    if (!window.SUPABASE_ENABLED || !window.supabaseClient) {
-      alert('Supabase is not configured yet. Submission simulated.');
-      form.reset();
-      return;
-    }
-    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       alert('Please login first to submit your business.');
       window.location.href = 'auth.html';
@@ -43,13 +40,13 @@ async function handleListingSubmit(e) {
       const file = logoInput.files[0];
       const ext = (file.name.split('.').pop() || 'png').toLowerCase();
       const path = `logos/${userId}-${Date.now()}.${ext}`;
-      const { error: upErr } = await window.supabaseClient.storage.from('business-media').upload(path, file, { upsert: true });
+      const { error: upErr } = await supabase.storage.from('business-media').upload(path, file, { upsert: true });
       if (upErr) throw upErr;
-      const { data: pub } = window.supabaseClient.storage.from('business-media').getPublicUrl(path);
+      const { data: pub } = supabase.storage.from('business-media').getPublicUrl(path);
       logoUrl = pub.publicUrl;
     }
 
-    const { error } = await window.supabaseClient.from('businesses').insert([{ ...biz, logo_url: logoUrl }]);
+    const { error } = await supabase.from('businesses').insert([{ ...biz, logo_url: logoUrl }]);
     if (error) throw error;
     alert('Thanks! Your listing was submitted and is pending review.');
     form.reset();

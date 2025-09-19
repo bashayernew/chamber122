@@ -1,0 +1,61 @@
+{
+  "page": {
+    "title": "MSME Bulletin",
+    "subtitle": "Stay updated with announcements, job postings, training opportunities, and funding information from the MSME community"
+  },
+  "search": {
+    "label": "Search Bulletin",
+    "placeholder": "Search by title, description, or business..."
+  },
+  "filters": {
+    "dateRange": "Date Range",
+    "allPosts": "All Posts",
+    "today": "Today",
+    "upcoming": "Upcoming",
+    "past": "Past"
+  },
+  "results": {
+    "noResults": "No posts found matching your criteria"
+  },
+  "form": {
+    "title": "Submit Bulletin Post",
+    "subtitle": "Share announcements, job postings, or opportunities with the community",
+    "category": {
+      "label": "Category *",
+      "placeholder": "Select category...",
+      "options": {
+        "announcements": "Community Announcement",
+        "jobs": "Job Posting",
+        "training": "Training Opportunity",
+        "funding": "Funding/Grant Information",
+        "opportunities": "Business Opportunity"
+      }
+    },
+    "title": {
+      "label": "Title *",
+      "placeholder": "Enter bulletin title"
+    },
+    "description": {
+      "label": "Description *",
+      "placeholder": "Provide detailed information..."
+    },
+    "company": {
+      "label": "Company/Organization *",
+      "placeholder": "Your company or organization name"
+    },
+    "contact": {
+      "label": "Contact Information *",
+      "placeholder": "Email, phone, or WhatsApp"
+    },
+    "deadline": {
+      "label": "Application Deadline (if applicable)",
+      "placeholder": "dd/mm/yyyy"
+    },
+    "link": {
+      "label": "External Link (if applicable)",
+      "placeholder": "https://example.com"
+    },
+    "submit": "Submit Post",
+    "cancel": "Cancel"
+  }
+}

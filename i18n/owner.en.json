@@ -1,0 +1,22 @@
+{
+  "page": {
+    "title": "My Business",
+    "subtitle": "Manage your business profile and settings"
+  },
+  "form": {
+    "businessName": "Business Name",
+    "category": "Category",
+    "description": "Description",
+    "address": "Address",
+    "phone": "Phone",
+    "email": "Email",
+    "website": "Website",
+    "save": "Save Changes",
+    "update": "Update Profile"
+  },
+  "sections": {
+    "profile": "Business Profile",
+    "settings": "Settings",
+    "statistics": "Statistics"
+  }
+}

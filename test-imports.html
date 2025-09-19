@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Imports</title>
+  <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2rem; }
+    .success { color: green; background: #efe; padding: 1rem; margin: 0.5rem 0; border-radius: 4px; }
+    .error { color: red; background: #fee; padding: 1rem; margin: 0.5rem 0; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Testing Imports</h1>
+  <div id="results"></div>
+
+  <script type="module">
+    const resultsDiv = document.getElementById('results');
+    
+    function addResult(message, isError = false) {
+      const div = document.createElement('div');
+      div.className = isError ? 'error' : 'success';
+      div.textContent = message;
+      resultsDiv.appendChild(div);
+    }
+    
+    try {
+      // Test supabase-client.js
+      const { supabase, getCurrentAccountState } = await import('/js/supabase-client.js');
+      addResult('✅ supabase-client.js loaded');
+      
+      // Test supabase.js
+      const { getUser, onAuthStateChange, isAdmin, getMyBusiness } = await import('/js/supabase.js');
+      addResult('✅ supabase.js loaded with all functions');
+      
+      // Test auth-state-manager.js
+      const { initAuthState } = await import('/js/auth-state-manager.js');
+      addResult('✅ auth-state-manager.js loaded');
+      
+      // Test header-auth.js
+      const headerAuth = await import('/js/header-auth.js');
+      addResult('✅ header-auth.js loaded');
+      
+      addResult('🎉 All imports successful! No more errors.');
+      
+    } catch (error) {
+      addResult(`❌ Error: ${error.message}`, true);
+      console.error('Import error:', error);
+    }
+  </script>
+</body>
+</html>

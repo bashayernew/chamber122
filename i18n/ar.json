@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "home": "الرئيسية",
+    "directory": "الدليل",
+    "events": "الفعاليات", 
+    "bulletin": "النشرة",
+    "about": "من نحن",
+    "contact": "تواصل"
+  },
+  "account": {
+    "menu": "الحساب",
+    "myBusiness": "مشروعي",
+    "myActivities": "أنشطتي",
+    "adminPanel": "لوحة الإدارة", 
+    "login": "تسجيل الدخول",
+    "signup": "إنشاء حساب وإدراج المشروع"
+  },
+  "footer": {
+    "support": "الدعم",
+    "quick": "روابط سريعة",
+    "aboutTitle": "Chamber122",
+    "about": "ربط المشاريع الصغيرة والمتوسطة في الكويت بفرص النمو والنجاح. انضم إلى مجتمعنا اليوم.",
+    "contactInfo": "تواصل",
+    "empowering": "تمكين المشاريع الصغيرة والمتوسطة في الكويت"
+  },
+  "auth": {
+    "loginRequired": "تسجيل الدخول مطلوب",
+    "loginRequiredDesc": "تحتاج إلى تسجيل الدخول للمتابعة.",
+    "continueAsGuest": "المتابعة كضيف",
+    "signIn": "تسجيل الدخول",
+    "cancel": "إلغاء",
+    "guestEmailPrompt": "أدخل بريدك الإلكتروني. سيتم مراجعة إرسالك قبل النشر.",
+    "guestEmailPlaceholder": "you@example.com",
+    "continue": "متابعة"
+  },
+  "status": {
+    "published": "منشور",
+    "draft": "مسودة",
+    "pending": "في انتظار المراجعة",
+    "archived": "مؤرشف",
+    "approved": "موافق عليه",
+    "rejected": "مرفوض",
+    "suspended": "معلق"
+  },
+  "msme": {
+    "viewProfile": "عرض الملف الشخصي",
+    "contact": "تواصل",
+    "about": "حول",
+    "services": "الخدمات",
+    "gallery": "المعرض",
+    "events": "الفعاليات",
+    "bulletins": "النشرات",
+    "views": "مشاهدات",
+    "lastUpdated": "آخر تحديث",
+    "phone": "الهاتف",
+    "whatsapp": "واتساب",
+    "email": "البريد الإلكتروني",
+    "website": "الموقع الإلكتروني",
+    "address": "العنوان",
+    "businessHours": "ساعات العمل"
+  },
+  "overlay": {
+    "close": "إغلاق",
+    "share": "مشاركة",
+    "like": "إعجاب",
+    "back": "رجوع"
+  },
+  "validation": {
+    "required": "هذا الحقل مطلوب",
+    "invalidEmail": "البريد الإلكتروني غير صالح",
+    "invalidPhone": "رقم الهاتف غير صالح",
+    "minLength": "يجب أن يكون {min} أحرف على الأقل",
+    "maxLength": "يجب أن يكون {max} أحرف كحد أقصى"
+  },
+  "time": {
+    "now": "الآن",
+    "minute": "منذ دقيقة",
+    "minutes": "منذ دقائق",
+    "hour": "منذ ساعة", 
+    "hours": "منذ ساعات",
+    "day": "منذ يوم",
+    "days": "منذ أيام",
+    "week": "منذ أسبوع",
+    "weeks": "منذ أسابيع",
+    "month": "منذ شهر",
+    "months": "منذ أشهر",
+    "year": "منذ سنة",
+    "years": "منذ سنوات"
+  },
+  "buttons": {
+    "addEvent": "إضافة فعالية",
+    "addPost": "إضافة منشور",
+    "submit": "إرسال",
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "approve": "موافقة",
+    "reject": "رفض",
+    "close": "إغلاق",
+    "back": "رجوع",
+    "next": "التالي",
+    "previous": "السابق"
+  },
+  "messages": {
+    "loading": "جاري التحميل...",
+    "error": "حدث خطأ",
+    "success": "نجح!",
+    "noResults": "لم يتم العثور على نتائج",
+    "tryAgain": "يرجى المحاولة مرة أخرى",
+    "comingSoon": "قريباً"
+  }
+}

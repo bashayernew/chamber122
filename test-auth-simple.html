@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Auth Test</title>
+    <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+    <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+</head>
+<body>
+    <h1>Simple Authentication Test</h1>
+    <div id="result"></div>
+    
+    <script type="module">
+        import { supabase } from './js/supabase-client.js';
+        
+        async function testAuth() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                console.log('🔍 Testing Supabase connection...');
+                
+                const { data: { user }, error } = await supabase.auth.getUser();
+                
+                if (error) {
+                    console.error('❌ Auth error:', error);
+                    resultDiv.innerHTML = `<p style="color: red;">❌ Auth Error: ${error.message}</p>`;
+                    return;
+                }
+                
+                if (!user) {
+                    console.log('❌ No user found');
+                    resultDiv.innerHTML = '<p style="color: orange;">❌ No user found - not logged in</p>';
+                    return;
+                }
+                
+                console.log('✅ User found:', user);
+                resultDiv.innerHTML = `
+                    <p style="color: green;">✅ User authenticated!</p>
+                    <p><strong>Email:</strong> ${user.email}</p>
+                    <p><strong>ID:</strong> ${user.id}</p>
+                    <p><strong>Created:</strong> ${new Date(user.created_at).toLocaleString()}</p>
+                `;
+                
+                // Test profile fetch
+                console.log('🔍 Testing profile fetch...');
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+                
+                if (profileError) {
+                    console.warn('⚠️ Profile error:', profileError);
+                    resultDiv.innerHTML += `<p style="color: orange;">⚠️ Profile Error: ${profileError.message}</p>`;
+                } else if (profile) {
+                    console.log('✅ Profile found:', profile);
+                    resultDiv.innerHTML += `
+                        <p style="color: green;">✅ Profile found!</p>
+                        <p><strong>Role:</strong> ${profile.role || 'null'}</p>
+                        <p><strong>Full Name:</strong> ${profile.full_name || 'null'}</p>
+                    `;
+                } else {
+                    console.log('ℹ️ No profile found');
+                    resultDiv.innerHTML += '<p style="color: blue;">ℹ️ No profile found - will create default</p>';
+                }
+                
+            } catch (error) {
+                console.error('❌ Test error:', error);
+                resultDiv.innerHTML = `<p style="color: red;">❌ Test Error: ${error.message}</p>`;
+            }
+        }
+        
+        testAuth();
+    </script>
+</body>
+</html>

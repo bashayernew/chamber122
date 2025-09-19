@@ -1,0 +1,16 @@
+{
+  "page": {
+    "title": "My Activities",
+    "subtitle": "Track and manage your business activities"
+  },
+  "sections": {
+    "recent": "Recent Activities",
+    "events": "My Events",
+    "announcements": "My Announcements"
+  },
+  "actions": {
+    "createEvent": "Create Event",
+    "postAnnouncement": "Post Announcement",
+    "viewAll": "View All"
+  }
+}

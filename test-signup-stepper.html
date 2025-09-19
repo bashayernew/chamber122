@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Signup Stepper</title>
+  <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2rem; }
+    .success { color: green; background: #efe; padding: 1rem; margin: 0.5rem 0; border-radius: 4px; }
+    .error { color: red; background: #fee; padding: 1rem; margin: 0.5rem 0; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Testing Signup Stepper Import</h1>
+  <div id="results"></div>
+
+  <script type="module">
+    const resultsDiv = document.getElementById('results');
+    
+    function addResult(message, isError = false) {
+      const div = document.createElement('div');
+      div.className = isError ? 'error' : 'success';
+      div.textContent = message;
+      resultsDiv.appendChild(div);
+    }
+    
+    try {
+      // Test supabase-client.js with getAccountAndCompleteness
+      const { supabase, getAccountAndCompleteness } = await import('/js/supabase-client.js');
+      addResult('✅ supabase-client.js loaded with getAccountAndCompleteness');
+      
+      // Test the function
+      const result = await getAccountAndCompleteness();
+      addResult(`✅ getAccountAndCompleteness works: next_step = ${result.data.next_step}`);
+      
+      // Test signup-stepper.js import
+      const signupStepper = await import('/js/signup-stepper.js');
+      addResult('✅ signup-stepper.js loaded successfully');
+      
+      addResult('🎉 All signup stepper imports working!');
+      
+    } catch (error) {
+      addResult(`❌ Error: ${error.message}`, true);
+      console.error('Import error:', error);
+    }
+  </script>
+</body>
+</html>
+

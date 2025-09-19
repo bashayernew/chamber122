@@ -1,0 +1,21 @@
+.site-header{position:sticky;top:0;z-index:50;background:#0e0f11;border-bottom:1px solid #1f2227}
+.header-inner{max-width:1100px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:center;gap:8px;text-decoration:none}
+.brand-mark{background:#d4af37;color:#0e0f11;font-weight:700;padding:4px 6px;border-radius:8px}
+.brand-name{color:#e5e7eb;font-weight:600;letter-spacing:.2px}
+.main-nav{margin-left:auto;display:flex;gap:16px}
+.main-nav a{color:#cbd5e1;text-decoration:none;padding:6px 8px;border-radius:8px}
+.main-nav a:hover{background:#17191d;color:#fff}
+.account{position:relative;margin-left:12px}
+.account-chip{display:inline-flex;align-items:center;gap:8px;background:#17191d;color:#f8fafc;border:1px solid #2a2f36;padding:6px 10px;border-radius:999px;cursor:pointer;-webkit-user-select:none;user-select:none}
+.account-chip::after{content:'▾';opacity:.8;font-size:12px}
+.account-menu{position:absolute;right:0;margin-top:8px;min-width:220px;background:#0f1114;border:1px solid #2a2f36;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:6px;list-style:none;display:none}
+.account-menu.open{display:block}
+.account-menu li{margin:2px 0}
+.menu-link{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:10px;color:#e5e7eb;text-decoration:none;background:none;border:none}
+.menu-link:hover,.menu-link:focus{background:#17191d;outline:none}
+.cta-inline{display:inline-flex;gap:8px}
+.cta-inline a{color:#e5e7eb;text-decoration:none;border:1px solid #2a2f36;padding:6px 10px;border-radius:10px}
+.cta-inline a:hover{background:#17191d}
+.nav-toggle{display:none;margin-left:8px;color:#e5e7eb;background:none;border:1px solid #2a2f36;border-radius:8px;padding:4px 8px}
+@media (max-width:720px){.main-nav{display:none}.nav-toggle{display:block;margin-left:auto}}

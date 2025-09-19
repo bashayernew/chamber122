@@ -1,0 +1,42 @@
+{
+  "page": {
+    "title": "Authentication",
+    "subtitle": "Sign in to your account or create a new one"
+  },
+  "form": {
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "businessName": "Business Name",
+    "phone": "Phone Number",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "forgotPassword": "Forgot Password?",
+    "rememberMe": "Remember Me"
+  },
+  "auth": {
+    "loginTab": "Login",
+    "signupTab": "Sign Up & Get Listed",
+    "loginTitle": "Login to Your Account",
+    "email": "Email",
+    "password": "Password",
+    "phone": "Phone Number",
+    "logIn": "Log In",
+    "forgotPassword": "Forgot password?",
+    "or": "or",
+    "usePhoneInstead": "Use phone instead",
+    "sendCode": "Send code",
+    "verificationCode": "Verification Code",
+    "verifyAndLogin": "Verify & Log in",
+    "otpTip": "Tip: On supported phones, the code may auto-fill.",
+    "getMagicLink": "Or get a magic link to email",
+    "sendMagicLink": "Send magic link",
+    "emailMeLink": "Email me a login link",
+    "phoneHelp": "Add your phone for SMS login option"
+  },
+  "validation": {
+    "emailRequired": "Email is required",
+    "passwordRequired": "Password is required",
+    "passwordMatch": "Passwords must match"
+  }
+}

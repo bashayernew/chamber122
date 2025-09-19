@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Debug Test</title>
+    <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+    <meta name="supabase-anon" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: white; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 8px; }
+        button { padding: 10px 20px; margin: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2563eb; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Button Debug Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Buttons</h2>
+        <p>Click any of these buttons to test the nuclear click binder:</p>
+        
+        <button id="signup-next" type="button" data-action="signup-next">Next (ID + data-action)</button>
+        <button id="signup-next-1" type="button" data-testid="signup-next-1">Next 1 (ID + testid)</button>
+        <button id="signup-next-2" type="button" data-testid="signup-next-2">Next 2 (ID + testid)</button>
+        <button id="signup-next-3" type="button" data-testid="signup-next-3">Next 3 (ID + testid)</button>
+        
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Console Output</h2>
+        <p>Check the browser console for detailed logs. You should see:</p>
+        <ul>
+            <li>✅ [Sanity] inline module loaded</li>
+            <li>✅ [Sanity] Next button found: ... (for each button)</li>
+            <li>✅ [DBG] Delegated click caught → running __dbgNextClick (when clicking)</li>
+            <li>✅ [DBG] Next clicked (global)</li>
+        </ul>
+    </div>
+
+    <!-- ========== NUCLEAR CLICK BINDER + SANITY TESTER ========== -->
+    <script type="module">
+        console.log("[Sanity] inline module loaded");
+
+        // 1) Import your modules with RELATIVE paths
+        const MODULES = [
+            "./js/supabase-client.js",
+            "./js/auth-state-manager.js",
+            "./js/signup-utils.js",
+            "./js/signup-stepper.js",
+        ];
+        for (const p of MODULES) {
+            import(p)
+                .then(() => console.log(`[Sanity] Imported OK: ${p}`))
+                .catch(err => console.error(`[Sanity] Import FAILED: ${p}`, err));
+        }
+
+        // 2) Global debug handler (never removed)
+        window.__dbgNextClick = async (ev) => {
+            ev?.preventDefault?.();
+            console.log("[DBG] Next clicked (global)");
+            
+            // Show which button was clicked
+            const btn = ev.target;
+            const resultDiv = document.getElementById('test-results');
+            resultDiv.innerHTML = `<p class="success">✅ Button clicked: ${btn.id || btn.textContent.trim()}</p>`;
+            
+            // handoff to real exported handler if present
+            try {
+                const m = await import("./js/signup-stepper.js");
+                if (typeof m.onNextClick === "function") {
+                    console.log("[DBG] Calling onNextClick from signup-stepper.js");
+                    return m.onNextClick(ev);
+                } else {
+                    console.warn("[DBG] onNextClick not exported from signup-stepper.js");
+                }
+            } catch (e) {
+                console.error("[DBG] Failed to import signup-stepper.js for handoff:", e);
+            }
+        };
+
+        // 3) Overlay detector: outline what sits over the button center
+        function inspectOverlay(btn) {
+            if (!btn) return;
+            const r = btn.getBoundingClientRect();
+            const x = r.left + r.width / 2;
+            const y = r.top + r.height / 2;
+            const el = document.elementFromPoint(x, y);
+            if (el && el !== btn && !btn.contains(el)) {
+                console.warn("[Overlay] Something is above the button:", el);
+                try { el.style.outline = "2px solid red"; } catch {}
+                console.warn("[Overlay] Lower its z-index OR set pointer-events:none on that overlay.");
+            } else {
+                console.log("[Overlay] No blocking element detected.");
+            }
+        }
+
+        // 4) Event delegation in CAPTURE phase (beats many overlays)
+        document.addEventListener("click", (e) => {
+            const btn = e.target.closest("#signup-next, #signup-next-1, #signup-next-2, #signup-next-3, [data-action='signup-next'], [data-testid*='signup-next']");
+            if (!btn) return;
+
+            // force it to be a pure button
+            if (btn.getAttribute("type") !== "button") btn.setAttribute("type", "button");
+
+            inspectOverlay(btn);
+            console.log("[DBG] Delegated click caught → running __dbgNextClick", btn);
+            window.__dbgNextClick(e);
+        }, { capture: true });
+
+        // 5) One-time startup checks
+        window.addEventListener("DOMContentLoaded", () => {
+            const btns = document.querySelectorAll("#signup-next, #signup-next-1, #signup-next-2, #signup-next-3, [data-action='signup-next'], [data-testid*='signup-next']");
+            if (btns.length === 0) {
+                console.error("[Sanity] No Next buttons found.");
+                // List all buttons to help debug
+                const allBtns = document.querySelectorAll("button");
+                console.log("[Sanity] All buttons found:", Array.from(allBtns).map(b => ({ id: b.id, class: b.className, text: b.textContent.trim() })));
+                return;
+            }
+            console.log(`[Sanity] Found ${btns.length} Next buttons:`, btns);
+            btns.forEach(btn => inspectOverlay(btn));
+        }, { once: true });
+    </script>
+</body>
+</html>

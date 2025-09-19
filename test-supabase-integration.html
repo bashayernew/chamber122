@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Integration Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: white; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 8px; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+        button { padding: 10px 20px; margin: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2563eb; }
+        pre { background: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Supabase Integration Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Test Business Query</h2>
+        <p>Test the new getMyBusiness() function:</p>
+        <button onclick="testBusinessQuery()">Test Business Query</button>
+        <div id="business-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test File Upload</h2>
+        <p>Test file upload to business-files bucket:</p>
+        <button onclick="testFileUpload()">Test File Upload</button>
+        <div id="upload-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test Compatibility View</h2>
+        <p>Test the accounts compatibility view:</p>
+        <button onclick="testCompatibilityView()">Test Compatibility View</button>
+        <div id="compatibility-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Error Handling</h2>
+        <p>Test graceful error handling:</p>
+        <button onclick="testErrorHandling()">Test Error Handling</button>
+        <div id="error-result"></div>
+    </div>
+
+    <script type="module">
+        import { supabase } from './js/supabase-client.js';
+
+        // Test business query
+        window.testBusinessQuery = async () => {
+            const resultDiv = document.getElementById('business-result');
+            resultDiv.innerHTML = '<p class="info">Testing business query...</p>';
+            
+            try {
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                if (userError) throw userError;
+                
+                if (!user) {
+                    resultDiv.innerHTML = '<p class="error">No authenticated user found. Please log in first.</p>';
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('businesses')
+                    .select('id,name,owner_id,is_active,created_at')
+                    .eq('owner_id', user.id)
+                    .limit(1);
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Business query successful!</p>
+                        <pre>${JSON.stringify(data[0], null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<p class="info">ℹ️ No business found for this user (this is normal for new users)</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Business query failed:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test file upload
+        window.testFileUpload = async () => {
+            const resultDiv = document.getElementById('upload-result');
+            resultDiv.innerHTML = '<p class="info">Testing file upload...</p>';
+            
+            try {
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                if (userError) throw userError;
+                
+                if (!user) {
+                    resultDiv.innerHTML = '<p class="error">No authenticated user found. Please log in first.</p>';
+                    return;
+                }
+
+                // Create test file
+                const file = new File(["Hello from Supabase test!"], "test.txt", { type: "text/plain" });
+                const path = `${user.id}/smoketest-${Date.now()}.txt`;
+                
+                const { data, error } = await supabase.storage
+                    .from('business-files')
+                    .upload(path, file, { upsert: true });
+
+                if (error) throw error;
+
+                resultDiv.innerHTML = `
+                    <p class="success">✅ File upload successful!</p>
+                    <pre>Path: ${data.path}</pre>
+                    <p class="info">File uploaded to: business-files/${data.path}</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ File upload failed:</p>
+                    <pre>${error.message}</pre>
+                    <p class="info">Make sure the 'business-files' bucket exists in your Supabase Dashboard</p>
+                `;
+            }
+        };
+
+        // Test compatibility view
+        window.testCompatibilityView = async () => {
+            const resultDiv = document.getElementById('compatibility-result');
+            resultDiv.innerHTML = '<p class="info">Testing compatibility view...</p>';
+            
+            try {
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                if (userError) throw userError;
+                
+                if (!user) {
+                    resultDiv.innerHTML = '<p class="error">No authenticated user found. Please log in first.</p>';
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('accounts')
+                    .select('id,name,owner_user_id,status,is_active')
+                    .eq('owner_user_id', user.id)
+                    .limit(1);
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Compatibility view working!</p>
+                        <pre>${JSON.stringify(data[0], null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<p class="info">ℹ️ No data found in compatibility view</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Compatibility view failed:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test error handling
+        window.testErrorHandling = async () => {
+            const resultDiv = document.getElementById('error-result');
+            resultDiv.innerHTML = '<p class="info">Testing error handling...</p>';
+            
+            try {
+                // Test with invalid table name
+                const { data, error } = await supabase
+                    .from('invalid_table')
+                    .select('*')
+                    .limit(1);
+
+                if (error) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Error handling working!</p>
+                        <pre>Error caught: ${error.message}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<p class="info">ℹ️ No error occurred (unexpected)</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Error handling working!</p>
+                    <pre>Exception caught: ${error.message}</pre>
+                `;
+            }
+        };
+
+        // Auto-run tests on load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🧪 Supabase Integration Test loaded');
+            console.log('Click the buttons above to test each functionality');
+        });
+    </script>
+</body>
+</html>

@@ -1,34 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <script type="module" src="/js/supabase-client.js?v=20"></script>
+  <script type="module" src="/js/site-header.js?v=1"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MSME Directory | Chamber122</title>
   <meta name="description" content="Browse and discover local MSMEs in Kuwait. Search by category, location, and find the perfect business for your needs.">
-  <link rel="stylesheet" href="css/style.css">
+  <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+  <link rel="stylesheet" href="css/style.css?v=16">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
+  <!-- Global Header -->
+  <div id="site-header"></div>
+  <link rel="stylesheet" href="/shared/header.css" />
+  <script type="module" src="/shared/header-mount.js"></script>
+
   <!-- Navigation -->
   <nav class="navbar">
     <div class="nav-container">
-      <a href="index.html" class="logo">
+      <a href="index.html" class="logo site-logo">
         <img src="images/logo.png" alt="Chamber122 Logo">
-        Chamber122
       </a>
       <div class="nav-menu">
-        <a href="index.html" class="nav-link">Home</a>
-        <a href="directory.html" class="nav-link active">Directory</a>
-        <a href="events.html" class="nav-link">Events</a>
-        <a href="bulletin.html" class="nav-link">Bulletin</a>
-        <a href="get-listed.html" class="nav-link">Get Listed</a>
-        <a href="about.html" class="nav-link">About</a>
-        <a href="contact.html" class="nav-link">Contact</a>
+        <a href="index.html" class="nav-link" data-i18n="nav.home">Home</a>
+        <a href="directory.html" class="nav-link active" data-i18n="nav.directory">Directory</a>
+        <a href="events.html" class="nav-link" data-i18n="nav.events">Events</a>
+        <a href="bulletin.html" class="nav-link" data-i18n="nav.bulletin">Bulletin</a>
+        <a href="about.html" class="nav-link" data-i18n="nav.about">About</a>
+        <a href="contact.html" class="nav-link" data-i18n="nav.contact">Contact</a>
       </div>
-      <div class="nav-buttons">
-        <a href="auth.html" class="nav-btn">Sign Up</a>
-        <a href="auth.html" class="nav-btn primary">Login</a>
+      <div class="nav-actions">
+        <!-- Language toggle -->
+        <span id="lang-toggle" class="lang-toggle" aria-label="Language">
+          <button data-lang="en" class="lang-btn" data-testid="lang-switch-en">EN</button> |
+          <button data-lang="ar" class="lang-btn" data-testid="lang-switch-ar">AR</button>
+        </span>
+        <!-- Auth CTAs (shown when NOT logged in) -->
+        <div id="auth-cta" class="flex items-center gap-3" data-testid="auth-cta">
+          <a href="auth.html#login" class="btn btn-ghost text-sm" data-testid="login-cta" data-i18n="nav.login">Login</a>
+          <a href="auth.html#signup" class="btn btn-primary text-sm px-4 py-2 rounded-2xl shadow-sm" data-testid="signup-cta" data-i18n="nav.signup">
+            Sign Up & Get Listed
+          </a>
+        </div>
+
+        <!-- Account menu (shown ONLY when logged in) -->
+        <div id="account-menu" class="relative hidden" data-testid="account-menu">
+          <button id="account-btn" class="btn btn-outline flex items-center gap-2">
+            <img id="account-avatar" src="" alt="" class="h-7 w-7 rounded-full object-cover hidden">
+            <span id="account-name" data-i18n="nav.account">Account</span>
+            <svg class="h-4 w-4 opacity-70" viewBox="0 0 20 20"><path d="M5 7l5 6 5-6"/></svg>
+          </button>
+          <div id="account-dropdown" class="menu hidden">
+            <a href="owner-activities.html" data-testid="menu-my-activities" data-i18n="nav.myActivities">My Activities</a>
+            <a href="admin-dashboard.html" id="menu-admin" class="hidden" data-testid="menu-admin" data-i18n="nav.admin">Admin Panel</a>
+            <a href="#" id="btn-logout" data-testid="logout" data-i18n="nav.logout">Logout</a>
+          </div>
+        </div>
       </div>
       <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
         <i class="fas fa-bars"></i>
@@ -39,61 +74,66 @@
       <a href="directory.html" class="mobile-link">Directory</a>
       <a href="events.html" class="mobile-link">Events</a>
       <a href="bulletin.html" class="mobile-link">Bulletin</a>
-      <a href="get-listed.html" class="mobile-link">Get Listed</a>
       <a href="about.html" class="mobile-link">About</a>
       <a href="contact.html" class="mobile-link">Contact</a>
+      <div class="mobile-divider"></div>
+      <a href="owner.html" class="mobile-link">
+        <i class="fas fa-building"></i>
+        My Business
+      </a>
+      <a href="owner-activities.html" class="mobile-link">
+        <i class="fas fa-calendar-alt"></i>
+        My Activities
+      </a>
+      <a href="admin.html" class="mobile-link">
+        <i class="fas fa-cog"></i>
+        Admin Panel
+      </a>
+      <div class="mobile-divider"></div>
+      <a href="auth.html" class="mobile-link">
+        <i class="fas fa-sign-in-alt"></i>
+        Login
+      </a>
+      <a href="get-listed.html" class="mobile-link">
+        <i class="fas fa-user-plus"></i>
+        Sign Up & Get Listed
+      </a>
     </div>
   </nav>
 
   <!-- Directory Header -->
   <section class="directory-header">
     <div class="directory-hero">
-      <h1>MSME Directory</h1>
-      <p>Discover and connect with Kuwait's growing community of micro, small, and medium enterprises</p>
+      <h1 data-i18n="page.title">MSME Directory</h1>
+      <p data-i18n="page.subtitle">Discover and connect with Kuwait's growing community of micro, small, and medium enterprises</p>
     </div>
     
     <!-- Advanced Search/Filter Bar -->
     <div class="filter-container">
       <div class="filter-bar">
         <div class="filter-group">
-          <label for="filter-name">Business Name</label>
-          <input type="text" id="filter-name" class="filter-input" placeholder="Search by name..." onkeyup="filterBusinesses()">
+          <label for="q" data-i18n="search.label">Search</label>
+          <input type="text" id="q" class="filter-input" placeholder-i18n data-i18n="search.placeholder" placeholder="Search by name or description...">
         </div>
         <div class="filter-group">
-          <label for="filter-location">Location</label>
-          <select id="filter-location" class="filter-input" onchange="filterBusinesses()">
-            <option value="">All Locations</option>
-            <option value="kuwait-city">Kuwait City</option>
-            <option value="hawally">Hawally</option>
-            <option value="farwaniya">Farwaniya</option>
-            <option value="jahra">Jahra</option>
-            <option value="ahmadi">Ahmadi</option>
-            <option value="mubarak-al-kabeer">Mubarak Al-Kabeer</option>
+          <label for="cat" data-i18n="filter.category">Category</label>
+          <select id="cat" class="filter-input">
+            <option value="" data-i18n="filter.allCategories">All Categories</option>
+            <option value="Food & Beverage" data-i18n="filter.categories.food">Food & Beverage</option>
+            <option value="Fashion & Beauty" data-i18n="filter.categories.fashion">Fashion & Beauty</option>
+            <option value="Cleaning Services" data-i18n="filter.categories.cleaning">Cleaning Services</option>
+            <option value="Technology" data-i18n="filter.categories.technology">Technology</option>
+            <option value="Home Services" data-i18n="filter.categories.home">Home Services</option>
+            <option value="Health & Wellness" data-i18n="filter.categories.health">Health & Wellness</option>
+            <option value="Education" data-i18n="filter.categories.education">Education</option>
+            <option value="Retail" data-i18n="filter.categories.retail">Retail</option>
+            <option value="Automotive" data-i18n="filter.categories.automotive">Automotive</option>
+            <option value="Other" data-i18n="filter.categories.other">Other</option>
           </select>
         </div>
-        <div class="filter-group">
-          <label for="filter-category">Category</label>
-          <select id="filter-category" class="filter-input" onchange="filterBusinesses()">
-            <option value="">All Categories</option>
-            <option value="food">Food & Beverage</option>
-            <option value="fashion">Fashion & Beauty</option>
-            <option value="cleaning">Cleaning Services</option>
-            <option value="tech">Technology</option>
-            <option value="home">Home Services</option>
-            <option value="health">Health & Wellness</option>
-            <option value="education">Education</option>
-            <option value="retail">Retail</option>
-            <option value="automotive">Automotive</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-        <button class="clear-filters-btn" onclick="clearFilters()">
-          <i class="fas fa-times"></i> Clear Filters
+        <button id="searchBtn" class="filter-btn">
+          <i class="fas fa-search"></i> <span data-i18n="search.label">Search</span>
         </button>
-      </div>
-      
-      <div class="results-info">
-        <span id="results-count">Loading businesses...</span>
       </div>
     </div>
   </section>
@@ -101,54 +141,54 @@
   <!-- Featured MSMEs Carousel -->
   <section class="featured-section">
     <div class="section-header">
-      <h2 class="section-title">Featured MSMEs</h2>
-      <p class="section-subtitle">Highlighted businesses in our community</p>
+      <h2 class="section-title" data-i18n="sections.featured">Featured MSMEs</h2>
+      <p class="section-subtitle" data-i18n="sections.featuredSubtitle">Highlighted businesses in our community</p>
     </div>
     
     <div class="featured-carousel">
-      <div class="featured-card" onclick="openBusinessModal('al-kuwaiti-kitchen')">
+      <div class="featured-card" onclick="openMSMEOverlay('al-kuwaiti-kitchen')">
         <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=200&fit=crop" alt="Al Kuwaiti Kitchen">
         <h3>Al Kuwaiti Kitchen</h3>
         <div class="category">Food & Beverage</div>
         <div class="tag featured">Featured</div>
-        <div class="explore-btn">Explore</div>
+        <div class="explore-btn" data-i18n="msme.viewProfile">View Profile</div>
       </div>
       
-      <div class="featured-card" onclick="openBusinessModal('desert-rose-boutique')">
+      <div class="featured-card" onclick="openMSMEOverlay('desert-rose-boutique')">
         <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=200&fit=crop" alt="Desert Rose Boutique">
         <h3>Desert Rose Boutique</h3>
         <div class="category">Fashion & Beauty</div>
         <div class="tag featured">Featured</div>
-        <div class="explore-btn">Explore</div>
+        <div class="explore-btn" data-i18n="msme.viewProfile">View Profile</div>
       </div>
       
-      <div class="featured-card" onclick="openBusinessModal('techflow-kuwait')">
+      <div class="featured-card" onclick="openMSMEOverlay('techflow-kuwait')">
         <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=200&fit=crop" alt="TechFlow Kuwait">
         <h3>TechFlow Kuwait</h3>
         <div class="category">Technology</div>
         <div class="tag featured">Featured</div>
-        <div class="explore-btn">Explore</div>
+        <div class="explore-btn" data-i18n="msme.viewProfile">View Profile</div>
       </div>
     </div>
   </section>
 
   <!-- MSME Grid Directory -->
   <section class="directory-grid-section">
-    <div class="directory-grid" id="directory-grid">
+    <div id="list" class="directory-grid">
       <!-- MSME cards will be populated by JavaScript -->
     </div>
     
     <div class="load-more-container">
-      <button class="load-more-btn" id="load-more-btn" onclick="loadMoreBusinesses()">
+      <button id="loadMore" class="load-more-btn" style="display: none;">
         <i class="fas fa-plus"></i> Load More Businesses
       </button>
     </div>
     
     <div class="cta-section">
-      <h3>Is Your Business Missing?</h3>
-      <p>Join our community and get discovered by customers across Kuwait</p>
+      <h3 data-i18n="cta.businessMissing">Is Your Business Missing?</h3>
+      <p data-i18n="cta.joinCommunity">Join our community and get discovered by customers across Kuwait</p>
       <a href="get-listed.html" class="cta-btn-large">
-        <i class="fas fa-plus"></i> Add Your Business for Free
+        <i class="fas fa-plus"></i> <span data-i18n="cta.joinToday">Join Our Community Today</span>
       </a>
     </div>
   </section>
@@ -156,37 +196,40 @@
   <!-- Footer -->
   <footer class="footer">
     <div class="footer-content">
+      <div class="footer-brand">
+        <img src="images/logo.png" alt="Chamber122" />
+      </div>
       <div class="footer-section">
-        <h3>Chamber122</h3>
-        <p>Connecting Kuwait's MSMEs with opportunities for growth and success. Join our community today.</p>
-        <div class="newsletter-form">
-          <input type="email" class="newsletter-input" placeholder="Subscribe to our newsletter">
-          <button class="newsletter-btn">Subscribe</button>
+        <h3 data-i18n="footer.aboutTitle">Chamber122</h3>
+        <p data-i18n="footer.about">Connecting Kuwait's MSMEs with opportunities for growth and success. Join our community today.</p>
+      </div>
+      
+      <div class="footer-section">
+        <h3 data-i18n="footer.quick">Quick Links</h3>
+        <div class="quick-links">
+          <ul class="quick-links-list">
+            <li><a href="index.html" data-i18n="nav.home">Home</a></li>
+            <li><a href="directory.html" data-i18n="nav.directory">Directory</a></li>
+            <li><a href="events.html" data-i18n="nav.events">Events</a></li>
+            <li><a href="bulletin.html" data-i18n="nav.bulletin">Bulletin</a></li>
+            <li><a href="get-listed.html" data-i18n="cta.getListed">Get Listed</a></li>
+            <li><a href="about.html" data-i18n="nav.about">About</a></li>
+            <li><a href="contact.html" data-i18n="nav.contact">Contact</a></li>
+          </ul>
         </div>
       </div>
       
       <div class="footer-section">
-        <h3>Quick Links</h3>
-        <p><a href="index.html">Home</a></p>
-        <p><a href="directory.html">Directory</a></p>
-        <p><a href="events.html">Events</a></p>
-        <p><a href="bulletin.html">Bulletin</a></p>
-        <p><a href="get-listed.html">Get Listed</a></p>
-        <p><a href="about.html">About</a></p>
-        <p><a href="contact.html">Contact</a></p>
-      </div>
-      
-      <div class="footer-section">
-        <h3>Connect</h3>
-        <p><a href="#"><i class="fab fa-twitter"></i> Twitter</a></p>
-        <p><a href="#"><i class="fab fa-linkedin"></i> LinkedIn</a></p>
-        <p><a href="#"><i class="fab fa-instagram"></i> Instagram</a></p>
+        <h3 data-i18n="footer.contactInfo">Connect</h3>
+        <p><a href="https://instagram.com/chamber_122_kw"><i class="fab fa-instagram"></i> Instagram</a></p>
+        <p><a href="https://www.tiktok.com/@chamber122"><i class="fab fa-tiktok"></i> TikTok</a></p>
+        <p><a href="https://wa.me/96522396999"><i class="fab fa-whatsapp"></i> Phone</a></p>
         <p><a href="mailto:info@chamber122.com"><i class="fas fa-envelope"></i> info@chamber122.com</a></p>
       </div>
     </div>
     
     <div class="footer-bottom">
-      <p>&copy; 2025 Chamber122. All Rights Reserved. | Empowering Kuwait's MSMEs</p>
+      <p>&copy; 2025 Chamber122. All Rights Reserved. | <span data-i18n="footer.empowering">Empowering Kuwait's MSMEs</span></p>
     </div>
   </footer>
 
@@ -223,7 +266,20 @@
     </div>
   </div>
 
-  <script src="js/main.js"></script>
-  <script src="js/directory.js"></script>
+  <script src="js/main.js?v=7"></script>
+  <script type="module" src="/js/directory.js"></script>
+  <script type="module" src="/js/msme-overlay.js"></script>
+  <script type="module" src="/js/analytics.js"></script>
+  <script type="module" src="/js/language-switcher.js"></script>
+  <script type="module" src="./js/i18n.js"></script>
+  <!-- Import authentication and gating scripts -->
+  <script type="module" src="js/modal-login-required.js"></script>
+  <script type="module" src="js/guest.js"></script>
+  <script type="module">
+    import { initNavAuthState } from '/js/nav-auth-state.js';
+    initNavAuthState();
+  </script>
+  <link rel="stylesheet" href="css/modal.css">
+  <link rel="stylesheet" href="/css/header.css?v=1">
 </body>
 </html>

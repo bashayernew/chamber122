@@ -1,0 +1,273 @@
+/* Onboarding Checklist Styles */
+/* Dark theme with gold accents, consistent with Chamber122 design */
+
+.onboarding-checklist {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Required Section */
+.required-section {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(31, 41, 55, 0.8) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.1);
+}
+
+.required-section:hover {
+  border-color: rgba(239, 68, 68, 0.3);
+  box-shadow: 0 8px 30px rgba(239, 68, 68, 0.15);
+}
+
+/* Recommended Section */
+.recommended-section {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(31, 41, 55, 0.8) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.1);
+}
+
+.recommended-section:hover {
+  border-color: rgba(245, 158, 11, 0.3);
+  box-shadow: 0 8px 30px rgba(245, 158, 11, 0.15);
+}
+
+/* Checklist Items */
+.checklist-item {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.checklist-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, currentColor, transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.checklist-item:hover::before {
+  opacity: 0.3;
+}
+
+.checklist-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Status Icons */
+.checklist-item .status-icon {
+  font-size: 1.5rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Progress Bars */
+.progress-bar {
+  background: rgba(75, 85, 99, 0.3);
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%);
+  animation: progress-shine 1.5s infinite;
+}
+
+@keyframes progress-shine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Required Progress Bar */
+.required-section .progress-fill {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* Recommended Progress Bar */
+.recommended-section .progress-fill {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+/* Complete Buttons */
+.complete-btn {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border: none;
+  color: white;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.complete-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.complete-btn:hover::before {
+  left: 100%;
+}
+
+.complete-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+}
+
+.complete-btn:active {
+  transform: translateY(0);
+}
+
+/* Completed State */
+.checklist-item.completed {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(31, 41, 55, 0.8));
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.checklist-item.completed .status-icon {
+  animation: checkmark 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes checkmark {
+  0% { transform: scale(0) rotate(45deg); }
+  50% { transform: scale(1.2) rotate(45deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* RTL Support */
+[dir="rtl"] .checklist-item {
+  text-align: right;
+}
+
+[dir="rtl"] .checklist-item .flex {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .checklist-item .space-x-3 > * + * {
+  margin-left: 0;
+  margin-right: 0.75rem;
+}
+
+[dir="rtl"] .checklist-item .space-x-4 > * + * {
+  margin-left: 0;
+  margin-right: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .onboarding-checklist {
+    padding: 1rem;
+  }
+  
+  .checklist-item {
+    padding: 1rem;
+  }
+  
+  .checklist-item .text-2xl {
+    font-size: 1.5rem;
+  }
+  
+  .checklist-item .text-3xl {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .onboarding-checklist .grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .demo-controls .status-toggle {
+    flex-direction: column;
+  }
+  
+  .demo-controls .demo-actions {
+    flex-direction: column;
+  }
+}
+
+/* Accessibility */
+.complete-btn:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.checklist-item:focus-within {
+  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline-offset: 2px;
+}
+
+/* Animation for new items */
+.checklist-item {
+  animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading state */
+.checklist-item.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.checklist-item.loading .complete-btn {
+  background: linear-gradient(90deg, #6b7280, #9ca3af, #6b7280);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

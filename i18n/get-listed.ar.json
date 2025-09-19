@@ -1,0 +1,22 @@
+{
+  "hero": {
+    "title": "أدرج مشروعك",
+    "subtitle": "انضم إلى مجتمعنا وعرض مشروعك الصغير أو المتوسط للعملاء المحتملين"
+  },
+  "form": {
+    "businessInfo": "معلومات المشروع",
+    "businessName": "اسم المشروع",
+    "businessNamePlaceholder": "أدخل اسم مشروعك",
+    "category": "الفئة",
+    "description": "الوصف",
+    "descriptionPlaceholder": "اوصف مشروعك...",
+    "contactInfo": "معلومات الاتصال",
+    "email": "البريد الإلكتروني",
+    "emailPlaceholder": "your@email.com",
+    "phone": "الهاتف",
+    "phonePlaceholder": "+965 XXXX XXXX",
+    "address": "العنوان",
+    "addressPlaceholder": "أدخل عنوان مشروعك",
+    "submit": "إرسال الطلب"
+  }
+}

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <script type="module" src="/js/supabase-client.js?v=20"></script>
+  <script type="module" src="/js/site-header.js?v=1"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Review Dashboard | Chamber122</title>
+  <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+  <link rel="stylesheet" href="css/style.css?v=16">
+  <link rel="stylesheet" href="css/admin-review.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+  <!-- Global Header -->
+  <div id="site-header"></div>
+  <link rel="stylesheet" href="/shared/header.css" />
+  <link rel="stylesheet" href="/css/header.css?v=1">
+  <script type="module" src="/shared/header-mount.js"></script>
+  <!-- Header -->
+  <header class="header">
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <script type="module" src="/js/supabase-client.js?v=20"></script>
+  <script type="module" src="/js/site-header.js?v=1"></script>
+    <div class="header-content">
+      <div class="header-brand">
+        <img src="images/logo.png" alt="Chamber122" />
+      </div>
+      <nav class="header-nav">
+        <a href="admin.html" class="nav-link">Admin Dashboard</a>
+        <a href="admin-review.html" class="nav-link active">Review</a>
+        <button id="logout-btn" class="btn btn-outline">Logout</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container">
+      <!-- Page Header -->
+      <div class="page-header">
+        <h1 class="page-title">
+          Compliance Review Dashboard
+          <span class="page-subtitle">لوحة مراجعة الامتثال</span>
+        </h1>
+        <p class="page-description">
+          Review and manage business compliance submissions.
+          <span class="page-description-ar">مراجعة وإدارة طلبات الامتثال التجارية.</span>
+        </p>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">📋</div>
+          <div class="stat-content">
+            <div class="stat-number" id="pending-count">0</div>
+            <div class="stat-label">Pending Review | قيد المراجعة</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">✅</div>
+          <div class="stat-content">
+            <div class="stat-number" id="approved-count">0</div>
+            <div class="stat-label">Approved | موافق عليه</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🔄</div>
+          <div class="stat-content">
+            <div class="stat-number" id="changes-requested-count">0</div>
+            <div class="stat-label">Changes Requested | طلب تعديلات</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">❌</div>
+          <div class="stat-content">
+            <div class="stat-number" id="rejected-count">0</div>
+            <div class="stat-label">Rejected | مرفوض</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters-section">
+        <div class="filter-group">
+          <label for="status-filter" class="filter-label">Status | الحالة</label>
+          <select id="status-filter" class="filter-select">
+            <option value="">All | الكل</option>
+            <option value="pending">Pending | قيد المراجعة</option>
+            <option value="approved">Approved | موافق عليه</option>
+            <option value="changes_requested">Changes Requested | طلب تعديلات</option>
+            <option value="rejected">Rejected | مرفوض</option>
+            <option value="deactivated">Deactivated | معطل</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="search-filter" class="filter-label">Search | البحث</label>
+          <input type="text" id="search-filter" class="filter-input" placeholder="Business name or email...">
+        </div>
+        <button id="refresh-btn" class="btn btn-primary">Refresh | تحديث</button>
+      </div>
+
+      <!-- Businesses Table -->
+      <div class="table-container">
+        <table class="businesses-table">
+          <thead>
+            <tr>
+              <th>Business | المنشأة</th>
+              <th>Owner | المالك</th>
+              <th>Industry | الصناعة</th>
+              <th>Status | الحالة</th>
+              <th>Documents | المستندات</th>
+              <th>Created | تاريخ الإنشاء</th>
+              <th>Actions | الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="businesses-tbody">
+            <!-- Table rows will be populated by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loading-state" class="loading-state" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p>Loading businesses... | جاري تحميل المنشآت...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="empty-state" style="display: none;">
+        <div class="empty-icon">📋</div>
+        <h3>No businesses found | لم يتم العثور على منشآت</h3>
+        <p>No businesses match your current filters.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Review Modal -->
+  <div id="review-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title">Review Business | مراجعة المنشأة</h3>
+        <button id="close-modal" class="modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <!-- Business Info -->
+        <div class="review-section">
+          <h4>Business Information | معلومات المنشأة</h4>
+          <div id="business-info" class="info-grid">
+            <!-- Business info will be populated by JavaScript -->
+          </div>
+        </div>
+
+        <!-- Documents -->
+        <div class="review-section">
+          <h4>Documents | المستندات</h4>
+          <div id="documents-list" class="documents-list">
+            <!-- Documents will be populated by JavaScript -->
+          </div>
+        </div>
+
+        <!-- Review Form -->
+        <div class="review-section">
+          <h4>Review Decision | قرار المراجعة</h4>
+          <form id="review-form" class="review-form">
+            <div class="form-group">
+              <label class="form-label">Decision | القرار</label>
+              <div class="decision-options">
+                <label class="decision-option">
+                  <input type="radio" name="decision" value="approve" required>
+                  <span class="decision-text">
+                    <span class="decision-title">Approve | موافقة</span>
+                    <span class="decision-desc">Approve this business | الموافقة على هذه المنشأة</span>
+                  </span>
+                </label>
+                <label class="decision-option">
+                  <input type="radio" name="decision" value="changes_requested" required>
+                  <span class="decision-text">
+                    <span class="decision-title">Request Changes | طلب تعديلات</span>
+                    <span class="decision-desc">Request specific changes | طلب تعديلات محددة</span>
+                  </span>
+                </label>
+                <label class="decision-option">
+                  <input type="radio" name="decision" value="reject" required>
+                  <span class="decision-text">
+                    <span class="decision-title">Reject | رفض</span>
+                    <span class="decision-desc">Reject this submission | رفض هذا الطلب</span>
+                  </span>
+                </label>
+                <label class="decision-option">
+                  <input type="radio" name="decision" value="deactivate" required>
+                  <span class="decision-text">
+                    <span class="decision-title">Deactivate | تعطيل</span>
+                    <span class="decision-desc">Deactivate this business | تعطيل هذه المنشأة</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="review-notes" class="form-label">Notes | ملاحظات</label>
+              <textarea id="review-notes" name="notes" class="form-textarea" rows="4" placeholder="Add your review notes..."></textarea>
+            </div>
+
+            <div class="form-group" id="reasons-group" style="display: none;">
+              <label class="form-label">Required Changes | التغييرات المطلوبة</label>
+              <div class="reasons-grid">
+                <label class="reason-item">
+                  <input type="checkbox" name="reasons" value="license">
+                  <span>Business License | رخصة العمل</span>
+                </label>
+                <label class="reason-item">
+                  <input type="checkbox" name="reasons" value="incorporation">
+                  <span>Articles of Incorporation | عقد التأسيس</span>
+                </label>
+                <label class="reason-item">
+                  <input type="checkbox" name="reasons" value="signature_auth">
+                  <span>Signature Authorization | تفويض التوقيع</span>
+                </label>
+                <label class="reason-item">
+                  <input type="checkbox" name="reasons" value="iban">
+                  <span>IBAN Certificate | شهادة الـIBAN</span>
+                </label>
+                <label class="reason-item">
+                  <input type="checkbox" name="reasons" value="business_info">
+                  <span>Business Information | معلومات المنشأة</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" id="cancel-review" class="btn btn-secondary">Cancel | إلغاء</button>
+              <button type="submit" id="submit-review" class="btn btn-primary">Submit Review | إرسال المراجعة</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="js/config.js"></script>
+  <script type="module" src="js/supabase-client.js"></script>
+  <script type="module" src="js/admin-review.js"></script>
+  <script type="module" src="js/auth-state-manager.js"></script>
+</body>
+</html>

@@ -1,4 +1,6 @@
 // Events page functionality
+import { supabase } from './supabase-client.js';
+
 let currentView = 'grid';
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
@@ -64,9 +66,50 @@ const eventsData = [
 
 // Initialize events page
 document.addEventListener('DOMContentLoaded', function() {
-  displayEvents(eventsData);
-  generateCalendar();
+  loadEvents();
+  safeInitCalendar();
 });
+
+// Safe calendar initialization - only runs if calendar elements exist
+function safeInitCalendar() {
+  const calendarGrid = document.getElementById('calendar-grid');
+  const monthYear = document.getElementById('calendar-month-year');
+  
+  if (!calendarGrid || !monthYear) {
+    console.warn('Calendar elements missing; skipping calendar init');
+    return; // Prevents the crash
+  }
+  
+  try {
+    generateCalendar();
+  } catch (e) {
+    console.error('generateCalendar failed:', e);
+  }
+}
+
+// Load events from database
+async function loadEvents() {
+  try {
+    const { data, error } = await supabase
+      .from('activities')
+      .select('*')
+      .eq('status', 'published')
+      .order('date', { ascending: true });
+
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      displayEvents(data);
+    } else {
+      // Fallback to sample data if no events in database
+      displayEvents(eventsData);
+    }
+  } catch (error) {
+    console.error('Error loading events:', error);
+    // Fallback to sample data on error
+    displayEvents(eventsData);
+  }
+}
 
 // Filter events
 function filterEvents() {
@@ -122,6 +165,12 @@ function switchView(view) {
 // Display events in grid
 function displayEvents(events) {
   const grid = document.getElementById('events-grid');
+  
+  if (!grid) {
+    console.warn('Events grid element not found');
+    return;
+  }
+  
   grid.innerHTML = '';
   
   if (events.length === 0) {
@@ -154,12 +203,21 @@ function createEventCard(event) {
     promotion: 'var(--warning)',
     market: 'var(--bronze)',
     workshop: 'var(--gold)',
-    sale: 'var(--warning)'
+    sale: 'var(--warning)',
+    conference: 'var(--gold)',
+    exhibition: 'var(--bronze)',
+    other: 'var(--gold)'
   };
+  
+  // Handle both sample data and database data
+  const imageUrl = event.image || event.cover_image_url || 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=500&h=300&fit=crop';
+  const contact = event.contact || event.contact_email || event.contact_phone || 'Contact organizer';
+  const time = event.time || 'TBA';
+  const location = event.location || 'Location TBA';
   
   card.innerHTML = `
     <div class="event-image">
-      <img src="${event.image}" alt="${event.title}">
+      <img src="${imageUrl}" alt="${event.title}">
       <div class="event-type-badge" style="background: ${typeColors[event.type] || 'var(--gold)'}">
         ${event.type.charAt(0).toUpperCase() + event.type.slice(1)}
       </div>
@@ -171,18 +229,18 @@ function createEventCard(event) {
           <i class="fas fa-calendar"></i> ${formattedDate}
         </span>
         <span class="event-time">
-          <i class="fas fa-clock"></i> ${event.time}
+          <i class="fas fa-clock"></i> ${time}
         </span>
         <span class="event-location">
-          <i class="fas fa-map-marker-alt"></i> ${event.location}
+          <i class="fas fa-map-marker-alt"></i> ${location}
         </span>
       </div>
-      <p class="event-description">${event.description}</p>
+      <p class="event-description">${event.description || 'No description available.'}</p>
       <div class="event-actions">
         <button class="event-btn primary" onclick="showEventDetails(${event.id})">
           Learn More
         </button>
-        <button class="event-btn secondary" onclick="contactEvent('${event.contact}')">
+        <button class="event-btn secondary" onclick="contactEvent('${contact}')">
           Contact
         </button>
       </div>
@@ -196,6 +254,12 @@ function createEventCard(event) {
 function generateCalendar() {
   const calendarGrid = document.getElementById('calendar-grid');
   const monthYear = document.getElementById('calendar-month-year');
+  
+  // Safety checks
+  if (!calendarGrid || !monthYear) {
+    console.warn('Calendar elements not found');
+    return;
+  }
   
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -301,32 +365,227 @@ function contactEvent(contact) {
 }
 
 // Open event form modal
-function openEventForm() {
-  document.getElementById('event-form-modal').classList.add('active');
-  document.body.style.overflow = 'hidden';
+export function openEventForm() {
+  console.log('openEventForm called');
+  const modal = document.getElementById('event-form-modal');
+  console.log('Modal element:', modal);
+  
+  if (modal) {
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    loadUserBusinesses();
+    console.log('Event form modal opened');
+  } else {
+    console.error('Event form modal not found!');
+  }
 }
 
 // Close event form modal
 function closeEventForm() {
-  document.getElementById('event-form-modal').classList.remove('active');
-  document.body.style.overflow = 'auto';
+  const modal = document.getElementById('event-form-modal');
+  if (modal) {
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    resetEventForm();
+  }
+}
+
+// Load user's businesses for the dropdown
+async function loadUserBusinesses() {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      hideBusinessSelection();
+      return;
+    }
+
+    const { data: businesses, error } = await supabase
+      .from('businesses')
+      .select('id, name')
+      .eq('owner_id', user.id)
+      .eq('is_active', true);
+
+    if (error) throw error;
+
+    const businessSelect = document.getElementById('event-business');
+    if (businessSelect) {
+      businessSelect.innerHTML = '<option value="">Select a business...</option>';
+      
+      if (businesses && businesses.length > 0) {
+        businesses.forEach(business => {
+          const option = document.createElement('option');
+          option.value = business.id;
+          option.textContent = business.name;
+          businessSelect.appendChild(option);
+        });
+      } else {
+        businessSelect.innerHTML = '<option value="">No businesses found. Please create a business first.</option>';
+        businessSelect.disabled = true;
+      }
+    }
+  } catch (error) {
+    console.error('Error loading businesses:', error);
+    hideBusinessSelection();
+  }
+}
+
+// Hide business selection for guests
+function hideBusinessSelection() {
+  const businessSelection = document.getElementById('business-selection');
+  if (businessSelection) {
+    businessSelection.style.display = 'none';
+  }
+}
+
+// Reset event form
+function resetEventForm() {
+  const form = document.getElementById('event-creation-form');
+  if (form) {
+    form.reset();
+  }
+  
+  const statusMessage = document.getElementById('event-status-message');
+  if (statusMessage) {
+    statusMessage.style.display = 'none';
+    statusMessage.textContent = '';
+  }
+}
+
+// Show status message
+function showStatusMessage(message, type = 'info') {
+  const statusMessage = document.getElementById('event-status-message');
+  if (statusMessage) {
+    statusMessage.style.display = 'block';
+    statusMessage.textContent = message;
+    statusMessage.style.backgroundColor = type === 'error' ? '#ff4444' : type === 'success' ? '#44ff44' : '#4444ff';
+    statusMessage.style.color = '#fff';
+  }
 }
 
 // Handle event form submission
-document.getElementById('event-submission-form').addEventListener('submit', function(e) {
-  e.preventDefault();
+async function handleEventSubmission() {
+  const form = document.getElementById('event-creation-form');
+  if (!form) return;
+
+  const submitBtn = document.getElementById('submit-event');
+  const originalText = submitBtn.textContent;
   
-  const submitBtn = this.querySelector('button[type="submit"]');
-  const originalText = submitBtn.innerHTML;
-  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+  // Show loading state
+  submitBtn.textContent = 'Creating...';
   submitBtn.disabled = true;
-  
-  setTimeout(() => {
-    alert('Thank you for submitting your event! We\'ll review it and get back to you within 24 hours.');
-    this.reset();
-    closeEventForm();
-    submitBtn.innerHTML = originalText;
+
+  try {
+    const formData = new FormData(form);
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    // Validate required fields
+    const title = formData.get('title').trim();
+    const date = formData.get('date');
+    const type = formData.get('type');
+    const businessId = formData.get('business_id');
+
+    if (!title) throw new Error('Event title is required');
+    if (!date) throw new Error('Event date is required');
+    if (!type) throw new Error('Event type is required');
+    if (!businessId) throw new Error('Please select a business');
+
+    // Prepare event data
+    const eventData = {
+      created_by: user.id,
+      business_id: businessId,
+      type: type,
+      title: title,
+      description: formData.get('description').trim() || null,
+      date: date,
+      time: formData.get('time') || null,
+      end_date: formData.get('end_date') || null,
+      end_time: formData.get('end_time') || null,
+      location: formData.get('location').trim() || null,
+      contact_email: formData.get('contact_email').trim() || null,
+      contact_phone: formData.get('contact_phone').trim() || null,
+      link: formData.get('link').trim() || null,
+      status: 'published' // For authenticated users with businesses
+    };
+
+    // Handle image upload if provided
+    const imageFile = formData.get('cover_image');
+    if (imageFile && imageFile.size > 0) {
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `${user.id}/events/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('business-media')
+        .upload(fileName, imageFile, { upsert: false });
+      
+      if (uploadError) throw uploadError;
+      
+      const { data: publicUrl } = supabase.storage
+        .from('business-media')
+        .getPublicUrl(fileName);
+      
+      eventData.cover_image_url = publicUrl.publicUrl;
+    }
+
+    // Insert event into database
+    const { data, error } = await supabase
+      .from('activities')
+      .insert([eventData])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Success
+    showStatusMessage('Event created successfully! It\'s now live on the site.', 'success');
+    
+    // Close modal after a short delay
+    setTimeout(() => {
+      closeEventForm();
+      // Refresh the events list
+      loadEvents();
+    }, 1500);
+
+  } catch (error) {
+    console.error('Error creating event:', error);
+    showStatusMessage('Failed to create event: ' + error.message, 'error');
+  } finally {
+    // Restore button state
+    submitBtn.textContent = originalText;
     submitBtn.disabled = false;
-  }, 2000);
+  }
+}
+
+// Initialize event listeners when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  // Event form modal listeners
+  const eventModal = document.getElementById('event-form-modal');
+  const closeBtn = document.getElementById('close-event-modal');
+  const cancelBtn = document.getElementById('cancel-event');
+  const submitBtn = document.getElementById('submit-event');
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeEventForm);
+  }
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', closeEventForm);
+  }
+
+  if (submitBtn) {
+    submitBtn.addEventListener('click', handleEventSubmission);
+  }
+
+  // Close modal when clicking outside
+  if (eventModal) {
+    eventModal.addEventListener('click', function(e) {
+      if (e.target === eventModal) {
+        closeEventForm();
+      }
+    });
+  }
 });
 

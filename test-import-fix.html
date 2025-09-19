@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Fix Test</title>
+    <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+    <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: white; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 8px; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+        button { padding: 10px 20px; margin: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2563eb; }
+        pre { background: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Import Fix Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Test SUPABASE_ENABLED Import</h2>
+        <p>Verify that SUPABASE_ENABLED is properly imported and accessible</p>
+        <button onclick="testSupabaseEnabled()">Test SUPABASE_ENABLED</button>
+        <div id="enabled-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test Supabase Client Import</h2>
+        <p>Verify that supabase client is properly imported and working</p>
+        <button onclick="testSupabaseClient()">Test Supabase Client</button>
+        <div id="client-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test Auth State Manager</h2>
+        <p>Verify that auth-state-manager can import both SUPABASE_ENABLED and supabase</p>
+        <button onclick="testAuthStateManager()">Test Auth State Manager</button>
+        <div id="auth-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Console Logs</h2>
+        <p>Check browser console for any import errors</p>
+        <button onclick="checkConsoleLogs()">Check Console Logs</button>
+        <div id="console-result"></div>
+    </div>
+
+    <script type="module">
+        // Test 1: SUPABASE_ENABLED Import
+        window.testSupabaseEnabled = async () => {
+            const resultDiv = document.getElementById('enabled-result');
+            resultDiv.innerHTML = '<p class="info">Testing SUPABASE_ENABLED import...</p>';
+            
+            try {
+                const { SUPABASE_ENABLED } = await import('./supabase-client.js');
+                
+                if (SUPABASE_ENABLED === true) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ SUPABASE_ENABLED imported successfully</p>
+                        <p class="info">Value: ${SUPABASE_ENABLED}</p>
+                        <p class="info">Type: ${typeof SUPABASE_ENABLED}</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="error">❌ SUPABASE_ENABLED has unexpected value</p>
+                        <p class="info">Value: ${SUPABASE_ENABLED}</p>
+                        <p class="info">Type: ${typeof SUPABASE_ENABLED}</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error importing SUPABASE_ENABLED:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 2: Supabase Client Import
+        window.testSupabaseClient = async () => {
+            const resultDiv = document.getElementById('client-result');
+            resultDiv.innerHTML = '<p class="info">Testing supabase client import...</p>';
+            
+            try {
+                const { supabase } = await import('./supabase-client.js');
+                
+                if (supabase && typeof supabase.auth === 'object') {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Supabase client imported successfully</p>
+                        <p class="info">Auth module: ${typeof supabase.auth}</p>
+                        <p class="info">Storage module: ${typeof supabase.storage}</p>
+                        <p class="info">Database module: ${typeof supabase.from}</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ Supabase client not properly initialized</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error importing supabase client:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 3: Auth State Manager Import
+        window.testAuthStateManager = async () => {
+            const resultDiv = document.getElementById('auth-result');
+            resultDiv.innerHTML = '<p class="info">Testing auth-state-manager import...</p>';
+            
+            try {
+                // This should not throw an error now
+                const authModule = await import('./js/auth-state-manager.js');
+                
+                if (authModule.AuthStateManager) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ AuthStateManager imported successfully</p>
+                        <p class="info">Class available: ${typeof authModule.AuthStateManager}</p>
+                        <p class="info">No ReferenceError for SUPABASE_ENABLED</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ AuthStateManager not found in module</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error importing auth-state-manager:</p>
+                    <pre>${error.message}</pre>
+                    <p class="info">This should be fixed now!</p>
+                `;
+            }
+        };
+
+        // Test 4: Console Logs
+        window.checkConsoleLogs = () => {
+            const resultDiv = document.getElementById('console-result');
+            
+            // Capture console logs
+            const originalLog = console.log;
+            const originalError = console.error;
+            const originalWarn = console.warn;
+            
+            let logs = [];
+            
+            console.log = (...args) => {
+                logs.push(['LOG', ...args]);
+                originalLog.apply(console, args);
+            };
+            
+            console.error = (...args) => {
+                logs.push(['ERROR', ...args]);
+                originalError.apply(console, args);
+            };
+            
+            console.warn = (...args) => {
+                logs.push(['WARN', ...args]);
+                originalWarn.apply(console, args);
+            };
+            
+            // Restore after a short delay
+            setTimeout(() => {
+                console.log = originalLog;
+                console.error = originalError;
+                console.warn = originalWarn;
+                
+                const errorLogs = logs.filter(log => log[0] === 'ERROR');
+                const warnLogs = logs.filter(log => log[0] === 'WARN');
+                
+                resultDiv.innerHTML = `
+                    <p class="info">Console check complete</p>
+                    <p class="info">Total logs: ${logs.length}</p>
+                    <p class="info">Errors: ${errorLogs.length}</p>
+                    <p class="info">Warnings: ${warnLogs.length}</p>
+                    ${errorLogs.length > 0 ? `
+                        <p class="error">Errors found:</p>
+                        <pre>${errorLogs.map(log => log.slice(1).join(' ')).join('\n')}</pre>
+                    ` : '<p class="success">✅ No errors found</p>'}
+                `;
+            }, 1000);
+        };
+
+        // Auto-run on load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🔧 Import Fix Test loaded');
+            console.log('Click the buttons above to test the fixes');
+        });
+    </script>
+</body>
+</html>

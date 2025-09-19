@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <script type="module" src="/js/supabase-client.js?v=20"></script>
+  <script type="module" src="/js/site-header.js?v=1"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset Password | Chamber122</title>
+  <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+  <link rel="stylesheet" href="css/style.css?v=16">
+  <link rel="stylesheet" href="css/auth.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/header.css?v=1">
+</head>
+<body>
+  <div id="site-header"></div>
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-form">
+        <h2 class="form-title">Reset Your Password</h2>
+        <p class="form-subtitle">Enter your new password below</p>
+        
+        <form id="resetForm">
+          <div class="form-group">
+            <label for="newPassword" class="form-label">New Password</label>
+            <div class="password-field">
+              <input type="password" id="newPassword" class="form-input" placeholder="Enter new password" required>
+              <button type="button" class="password-toggle" onclick="togglePassword('newPassword')">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="confirmPassword" class="form-label">Confirm New Password</label>
+            <div class="password-field">
+              <input type="password" id="confirmPassword" class="form-input" placeholder="Confirm new password" required>
+              <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword')">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          
+          <button type="submit" id="resetSubmit" class="btn btn-primary">Update Password</button>
+        </form>
+        
+        <div class="form-footer">
+          <a href="auth.html" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            Back to Login
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/supabase-client.js"></script>
+  <script type="module" src="js/password-reset.js"></script>
+  <script type="module">
+    import { updatePassword } from '/js/password-reset.js';
+    
+    document.getElementById('resetForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      
+      if (newPassword !== confirmPassword) {
+        alert('Passwords do not match');
+        return;
+      }
+      
+      if (newPassword.length < 6) {
+        alert('Password must be at least 6 characters');
+        return;
+      }
+      
+      const btn = document.getElementById('resetSubmit');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+      btn.disabled = true;
+      
+      try {
+        await updatePassword(newPassword);
+        alert('Password updated successfully! You can now log in with your new password.');
+        window.location.href = '/auth.html';
+      } catch (error) {
+        alert('Failed to update password: ' + error.message);
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    });
+  </script>
+  
+  <script>
+    function togglePassword(fieldId) {
+      const field = document.getElementById(fieldId);
+      const toggle = field.parentNode.querySelector('.password-toggle i');
+      
+      if (field.type === 'password') {
+        field.type = 'text';
+        toggle.classList.remove('fa-eye');
+        toggle.classList.add('fa-eye-slash');
+      } else {
+        field.type = 'password';
+        toggle.classList.remove('fa-eye-slash');
+        toggle.classList.add('fa-eye');
+      }
+    }
+  </script>
+</body>
+</html>
+
+
+
+
+

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Header Menu Test</title>
+    <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+    <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Header Menu Diagnostic Test</h1>
+        
+        <div class="test-section">
+            <h2>1. DOM Element Check</h2>
+            <div id="accountMenu"></div>
+            <p>If you see a menu below this, the script is working!</p>
+        </div>
+        
+        <div class="test-section">
+            <h2>2. Console Output</h2>
+            <p>Open browser DevTools (F12) and check the Console tab for messages starting with 🔧, ✅, ❌</p>
+        </div>
+        
+        <div class="test-section">
+            <h2>3. Manual Tests</h2>
+            <button onclick="testAuth()">Test Authentication</button>
+            <button onclick="testProfile()">Test Profile</button>
+            <button onclick="testMenu()">Test Menu Render</button>
+        </div>
+    </div>
+    
+    <script type="module" src="/shared/header-menu.js"></script>
+    
+    <script>
+        // Test functions
+        async function testAuth() {
+            try {
+                const { supabase } = await import('/js/supabase-client.js');
+                const { data: { user }, error } = await supabase.auth.getUser();
+                console.log('Auth test result:', { user: user?.email || null, error });
+                alert(`Auth test: ${user ? 'Logged in as ' + user.email : 'Not logged in'}`);
+            } catch (e) {
+                console.error('Auth test error:', e);
+                alert('Auth test failed: ' + e.message);
+            }
+        }
+        
+        async function testProfile() {
+            try {
+                const { supabase } = await import('/js/supabase-client.js');
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    alert('Not logged in - cannot test profile');
+                    return;
+                }
+                
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+                
+                console.log('Profile test result:', { data, error });
+                alert(`Profile test: ${data ? JSON.stringify(data) : 'No profile found'}`);
+            } catch (e) {
+                console.error('Profile test error:', e);
+                alert('Profile test failed: ' + e.message);
+            }
+        }
+        
+        function testMenu() {
+            const menu = document.getElementById('accountMenu');
+            console.log('Menu element:', menu);
+            console.log('Menu innerHTML:', menu?.innerHTML || 'Empty');
+            alert(`Menu test: ${menu?.innerHTML ? 'Menu rendered' : 'Menu empty'}`);
+        }
+    </script>
+    
+    <style>
+        .test-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            border: 1px solid #333;
+            border-radius: 8px;
+        }
+        
+        button {
+            background: #f2c64b;
+            color: #1a1a1a;
+            border: none;
+            padding: 0.5rem 1rem;
+            margin: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #e6b800;
+        }
+    </style>
+</body>
+</html>

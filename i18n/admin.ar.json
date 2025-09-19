@@ -1,0 +1,20 @@
+{
+  "page": {
+    "title": "لوحة الإدارة",
+    "subtitle": "إدارة منصة تشامبر 122"
+  },
+  "sections": {
+    "users": "المستخدمون",
+    "businesses": "المشاريع",
+    "events": "الفعاليات",
+    "announcements": "الإعلانات",
+    "settings": "الإعدادات"
+  },
+  "actions": {
+    "approve": "موافقة",
+    "reject": "رفض",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "view": "عرض"
+  }
+}

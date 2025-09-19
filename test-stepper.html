@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stepper Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: white; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 8px; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+        button { padding: 10px 20px; margin: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2563eb; }
+        pre { background: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Stepper Navigation Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Stepper Navigation</h2>
+        <p>This will test the stepper navigation in your auth.html page.</p>
+        
+        <button onclick="testStepperNavigation()">Test Stepper Navigation</button>
+        <button onclick="enableDebugBypass()">Enable Debug Bypass</button>
+        <button onclick="disableDebugBypass()">Disable Debug Bypass</button>
+        
+        <div id="stepper-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Console Commands</h2>
+        <p>Run these commands in your browser console on the auth.html page:</p>
+        <pre>
+// Enable debug bypass (skips validation)
+window.SIGNUP_DEBUG_BYPASS = true;
+
+// Disable debug bypass
+window.SIGNUP_DEBUG_BYPASS = false;
+
+// Check current step
+console.log('Current step:', window.currentStep);
+
+// Force show step 2
+showStep(2);
+
+// Check if stepper is initialized
+console.log('Stepper initialized:', window.currentStep !== undefined);
+        </pre>
+    </div>
+
+    <script>
+        function testStepperNavigation() {
+            const resultDiv = document.getElementById('stepper-result');
+            resultDiv.innerHTML = '<p class="info">Testing stepper navigation...</p>';
+            
+            // Open auth.html in new tab for testing
+            const authUrl = 'auth.html#signup';
+            const newWindow = window.open(authUrl, '_blank');
+            
+            if (newWindow) {
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Opened auth.html in new tab</p>
+                    <p class="info">Now test the stepper navigation:</p>
+                    <ol>
+                        <li>Fill in the business information (Step 1)</li>
+                        <li>Click "Next" to go to Step 2</li>
+                        <li>Upload a logo (optional) and click "Next"</li>
+                        <li>Upload required documents (Step 3) and click "Next"</li>
+                        <li>Enter email/password (Step 4) and click "Next"</li>
+                    </ol>
+                    <p class="info">If it doesn't work, try enabling debug bypass in the console.</p>
+                `;
+            } else {
+                resultDiv.innerHTML = '<p class="error">❌ Could not open auth.html (popup blocked?)</p>';
+            }
+        }
+
+        function enableDebugBypass() {
+            const resultDiv = document.getElementById('stepper-result');
+            resultDiv.innerHTML = `
+                <p class="success">✅ Debug bypass enabled</p>
+                <p class="info">Run this in the console on auth.html:</p>
+                <pre>window.SIGNUP_DEBUG_BYPASS = true;</pre>
+                <p class="info">This will skip validation and allow free navigation between steps.</p>
+            `;
+        }
+
+        function disableDebugBypass() {
+            const resultDiv = document.getElementById('stepper-result');
+            resultDiv.innerHTML = `
+                <p class="success">✅ Debug bypass disabled</p>
+                <p class="info">Run this in the console on auth.html:</p>
+                <pre>window.SIGNUP_DEBUG_BYPASS = false;</pre>
+                <p class="info">This will re-enable validation for proper form flow.</p>
+            `;
+        }
+
+        // Auto-run on load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🧪 Stepper Test loaded');
+            console.log('Click "Test Stepper Navigation" to open auth.html and test the stepper');
+        });
+    </script>
+</body>
+</html>

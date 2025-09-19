@@ -1,0 +1,100 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  BASE_URL: http://localhost:3000
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+        
+      - name: Build application
+        run: npm run build || echo "No build step required for static site"
+        
+      - name: Start application
+        run: |
+          npm run start &
+          sleep 5
+          npx wait-on http://localhost:3000 --timeout 30000
+          
+      - name: Setup test environment
+        run: |
+          cp env.e2e.example .env.e2e
+          echo "BASE_URL=${{ env.BASE_URL }}" >> .env.e2e
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env.e2e
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env.e2e
+          echo "SUPABASE_SERVICE_ROLE=${{ secrets.SUPABASE_SERVICE_ROLE }}" >> .env.e2e
+          echo "ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}" >> .env.e2e
+          echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" >> .env.e2e
+          echo "MSME_PENDING_EMAIL=${{ secrets.MSME_PENDING_EMAIL }}" >> .env.e2e
+          echo "MSME_PENDING_PASSWORD=${{ secrets.MSME_PENDING_PASSWORD }}" >> .env.e2e
+          echo "MSME_APPROVED_EMAIL=${{ secrets.MSME_APPROVED_EMAIL }}" >> .env.e2e
+          echo "MSME_APPROVED_PASSWORD=${{ secrets.MSME_APPROVED_PASSWORD }}" >> .env.e2e
+          echo "GUEST_EMAIL=${{ secrets.GUEST_EMAIL || 'guest@demo.com' }}" >> .env.e2e
+          
+      - name: Seed test data
+        run: npm run seed:e2e
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          MSME_PENDING_EMAIL: ${{ secrets.MSME_PENDING_EMAIL }}
+          MSME_PENDING_PASSWORD: ${{ secrets.MSME_PENDING_PASSWORD }}
+          MSME_APPROVED_EMAIL: ${{ secrets.MSME_APPROVED_EMAIL }}
+          MSME_APPROVED_PASSWORD: ${{ secrets.MSME_APPROVED_PASSWORD }}
+          GUEST_EMAIL: ${{ secrets.GUEST_EMAIL || 'guest@demo.com' }}
+          
+      - name: Run E2E tests
+        run: npm run test:e2e
+          
+      - name: Stop application
+        if: always()
+        run: |
+          pkill -f "python.*http.server" || true
+          pkill -f "npm.*start" || true
+          
+      - name: Cleanup test data
+        if: always()
+        run: npm run clean:e2e
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+          
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: e2e-report/
+          retention-days: 30
+          
+      - name: Upload test videos
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-videos
+          path: test-results/
+          retention-days: 7

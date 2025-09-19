@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAB Debug Test</title>
+  <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+</head>
+<body>
+  <h1>FAB Button Debug Test</h1>
+  <p>Click the red button below to test if it works:</p>
+  
+  <!-- Red FAB Button -->
+  <button id="fabAddBulletin" aria-label="Add bulletin"
+    style="position:fixed;right:20px;bottom:20px;width:56px;height:56px;border-radius:50%;
+           border:none;background:#e11d48;color:#fff;font-size:28px;line-height:0;
+           box-shadow:0 8px 24px rgba(0,0,0,.35);cursor:pointer;z-index:9999;">+</button>
+
+  <div id="debug-info" style="margin: 20px; padding: 20px; background: #f0f0f0; border-radius: 8px;">
+    <h3>Debug Information:</h3>
+    <div id="results"></div>
+  </div>
+
+  <script type="module">
+    // Test 1: Check if button exists
+    const fab = document.getElementById('fabAddBulletin');
+    const results = document.getElementById('results');
+    
+    results.innerHTML += `<p><strong>1. Button exists:</strong> ${fab ? 'YES ✓' : 'NO ✗'}</p>`;
+    
+    if (!fab) {
+      results.innerHTML += `<p style="color: red;">ERROR: FAB button not found!</p>`;
+    } else {
+      results.innerHTML += `<p style="color: green;">Button found: ${fab.tagName}</p>`;
+    }
+    
+    // Test 2: Check Supabase import
+    try {
+      const { supabase } = await import('/js/supabase-client.js');
+      results.innerHTML += `<p><strong>2. Supabase import:</strong> SUCCESS ✓</p>`;
+      
+      // Test 3: Check if user is logged in
+      const { data: { user } } = await supabase.auth.getUser();
+      results.innerHTML += `<p><strong>3. User logged in:</strong> ${user ? 'YES ✓ (' + user.email + ')' : 'NO ✗'}</p>`;
+      
+      // Test 4: Add simple click handler
+      fab.addEventListener('click', () => {
+        alert('FAB button clicked! This proves the button works.');
+        results.innerHTML += `<p style="color: green;"><strong>4. Button click:</strong> WORKING ✓</p>`;
+      });
+      
+      results.innerHTML += `<p><strong>4. Click handler added:</strong> SUCCESS ✓</p>`;
+      
+    } catch (error) {
+      results.innerHTML += `<p style="color: red;"><strong>2. Supabase import:</strong> FAILED ✗ - ${error.message}</p>`;
+    }
+    
+    // Test 5: Check for any console errors
+    const originalError = console.error;
+    console.error = function(...args) {
+      results.innerHTML += `<p style="color: red;"><strong>Console Error:</strong> ${args.join(' ')}</p>`;
+      originalError.apply(console, args);
+    };
+  </script>
+</body>
+</html>

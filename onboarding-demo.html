@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Onboarding Checklist Demo | Chamber122</title>
+  <link rel="stylesheet" href="css/style.css?v=16">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .demo-controls {
+      background: rgba(31, 41, 55, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(75, 85, 99, 0.3);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .status-toggle {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    
+    .status-toggle button {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #60a5fa;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .status-toggle button:hover {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: rgba(59, 130, 246, 0.5);
+    }
+    
+    .status-toggle button.active {
+      background: rgba(34, 197, 94, 0.2);
+      border-color: rgba(34, 197, 94, 0.5);
+      color: #4ade80;
+    }
+    
+    .demo-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    
+    .demo-actions button {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .demo-actions button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    
+    .demo-actions button.secondary {
+      background: linear-gradient(135deg, #6b7280, #4b5563);
+    }
+    
+    .demo-actions button.secondary:hover {
+      box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="container mx-auto px-4 py-8">
+    <!-- Demo Controls -->
+    <div class="demo-controls">
+      <h1 class="text-3xl font-bold text-white mb-4">
+        Onboarding Checklist Demo
+        <span class="text-lg font-normal text-gray-400 block">عرض توضيحي لقائمة التحقق من التسجيل</span>
+      </h1>
+      
+      <p class="text-gray-300 mb-4">
+        This demo shows the two-tier onboarding checklist component with Arabic and English labels. 
+        Toggle items to see the progress bars update in real-time.
+      </p>
+      
+      <div class="status-toggle">
+        <button onclick="toggleAllRequired()">Toggle All Required</button>
+        <button onclick="toggleAllRecommended()">Toggle All Recommended</button>
+        <button onclick="resetAll()">Reset All</button>
+        <button onclick="completeAll()">Complete All</button>
+      </div>
+      
+      <div class="demo-actions">
+        <button onclick="exportStatus()">Export Status</button>
+        <button class="secondary" onclick="importStatus()">Import Status</button>
+        <button class="secondary" onclick="showStatus()">Show Current Status</button>
+      </div>
+    </div>
+
+    <!-- Onboarding Checklist Container -->
+    <div id="onboarding-checklist"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/onboarding-checklist.js"></script>
+  <script>
+    // Initialize the onboarding checklist
+    let checklist;
+    
+    // Sample status data
+    const initialStatus = {
+      businessName: true,
+      industryCountry: true,
+      businessLogo: false,
+      businessLicense: false,
+      articlesIncorporation: false,
+      signatureAuthorization: false,
+      ibanCertificate: false,
+      contactEmail: true,
+      phoneWhatsapp: true,
+      businessDescription: false,
+      aboutStory: false,
+      businessCategory: false,
+      socialMediaLinks: false,
+      physicalAddress: false,
+      googleMapsLink: false,
+      serviceArea: false,
+      openingHours: false,
+      languagesSupported: false,
+      numberEmployees: false,
+      coverImage: false,
+      galleryPortfolio: false,
+      introVideo: false,
+      certificatesAwards: false
+    };
+
+    // Initialize checklist
+    document.addEventListener('DOMContentLoaded', () => {
+      checklist = new OnboardingChecklist('onboarding-checklist', initialStatus);
+      
+      // Listen for completion events
+      document.getElementById('onboarding-checklist').addEventListener('onboardingItemComplete', (e) => {
+        console.log('Item completed:', e.detail);
+        showNotification(`Completed: ${e.detail.itemName}`);
+      });
+    });
+
+    // Demo functions
+    function toggleAllRequired() {
+      const requiredKeys = ['businessName', 'industryCountry', 'businessLogo', 'businessLicense', 
+                           'articlesIncorporation', 'signatureAuthorization', 'ibanCertificate'];
+      const currentStatus = checklist.getStatus();
+      const newStatus = {};
+      
+      requiredKeys.forEach(key => {
+        newStatus[key] = !currentStatus[key];
+      });
+      
+      checklist.updateStatus(newStatus);
+      showNotification('Toggled all required items');
+    }
+
+    function toggleAllRecommended() {
+      const recommendedKeys = ['contactEmail', 'phoneWhatsapp', 'businessDescription', 'aboutStory',
+                              'businessCategory', 'socialMediaLinks', 'physicalAddress', 'googleMapsLink',
+                              'serviceArea', 'openingHours', 'languagesSupported', 'numberEmployees',
+                              'coverImage', 'galleryPortfolio', 'introVideo', 'certificatesAwards'];
+      const currentStatus = checklist.getStatus();
+      const newStatus = {};
+      
+      recommendedKeys.forEach(key => {
+        newStatus[key] = !currentStatus[key];
+      });
+      
+      checklist.updateStatus(newStatus);
+      showNotification('Toggled all recommended items');
+    }
+
+    function resetAll() {
+      const allKeys = Object.keys(initialStatus);
+      const newStatus = {};
+      allKeys.forEach(key => {
+        newStatus[key] = false;
+      });
+      
+      checklist.updateStatus(newStatus);
+      showNotification('Reset all items');
+    }
+
+    function completeAll() {
+      const allKeys = Object.keys(initialStatus);
+      const newStatus = {};
+      allKeys.forEach(key => {
+        newStatus[key] = true;
+      });
+      
+      checklist.updateStatus(newStatus);
+      showNotification('Completed all items');
+    }
+
+    function exportStatus() {
+      const status = checklist.getStatus();
+      const dataStr = JSON.stringify(status, null, 2);
+      const dataBlob = new Blob([dataStr], {type: 'application/json'});
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'onboarding-status.json';
+      link.click();
+      URL.revokeObjectURL(url);
+      showNotification('Status exported to JSON file');
+    }
+
+    function importStatus() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const status = JSON.parse(e.target.result);
+              checklist.updateStatus(status);
+              showNotification('Status imported successfully');
+            } catch (error) {
+              showNotification('Error importing status: Invalid JSON');
+            }
+          };
+          reader.readAsText(file);
+        }
+      };
+      input.click();
+    }
+
+    function showStatus() {
+      const status = checklist.getStatus();
+      const requiredCompleted = checklist.getRequiredCompleted();
+      const requiredTotal = checklist.getRequiredTotal();
+      const recommendedCompleted = checklist.getRecommendedCompleted();
+      const recommendedTotal = checklist.getRecommendedTotal();
+      
+      const message = `Current Status:
+Required: ${requiredCompleted}/${requiredTotal} (${checklist.getRequiredPercentage()}%)
+Recommended: ${recommendedCompleted}/${recommendedTotal} (${checklist.getRecommendedPercentage()}%)
+
+Full Status:
+${JSON.stringify(status, null, 2)}`;
+      
+      alert(message);
+    }
+
+    function showNotification(message) {
+      // Create a simple notification
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

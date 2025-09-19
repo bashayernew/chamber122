@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Update Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: white; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 8px; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+        button { padding: 10px 20px; margin: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2563eb; }
+        pre { background: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Supabase Update Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Test Supabase Client Export</h2>
+        <p>Verify that the supabase client instance is properly exported</p>
+        <button onclick="testSupabaseClient()">Test Supabase Client</button>
+        <div id="client-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test getMyBusiness Function</h2>
+        <p>Test the new getMyBusiness function</p>
+        <button onclick="testGetMyBusiness()">Test getMyBusiness</button>
+        <div id="business-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test getAccountAndCompleteness Alias</h2>
+        <p>Test the compatibility alias function</p>
+        <button onclick="testAccountCompleteness()">Test getAccountAndCompleteness</button>
+        <div id="account-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Import Compatibility</h2>
+        <p>Test that owner-activities.js can import getAccountAndCompleteness</p>
+        <button onclick="testImportCompatibility()">Test Import Compatibility</button>
+        <div id="import-result"></div>
+    </div>
+
+    <script type="module">
+        // Test 1: Supabase Client Export
+        window.testSupabaseClient = async () => {
+            const resultDiv = document.getElementById('client-result');
+            resultDiv.innerHTML = '<p class="info">Testing supabase client export...</p>';
+            
+            try {
+                const { supabase } = await import('./js/supabase.js');
+                
+                if (supabase && typeof supabase.auth.getUser === 'function') {
+                    resultDiv.innerHTML = '<p class="success">✅ Supabase client instance exported correctly</p>';
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ Supabase client not properly exported</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error importing supabase client:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 2: getMyBusiness Function
+        window.testGetMyBusiness = async () => {
+            const resultDiv = document.getElementById('business-result');
+            resultDiv.innerHTML = '<p class="info">Testing getMyBusiness function...</p>';
+            
+            try {
+                const { getMyBusiness } = await import('./js/supabase.js');
+                
+                if (typeof getMyBusiness === 'function') {
+                    const result = await getMyBusiness();
+                    
+                    if (result && typeof result === 'object' && 'business' in result && 'completeness' in result) {
+                        resultDiv.innerHTML = `
+                            <p class="success">✅ getMyBusiness function works correctly</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = '<p class="error">❌ getMyBusiness returned unexpected format</p>';
+                    }
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ getMyBusiness is not a function</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error testing getMyBusiness:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 3: getAccountAndCompleteness Alias
+        window.testAccountCompleteness = async () => {
+            const resultDiv = document.getElementById('account-result');
+            resultDiv.innerHTML = '<p class="info">Testing getAccountAndCompleteness alias...</p>';
+            
+            try {
+                const { getAccountAndCompleteness } = await import('./js/supabase.js');
+                
+                if (typeof getAccountAndCompleteness === 'function') {
+                    const result = await getAccountAndCompleteness();
+                    
+                    if (result && typeof result === 'object' && 'business' in result && 'completeness' in result) {
+                        resultDiv.innerHTML = `
+                            <p class="success">✅ getAccountAndCompleteness alias works correctly</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = '<p class="error">❌ getAccountAndCompleteness returned unexpected format</p>';
+                    }
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ getAccountAndCompleteness is not a function</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error testing getAccountAndCompleteness:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Test 4: Import Compatibility
+        window.testImportCompatibility = async () => {
+            const resultDiv = document.getElementById('import-result');
+            resultDiv.innerHTML = '<p class="info">Testing import compatibility...</p>';
+            
+            try {
+                // Test the exact import that owner-activities.js would use
+                const { getAccountAndCompleteness, supabase } = await import('./js/supabase.js');
+                
+                if (typeof getAccountAndCompleteness === 'function' && supabase) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Import compatibility test passed</p>
+                        <p class="info">owner-activities.js can now import both:</p>
+                        <pre>import { getAccountAndCompleteness, supabase } from './supabase.js';</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<p class="error">❌ Import compatibility test failed</p>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error testing import compatibility:</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        };
+
+        // Auto-run on load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🧪 Supabase Update Test loaded');
+            console.log('Click the buttons above to test each functionality');
+        });
+    </script>
+</body>
+</html>
