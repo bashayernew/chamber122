@@ -28,6 +28,10 @@
       auth: { autoRefreshToken:true, persistSession:true, detectSessionInUrl:true },
       global: { headers: { 'x-client-info': 'chamber122-debug' } }
     });
+    
+    // Make Supabase client globally available immediately
+    window._sb = sb;
+    
     const $ = (id) => document.getElementById(id);
     async function print(title, obj) {
       $('out').textContent += `\n\n=== ${title} ===\n` + JSON.stringify(obj, null, 2);
@@ -38,35 +42,40 @@
       await print('Config', { url: window.SUPABASE_URL, anonKeyShort: window.SUPABASE_ANON_KEY.slice(0,12)+'...' });
       const { data } = await sb.auth.getSession();
       await print('getSession()', data);
-      window._sb = sb;
     });
 
     window.signIn = async () => {
-      $('status').textContent = 'Signing in…';
-      $('out').textContent = '';
-      await print('Attempt', { email: $('email').value.trim() });
+      const sb = window._sb;
+      if (!sb) { document.getElementById('status').textContent = '❌ Client not ready'; return; }
+      document.getElementById('status').textContent = 'Signing in…';
+      document.getElementById('out').textContent = '';
+      await print('Attempt', { email: document.getElementById('email').value.trim() });
       try {
-        const { data, error } = await _sb.auth.signInWithPassword({
-          email: $('email').value.trim(),
-          password: $('password').value
+        const { data, error } = await sb.auth.signInWithPassword({
+          email: document.getElementById('email').value.trim(),
+          password: document.getElementById('password').value
         });
         await print('Result', { data, error });
-        $('status').textContent = error ? `❌ ${error.message}` : '✅ Logged in';
+        document.getElementById('status').textContent = error ? `❌ ${error.message}` : '✅ Logged in';
         if (!error) setTimeout(()=>location.href='/dashboard.html', 1000);
       } catch (e) {
         await print('Exception', { message: String(e), stack: e?.stack });
-        $('status').textContent = `❌ ${String(e)}`;
+        document.getElementById('status').textContent = `❌ ${String(e)}`;
       }
     };
 
     window.whoAmI = async () => {
-      const { data, error } = await _sb.auth.getUser();
+      const sb = window._sb;
+      if (!sb) { document.getElementById('status').textContent = '❌ Client not ready'; return; }
+      const { data, error } = await sb.auth.getUser();
       await print('getUser()', { data, error });
     };
 
     window.logout = async () => {
-      await _sb.auth.signOut();
-      $('status').textContent = 'Signed out';
+      const sb = window._sb;
+      if (!sb) { document.getElementById('status').textContent = '❌ Client not ready'; return; }
+      await sb.auth.signOut();
+      document.getElementById('status').textContent = 'Signed out';
     };
   </script>
 </head>
