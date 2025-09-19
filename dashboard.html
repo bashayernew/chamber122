@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | Chamber122</title>
+  <meta name="description" content="Your Chamber122 dashboard - manage your business, activities, and bulletins">
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <link rel="stylesheet" href="css/style.css?v=17">
+  <link rel="stylesheet" href="/css/header.css?v=1">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script type="module" src="/js/supabase-client.js?v=20"></script>
+  <script type="module" src="/js/site-header.js?v=1"></script>
+  <script type="module" src="/js/require-auth.js?v=1"></script>
+  <style>
+    .dashboard-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    .dashboard-header {
+      margin-bottom: 2rem;
+    }
+    
+    .dashboard-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #e8e9f3;
+      margin-bottom: 0.5rem;
+    }
+    
+    .dashboard-subtitle {
+      color: #a0a0a0;
+      font-size: 1.1rem;
+    }
+    
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+    
+    .dashboard-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
+    }
+    
+    .dashboard-card:hover {
+      border-color: #6f75ff;
+      transform: translateY(-2px);
+    }
+    
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+    
+    .card-icon.business {
+      background: linear-gradient(135deg, #6f75ff, #4f46e5);
+      color: white;
+    }
+    
+    .card-icon.activities {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+    }
+    
+    .card-icon.bulletins {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+    }
+    
+    .card-icon.directory {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      color: white;
+    }
+    
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #e8e9f3;
+      margin: 0;
+    }
+    
+    .card-description {
+      color: #a0a0a0;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    
+    .card-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      border: none;
+      cursor: pointer;
+    }
+    
+    .btn-primary {
+      background: #6f75ff;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #5a5fcf;
+      transform: translateY(-1px);
+    }
+    
+    .btn-secondary {
+      background: #2a2a2a;
+      color: #e8e9f3;
+      border: 1px solid #3a3a3a;
+    }
+    
+    .btn-secondary:hover {
+      background: #3a3a3a;
+      transform: translateY(-1px);
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+    
+    .stat-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #6f75ff;
+      margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+      color: #a0a0a0;
+      font-size: 0.9rem;
+    }
+    
+    .recent-activity {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    
+    .activity-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    
+    .activity-item:last-child {
+      border-bottom: none;
+    }
+    
+    .activity-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #2a2a2a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6f75ff;
+    }
+    
+    .activity-content {
+      flex: 1;
+    }
+    
+    .activity-title {
+      color: #e8e9f3;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+    
+    .activity-time {
+      color: #a0a0a0;
+      font-size: 0.85rem;
+    }
+    
+    .welcome-message {
+      background: linear-gradient(135deg, #6f75ff, #4f46e5);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      color: white;
+    }
+    
+    .welcome-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    
+    .welcome-text {
+      opacity: 0.9;
+      line-height: 1.6;
+    }
+    
+    @media (max-width: 768px) {
+      .dashboard-container {
+        padding: 1rem;
+      }
+      
+      .dashboard-title {
+        font-size: 2rem;
+      }
+      
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .card-actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <div class="dashboard-container">
+    <!-- Welcome Section -->
+    <div class="welcome-message">
+      <h1 class="welcome-title">Welcome to Chamber122!</h1>
+      <p class="welcome-text">Your gateway to Kuwait's MSME community. Manage your business, connect with others, and grow together.</p>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number" id="businessCount">-</div>
+        <div class="stat-label">Businesses Listed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="activityCount">-</div>
+        <div class="stat-label">Activities Posted</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="bulletinCount">-</div>
+        <div class="stat-label">Bulletins Shared</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="memberSince">-</div>
+        <div class="stat-label">Member Since</div>
+      </div>
+    </div>
+
+    <!-- Main Dashboard Grid -->
+    <div class="dashboard-grid">
+      <!-- My Business Card -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <div class="card-icon business">
+            <i class="fas fa-building"></i>
+          </div>
+          <h3 class="card-title">My Business</h3>
+        </div>
+        <p class="card-description">Manage your business profile, update information, and showcase your services to the community.</p>
+        <div class="card-actions">
+          <a href="/owner.html" class="btn btn-primary">
+            <i class="fas fa-edit"></i>
+            Manage Business
+          </a>
+          <a href="/directory.html" class="btn btn-secondary">
+            <i class="fas fa-search"></i>
+            Browse Directory
+          </a>
+        </div>
+      </div>
+
+      <!-- Activities Card -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <div class="card-icon activities">
+            <i class="fas fa-calendar-alt"></i>
+          </div>
+          <h3 class="card-title">Activities</h3>
+        </div>
+        <p class="card-description">Create and manage events, workshops, and activities. Share your expertise with the community.</p>
+        <div class="card-actions">
+          <a href="/owner-activities.html" class="btn btn-primary">
+            <i class="fas fa-plus"></i>
+            Create Activity
+          </a>
+          <a href="/events.html" class="btn btn-secondary">
+            <i class="fas fa-list"></i>
+            View All Events
+          </a>
+        </div>
+      </div>
+
+      <!-- Bulletins Card -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <div class="card-icon bulletins">
+            <i class="fas fa-bullhorn"></i>
+          </div>
+          <h3 class="card-title">Bulletins</h3>
+        </div>
+        <p class="card-description">Share announcements, job postings, and opportunities with the MSME community.</p>
+        <div class="card-actions">
+          <a href="/owner-bulletins.html" class="btn btn-primary">
+            <i class="fas fa-plus"></i>
+            Create Bulletin
+          </a>
+          <a href="/bulletin.html" class="btn btn-secondary">
+            <i class="fas fa-list"></i>
+            View All Bulletins
+          </a>
+        </div>
+      </div>
+
+      <!-- Directory Card -->
+      <div class="dashboard-card">
+        <div class="card-header">
+          <div class="card-icon directory">
+            <i class="fas fa-users"></i>
+          </div>
+          <h3 class="card-title">Community</h3>
+        </div>
+        <p class="card-description">Connect with other MSMEs, discover new opportunities, and grow your network.</p>
+        <div class="card-actions">
+          <a href="/directory.html" class="btn btn-primary">
+            <i class="fas fa-search"></i>
+            Browse Members
+          </a>
+          <a href="/community.html" class="btn btn-secondary">
+            <i class="fas fa-comments"></i>
+            Community Hub
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity Section -->
+    <div class="recent-activity">
+      <h3 style="color: #e8e9f3; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fas fa-clock"></i>
+        Recent Activity
+      </h3>
+      <div id="recentActivityList">
+        <div class="activity-item">
+          <div class="activity-icon">
+            <i class="fas fa-user-plus"></i>
+          </div>
+          <div class="activity-content">
+            <div class="activity-title">Welcome to Chamber122!</div>
+            <div class="activity-time">Just now</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-icon">
+            <i class="fas fa-info-circle"></i>
+          </div>
+          <div class="activity-content">
+            <div class="activity-title">Complete your business profile to get started</div>
+            <div class="activity-time">Get started</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from '/js/supabase-client.js';
+
+    // Load dashboard data
+    async function loadDashboardData() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Load user profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, created_at')
+          .eq('user_id', user.id)
+          .single();
+
+        // Load business count
+        const { count: businessCount } = await supabase
+          .from('businesses')
+          .select('*', { count: 'exact', head: true })
+          .eq('owner_id', user.id);
+
+        // Load activities count
+        const { count: activityCount } = await supabase
+          .from('activities')
+          .select('*', { count: 'exact', head: true })
+          .eq('owner_id', user.id);
+
+        // Load bulletins count
+        const { count: bulletinCount } = await supabase
+          .from('bulletins')
+          .select('*', { count: 'exact', head: true })
+          .eq('owner_id', user.id);
+
+        // Update stats
+        document.getElementById('businessCount').textContent = businessCount || 0;
+        document.getElementById('activityCount').textContent = activityCount || 0;
+        document.getElementById('bulletinCount').textContent = bulletinCount || 0;
+        
+        // Update member since
+        if (profile?.created_at) {
+          const memberDate = new Date(profile.created_at);
+          const memberSince = memberDate.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'short' 
+          });
+          document.getElementById('memberSince').textContent = memberSince;
+        }
+
+        // Update welcome message with user's name
+        if (profile?.full_name) {
+          const welcomeTitle = document.querySelector('.welcome-title');
+          welcomeTitle.textContent = `Welcome back, ${profile.full_name}!`;
+        }
+
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      }
+    }
+
+    // Load data when page loads
+    document.addEventListener('DOMContentLoaded', loadDashboardData);
+  </script>
+</body>
+</html>
