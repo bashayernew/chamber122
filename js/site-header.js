@@ -12,27 +12,43 @@ function initialsFrom(str='?'){ const s=(str||'?').trim(); return s ? s[0].toUpp
 async function getProfile(userId){
   if (!userId) return { full_name: '', avatar_url: '' };
 
-  // Try to fetch full_name + avatar_url. If avatar_url column doesn't exist (42703), retry without it.
-  let { data, error } = await supabase
-    .from('profiles')
-    .select('full_name, avatar_url')
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  if (error && error.code === '42703') {
-    console.warn('[site-header] avatar_url column missing on profiles; retrying without it');
-    ({ data, error } = await supabase
+  // Try different approaches to fetch profile data
+  try {
+    // First try: full_name only (most likely to work)
+    let { data, error } = await supabase
       .from('profiles')
       .select('full_name')
       .eq('user_id', userId)
-      .maybeSingle());
-  }
+      .maybeSingle();
 
-  if (error) {
-    console.warn('[site-header] profiles fetch', error);
+    if (error) {
+      console.warn('[site-header] profiles fetch failed:', error);
+      return { full_name: '', avatar_url: '' };
+    }
+
+    // If we got data, try to add avatar_url in a separate query
+    if (data) {
+      try {
+        const { data: avatarData, error: avatarError } = await supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('user_id', userId)
+          .maybeSingle();
+        
+        if (!avatarError && avatarData) {
+          data.avatar_url = avatarData.avatar_url;
+        }
+      } catch (avatarErr) {
+        // Ignore avatar_url errors, just use full_name
+        console.debug('[site-header] avatar_url not available:', avatarErr);
+      }
+    }
+
+    return data || { full_name: '', avatar_url: '' };
+  } catch (error) {
+    console.warn('[site-header] profiles fetch exception:', error);
     return { full_name: '', avatar_url: '' };
   }
-  return data || { full_name: '', avatar_url: '' };
 }
 
 function renderLoggedOut(container){
