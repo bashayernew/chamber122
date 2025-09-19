@@ -11,8 +11,27 @@ function initialsFrom(str='?'){ const s=(str||'?').trim(); return s ? s[0].toUpp
 
 async function getProfile(userId){
   if (!userId) return { full_name: '', avatar_url: '' };
-  const { data, error } = await supabase.from('profiles').select('full_name, avatar_url').eq('user_id', userId).maybeSingle();
-  if (error) console.warn('[site-header] profiles fetch', error);
+
+  // Try to fetch full_name + avatar_url. If avatar_url column doesn't exist (42703), retry without it.
+  let { data, error } = await supabase
+    .from('profiles')
+    .select('full_name, avatar_url')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error && error.code === '42703') {
+    console.warn('[site-header] avatar_url column missing on profiles; retrying without it');
+    ({ data, error } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('user_id', userId)
+      .maybeSingle());
+  }
+
+  if (error) {
+    console.warn('[site-header] profiles fetch', error);
+    return { full_name: '', avatar_url: '' };
+  }
   return data || { full_name: '', avatar_url: '' };
 }
 

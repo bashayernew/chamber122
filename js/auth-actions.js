@@ -24,7 +24,8 @@ export async function onCompleteSignup({ business, account, docs }) {
   await supabase.from('profiles').upsert({
     user_id: user.id,
     full_name: account.fullname,
-    phone: account.phone || ''
+    phone: account.phone || '',
+    avatar_url: user?.user_metadata?.avatar_url || null
   });
 
   await supabase.from('accounts').insert({
