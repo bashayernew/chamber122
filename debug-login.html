@@ -2,243 +2,110 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login Debug | Chamber122</title>
+  <title>Debug Login Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #0b0c12; color: #e9e9f1; }
+    .card { background: #101321; border: 1px solid #222640; border-radius: 16px; padding: 20px; margin: 20px 0; }
+    input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #262b45; background: #0c1022; color: #f2f3ff; }
+    button { background: #6f75ff; border: 0; font-weight: 700; cursor: pointer; }
+    .error { color: #ff6b6b; }
+    .success { color: #51cf66; }
+    pre { background: #1a1a1a; padding: 10px; border-radius: 4px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Debug Login Test</h1>
+  
+  <div class="card">
+    <h3>Test Login</h3>
+    <input type="email" id="email" placeholder="your@email.com" value="test@example.com">
+    <input type="password" id="password" placeholder="password" value="testpass123">
+    <button onclick="testLogin()">Test Login</button>
+    <div id="result"></div>
+  </div>
+
+  <div class="card">
+    <h3>Supabase Status</h3>
+    <button onclick="checkSupabase()">Check Supabase Connection</button>
+    <div id="supabase-status"></div>
+  </div>
+
+  <div class="card">
+    <h3>Console Logs</h3>
+    <pre id="logs"></pre>
+  </div>
+
   <script>
     window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
     window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
   </script>
-  <link rel="stylesheet" href="css/style.css">
-  <style>
-    body {
-      background: #0b0c12;
-      color: #e9e9f1;
-      font-family: system-ui, sans-serif;
-      padding: 2rem;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-    }
-    .debug-section {
-      background: #101321;
-      border: 1px solid #222640;
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-    .debug-title {
-      color: #6f75ff;
-      font-weight: 600;
-      margin-bottom: 1rem;
-    }
-    .form-group {
-      margin-bottom: 1rem;
-    }
-    .form-label {
-      display: block;
-      margin-bottom: 0.5rem;
-      color: #cfd3ff;
-    }
-    .form-input {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid #2a2f4a;
-      border-radius: 8px;
-      background: #14172a;
-      color: #e8e9f3;
-      font-size: 1rem;
-    }
-    .btn {
-      background: #6f75ff;
-      color: white;
-      border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      margin-right: 0.5rem;
-    }
-    .btn:hover {
-      background: #5a5fcf;
-    }
-    .btn:disabled {
-      background: #4a4f6f;
-      cursor: not-allowed;
-    }
-    .status {
-      margin-top: 1rem;
-      padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      white-space: pre-wrap;
-    }
-    .status.success {
-      background: rgba(16, 185, 129, 0.1);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      color: #10b981;
-    }
-    .status.error {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      color: #ef4444;
-    }
-    .status.info {
-      background: rgba(59, 130, 246, 0.1);
-      border: 1px solid rgba(59, 130, 246, 0.3);
-      color: #3b82f6;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Login Debug Tool</h1>
-    
-    <div class="debug-section">
-      <h2 class="debug-title">Connection Test</h2>
-      <button class="btn" onclick="testConnection()">Test Supabase Connection</button>
-      <div id="connectionStatus" class="status info" style="display: none;"></div>
-    </div>
-
-    <div class="debug-section">
-      <h2 class="debug-title">Login Test</h2>
-      <form id="loginForm">
-        <div class="form-group">
-          <label class="form-label" for="email">Email</label>
-          <input type="email" id="email" class="form-input" placeholder="your@email.com" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="password">Password</label>
-          <input type="password" id="password" class="form-input" placeholder="Your password" required>
-        </div>
-        <button type="submit" class="btn">Test Login</button>
-        <button type="button" class="btn" onclick="checkCurrentUser()">Check Current User</button>
-      </form>
-      <div id="loginStatus" class="status info" style="display: none;"></div>
-    </div>
-
-    <div class="debug-section">
-      <h2 class="debug-title">Session Info</h2>
-      <button class="btn" onclick="getSessionInfo()">Get Session Info</button>
-      <div id="sessionStatus" class="status info" style="display: none;"></div>
-    </div>
-  </div>
 
   <script type="module">
-    import { supabase } from '/js/supabase-client.js';
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
+    import { supabase } from './js/supabase-client.js';
 
-    // Test Supabase connection
-    window.testConnection = async function() {
-      const status = document.getElementById('connectionStatus');
-      status.style.display = 'block';
-      status.className = 'status info';
-      status.textContent = 'Testing connection...';
+    function log(message, type = 'info') {
+      const logs = document.getElementById('logs');
+      const timestamp = new Date().toLocaleTimeString();
+      const color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : '#e9e9f1';
+      logs.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+      console.log(`[${timestamp}] ${message}`);
+    }
 
-      try {
-        const { data, error } = await supabase.from('profiles').select('count').limit(1);
-        if (error) throw error;
-        
-        status.className = 'status success';
-        status.textContent = '✅ Connection successful! Supabase is working properly.';
-      } catch (error) {
-        status.className = 'status error';
-        status.textContent = `❌ Connection failed: ${error.message}`;
-      }
-    };
-
-    // Test login
-    document.getElementById('loginForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      
+    window.testLogin = async function() {
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
-      const status = document.getElementById('loginStatus');
+      const result = document.getElementById('result');
       
-      status.style.display = 'block';
-      status.className = 'status info';
-      status.textContent = 'Attempting login...';
-
+      log(`Attempting login with email: ${email}`);
+      
       try {
-        console.log('Attempting login with:', { email, password: '***' });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-
         if (error) {
-          throw error;
-        }
-
-        console.log('Login response:', data);
-        
-        status.className = 'status success';
-        status.textContent = `✅ Login successful!\nUser: ${data.user?.email}\nSession: ${data.session ? 'Active' : 'None'}`;
-        
-        // Auto-redirect to dashboard after successful login
-        setTimeout(() => {
-          window.location.href = '/dashboard.html';
-        }, 2000);
-        
-      } catch (error) {
-        console.error('Login error:', error);
-        status.className = 'status error';
-        status.textContent = `❌ Login failed: ${error.message}`;
-      }
-    });
-
-    // Check current user
-    window.checkCurrentUser = async function() {
-      const status = document.getElementById('loginStatus');
-      status.style.display = 'block';
-      status.className = 'status info';
-      status.textContent = 'Checking current user...';
-
-      try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        
-        if (error) throw error;
-        
-        if (user) {
-          status.className = 'status success';
-          status.textContent = `✅ User is logged in:\nEmail: ${user.email}\nID: ${user.id}\nCreated: ${user.created_at}`;
+          log(`Login error: ${error.message}`, 'error');
+          result.innerHTML = `<div class="error">Error: ${error.message}</div>`;
         } else {
-          status.className = 'status error';
-          status.textContent = '❌ No user currently logged in.';
+          log(`Login successful!`, 'success');
+          log(`User: ${JSON.stringify(data.user, null, 2)}`, 'success');
+          result.innerHTML = `<div class="success">Login successful! User ID: ${data.user.id}</div>`;
         }
-      } catch (error) {
-        status.className = 'status error';
-        status.textContent = `❌ Error checking user: ${error.message}`;
+      } catch (err) {
+        log(`Exception during login: ${err.message}`, 'error');
+        result.innerHTML = `<div class="error">Exception: ${err.message}</div>`;
       }
     };
 
-    // Get session info
-    window.getSessionInfo = async function() {
-      const status = document.getElementById('sessionStatus');
-      status.style.display = 'block';
-      status.className = 'status info';
-      status.textContent = 'Getting session info...';
-
+    window.checkSupabase = async function() {
+      const status = document.getElementById('supabase-status');
+      
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        log('Checking Supabase connection...');
         
-        if (error) throw error;
+        // Test basic connection
+        const { data, error } = await supabase.from('profiles').select('count').limit(1);
         
-        if (session) {
-          status.className = 'status success';
-          status.textContent = `✅ Active session found:\nUser: ${session.user.email}\nExpires: ${new Date(session.expires_at * 1000)}\nAccess Token: ${session.access_token.substring(0, 20)}...`;
+        if (error) {
+          log(`Supabase connection error: ${error.message}`, 'error');
+          status.innerHTML = `<div class="error">Connection Error: ${error.message}</div>`;
         } else {
-          status.className = 'status error';
-          status.textContent = '❌ No active session found.';
+          log('Supabase connection successful!', 'success');
+          status.innerHTML = `<div class="success">Supabase connected successfully</div>`;
         }
-      } catch (error) {
-        status.className = 'status error';
-        status.textContent = `❌ Error getting session: ${error.message}`;
+        
+        // Test auth
+        const { data: session } = await supabase.auth.getSession();
+        log(`Current session: ${session?.session ? 'Active' : 'None'}`, session?.session ? 'success' : 'info');
+        
+      } catch (err) {
+        log(`Supabase check exception: ${err.message}`, 'error');
+        status.innerHTML = `<div class="error">Exception: ${err.message}</div>`;
       }
     };
 
-    // Auto-check connection on page load
-    window.addEventListener('load', testConnection);
+    // Initial checks
+    log('Debug page loaded');
+    checkSupabase();
   </script>
 </body>
 </html>
