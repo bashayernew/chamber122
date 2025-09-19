@@ -10,7 +10,8 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   console.warn('[Supabase] Missing URL or ANON key on window or env.');
 }
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+// Use global instance to prevent multiple GoTrueClient instances
+export const supabase = window.supabase || createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -18,6 +19,11 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
   global: { headers: { 'x-client-info': 'chamber122-web' } }
 });
+
+// Store in window to prevent multiple instances
+if (!window.supabase) {
+  window.supabase = supabase;
+}
 
 // convenience for quick console tests:
 window._sb = supabase;
@@ -30,4 +36,33 @@ export async function getCurrentAccountState() {
     return { user: null, error };
   }
   return { user, error: null };
+}
+
+// Export getAccountAndCompleteness function
+export async function getAccountAndCompleteness() {
+  try {
+    const { data, error } = await supabase.rpc('get_account_and_completeness');
+    
+    if (error) {
+      console.error('Error getting account completeness:', error);
+      return {
+        business: null,
+        completeness: { hasBusiness: false, percentage: 0 },
+        next_step: 'signup'
+      };
+    }
+    
+    return data || {
+      business: null,
+      completeness: { hasBusiness: false, percentage: 0 },
+      next_step: 'signup'
+    };
+  } catch (error) {
+    console.error('Error in getAccountAndCompleteness:', error);
+    return {
+      business: null,
+      completeness: { hasBusiness: false, percentage: 0 },
+      next_step: 'signup'
+    };
+  }
 }
