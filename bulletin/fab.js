@@ -57,6 +57,8 @@ async function handleFABClick(e) {
   console.log('FAB clicked');
 
   const modal = document.getElementById('bulletinModal');
+  console.log('Modal element found:', modal);
+  
   if (!modal) {
     console.error('bulletinModal not found, redirecting to owner-bulletins.html');
     window.location.href = '/owner-bulletins.html';
@@ -123,15 +125,25 @@ function showUpgradeDialog(modal) {
 
 async function showComposerModal(modal) {
   try {
+    console.log('Loading composer modal...');
+    console.log('Modal element:', modal);
+    
     // Load composer HTML
     const response = await fetch('/bulletin/components/bulletin-composer.html');
+    console.log('Fetch response:', response);
+    
     if (!response.ok) {
-      throw new Error('Failed to load composer');
+      throw new Error(`Failed to load composer: ${response.status} ${response.statusText}`);
     }
     
     const composerHtml = await response.text();
+    console.log('Composer HTML loaded, length:', composerHtml.length);
+    
     modal.innerHTML = composerHtml;
     modal.classList.add('show');
+    modal.removeAttribute('hidden');
+    
+    console.log('Modal should now be visible');
     
     // Setup form handlers
     setupComposerHandlers(modal);
