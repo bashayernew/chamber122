@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Debug Session Persistence</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #0b0c12; color: #e9e9f1; }
+    .card { background: #101321; border: 1px solid #222640; border-radius: 16px; padding: 20px; margin: 20px 0; }
+    button { padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #262b45; background: #6f75ff; color: #f2f3ff; cursor: pointer; }
+    .error { color: #ff6b6b; }
+    .success { color: #51cf66; }
+    pre { background: #1a1a1a; padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; }
+    .header-preview { border: 2px solid #444; padding: 10px; margin: 10px 0; background: #1a1a1a; }
+  </style>
+</head>
+<body>
+  <h1>Session Persistence Debug</h1>
+  
+  <div class="card">
+    <h3>Test Session Hydration</h3>
+    <button onclick="testSessionHydration()">Test Session Hydration</button>
+    <div id="hydration-result"></div>
+  </div>
+
+  <div class="card">
+    <h3>Check LocalStorage</h3>
+    <button onclick="checkLocalStorage()">Check LocalStorage</button>
+    <div id="storage-result"></div>
+  </div>
+
+  <div class="card">
+    <h3>Test Header Rendering</h3>
+    <button onclick="testHeaderRendering()">Test Header Rendering</button>
+    <div id="header-result"></div>
+    <div id="header-preview" class="header-preview"></div>
+  </div>
+
+  <div class="card">
+    <h3>Console Logs</h3>
+    <pre id="logs"></pre>
+  </div>
+
+  <!-- Header mount point -->
+  <div id="site-header"></div>
+
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+
+  <script type="module">
+    import { supabase } from './js/supabase-client.js';
+    import { ensureSessionHydrated, onAnyAuthChange } from './js/auth-session.js';
+
+    function log(message, type = 'info') {
+      const logs = document.getElementById('logs');
+      const timestamp = new Date().toLocaleTimeString();
+      const color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : '#e9e9f1';
+      logs.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+      console.log(`[${timestamp}] ${message}`);
+    }
+
+    window.testSessionHydration = async function() {
+      const result = document.getElementById('hydration-result');
+      log('Testing session hydration...');
+      
+      try {
+        const session = await ensureSessionHydrated();
+        
+        if (session?.user) {
+          log(`Session hydrated successfully! User: ${session.user.email}`, 'success');
+          result.innerHTML = `<div class="success">✅ Session hydrated! User: ${session.user.email}</div>`;
+        } else {
+          log('No session found after hydration', 'error');
+          result.innerHTML = `<div class="error">❌ No session found</div>`;
+        }
+      } catch (err) {
+        log(`Hydration error: ${err.message}`, 'error');
+        result.innerHTML = `<div class="error">❌ Error: ${err.message}</div>`;
+      }
+    };
+
+    window.checkLocalStorage = function() {
+      const result = document.getElementById('storage-result');
+      log('Checking localStorage...');
+      
+      try {
+        const keys = Object.keys(localStorage).filter(k => k.includes('sb-'));
+        log(`Found ${keys.length} Supabase keys in localStorage`);
+        
+        keys.forEach(key => {
+          const value = localStorage.getItem(key);
+          log(`Key: ${key}`);
+          log(`Value length: ${value?.length} chars`);
+          if (value) {
+            try {
+              const parsed = JSON.parse(value);
+              log(`Parsed keys: ${Object.keys(parsed).join(', ')}`);
+              if (parsed.currentSession) {
+                log(`Has currentSession: ${!!parsed.currentSession.access_token}`, 'success');
+              }
+            } catch (e) {
+              log(`Could not parse ${key}: ${e.message}`, 'error');
+            }
+          }
+        });
+        
+        if (keys.length > 0) {
+          result.innerHTML = `<div class="success">✅ Found ${keys.length} Supabase keys in localStorage</div>`;
+        } else {
+          result.innerHTML = `<div class="error">❌ No Supabase keys found in localStorage</div>`;
+        }
+      } catch (err) {
+        log(`LocalStorage check error: ${err.message}`, 'error');
+        result.innerHTML = `<div class="error">❌ Error: ${err.message}</div>`;
+      }
+    };
+
+    window.testHeaderRendering = async function() {
+      const result = document.getElementById('header-result');
+      const preview = document.getElementById('header-preview');
+      log('Testing header rendering...');
+      
+      try {
+        // Import the header functions (we'll simulate them)
+        const session = await ensureSessionHydrated();
+        
+        if (session?.user) {
+          log(`Rendering logged-in header for: ${session.user.email}`, 'success');
+          preview.innerHTML = `
+            <strong>Logged In Header:</strong><br>
+            User: ${session.user.email}<br>
+            ID: ${session.user.id}<br>
+            Avatar: ${session.user.user_metadata?.avatar_url || 'None'}
+          `;
+          result.innerHTML = `<div class="success">✅ Should show logged-in header</div>`;
+        } else {
+          log('Rendering logged-out header', 'error');
+          preview.innerHTML = `<strong>Logged Out Header:</strong><br>Should show Login/Signup buttons`;
+          result.innerHTML = `<div class="error">❌ Should show logged-out header</div>`;
+        }
+      } catch (err) {
+        log(`Header rendering error: ${err.message}`, 'error');
+        result.innerHTML = `<div class="error">❌ Error: ${err.message}</div>`;
+      }
+    };
+
+    // Set up auth change listener
+    onAnyAuthChange((evt, session) => {
+      log(`Auth state changed: ${evt} - ${session ? 'Logged in' : 'Logged out'}`, session ? 'success' : 'error');
+    });
+
+    // Initial checks
+    log('Debug page loaded');
+    checkLocalStorage();
+  </script>
+</body>
+</html>
