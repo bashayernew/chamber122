@@ -2257,7 +2257,9 @@ html[dir="rtl"] .inline-dir .ltr { direction: ltr; }
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  position: relative;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
   overflow: hidden;
   box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
   font-size: 1.5rem;
