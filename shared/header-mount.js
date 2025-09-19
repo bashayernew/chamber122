@@ -1,6 +1,6 @@
 async function mountHeader() {
-  const slot = document.getElementById('siteHeader');
-  if (!slot) return console.error('header-mount: #siteHeader not found');
+  const slot = document.getElementById('site-header');
+  if (!slot) return console.error('header-mount: #site-header not found');
 
   async function getPartial() {
     try { return await (await fetch('/partials/header.html', { cache:'no-cache' })).text(); }
