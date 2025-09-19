@@ -38,7 +38,7 @@ async function loadUserProfile() {
     const { data, error } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', currentUser.id)
+      .eq('user_id', currentUser.id)
       .single();
 
     if (error) {
