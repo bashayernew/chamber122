@@ -63,12 +63,20 @@ async function handleFABClick(e) {
     return;
   }
 
+  // Debug logging
+  console.log('Current user:', currentUser);
+  console.log('User profile:', userProfile);
+  console.log('User role:', userProfile?.role);
+
   // Check user status and show appropriate dialog
   if (!currentUser) {
+    console.log('No current user, showing login dialog');
     showLoginDialog(modal);
   } else if (!isProvider(userProfile?.role)) {
+    console.log('User is not a provider, showing upgrade dialog');
     showUpgradeDialog(modal);
   } else {
+    console.log('User is a provider, showing composer modal');
     showComposerModal(modal);
   }
 }
