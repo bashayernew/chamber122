@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <script type="module" src="/js/supabase-client.js?v=20"></script>
   <script type="module" src="/js/auth-session.js?v=1"></script>
-  <script type="module" src="/js/site-header.js?v=1"></script>
+  <script type="module" src="/js/header-auth-slot.js?v=1"></script>
   <script type="module" src="/js/bulletins.js?v=2"></script>
   <style>
     /* Bulletin List Styling */
@@ -324,8 +324,67 @@
   </style>
 </head>
 <body data-type="announcement">
-  <div id="site-header"></div>
-
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="logo site-logo">
+        <img src="images/logo.png" alt="Chamber122 Logo">
+      </a>
+      <div class="nav-menu">
+        <a href="index.html" class="nav-link" data-i18n="nav.home">Home</a>
+        <a href="directory.html" class="nav-link" data-i18n="nav.directory">Directory</a>
+        <a href="events.html" class="nav-link" data-i18n="nav.events">Events</a>
+        <a href="bulletin.html" class="nav-link active" data-i18n="nav.bulletin">Bulletin</a>
+        <a href="about.html" class="nav-link" data-i18n="nav.about">About</a>
+        <a href="contact.html" class="nav-link" data-i18n="nav.contact">Contact</a>
+      </div>
+      <div class="nav-actions">
+        <!-- Language toggle -->
+        <span id="lang-toggle" class="lang-toggle" aria-label="Language">
+          <button data-lang="en" class="lang-btn" data-testid="lang-switch-en">EN</button> |
+          <button data-lang="ar" class="lang-btn" data-testid="lang-switch-ar">AR</button>
+        </span>
+        <!-- Auth slot for session-aware rendering -->
+        <span id="auth-slot">
+          <a class="btn" href="/auth.html">Login</a>
+          <a class="btn primary" href="/auth.html#signup">Sign Up &amp; Get Listed</a>
+        </span>
+      </div>
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+    <div class="mobile-menu" id="mobile-menu">
+      <a href="index.html" class="mobile-link">Home</a>
+      <a href="directory.html" class="mobile-link">Directory</a>
+      <a href="events.html" class="mobile-link">Events</a>
+      <a href="bulletin.html" class="mobile-link">Bulletin</a>
+      <a href="about.html" class="mobile-link">About</a>
+      <a href="contact.html" class="mobile-link">Contact</a>
+      <div class="mobile-divider"></div>
+      <a href="owner.html" class="mobile-link">
+        <i class="fas fa-building"></i>
+        My Business
+      </a>
+      <a href="owner-activities.html" class="mobile-link">
+        <i class="fas fa-calendar-alt"></i>
+        My Activities
+      </a>
+      <a href="admin.html" class="mobile-link">
+        <i class="fas fa-cog"></i>
+        Admin Panel
+      </a>
+      <div class="mobile-divider"></div>
+      <a href="auth.html" class="mobile-link">
+        <i class="fas fa-sign-in-alt"></i>
+        Login
+      </a>
+      <a href="get-listed.html" class="mobile-link">
+        <i class="fas fa-user-plus"></i>
+        Sign Up & Get Listed
+      </a>
+    </div>
+  </nav>
 
   <!-- Bulletin Header -->
   <section class="bulletin-header">
