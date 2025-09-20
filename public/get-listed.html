@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Listed - Chamber122</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/forms.css?v=1">
+    <link rel="stylesheet" href="/css/header.css?v=1">
+    
+    <!-- Supabase Environment -->
+    <script>
+        window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+        window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+    </script>
+    <script type="module" src="/js/supabase-client.js?v=20"></script>
+    <script type="module" src="/js/header-auth-slot.js?v=8"></script>
+</head>
+<body>
+    <div id="auth-slot">
+        <!-- Fallback for no-JS -->
+        <a class="btn" href="/auth.html">Login</a>
+        <a class="btn primary" href="/auth.html#signup">Sign Up & Get Listed</a>
+    </div>
+
+    <main style="max-width: 800px; margin: 40px auto; padding: 20px;">
+        <div class="form-card">
+            <h2 style="margin:0 0 8px">Complete Your Business Profile</h2>
+            <p class="help">Create your listing to appear in the MSME directory.</p>
+
+            <div class="stepper-nav" id="listing-steps-nav">
+                <span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            </div>
+
+            <form id="listing-form" novalidate>
+                <!-- Step 1: Basics -->
+                <section class="step" data-step="1">
+                    <div class="form-row">
+                        <div>
+                            <label class="required">Business Name</label>
+                            <input id="biz-name" placeholder="Enter your business name" required>
+                        </div>
+                        <div>
+                            <label>Tagline</label>
+                            <input id="biz-tagline" placeholder="Short one-line pitch">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label class="required">Category</label>
+                            <select id="biz-category" required>
+                                <option value="">Select a category...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="required">City</label>
+                            <select id="biz-city" required>
+                                <option value="">Select your city...</option>
+                                <option>Al Asimah</option><option>Hawalli</option><option>Farwaniya</option>
+                                <option>Jahra</option><option>Mubarak Al-Kabeer</option><option>Ahmadi</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="required">About your business</label>
+                        <textarea id="biz-description" maxlength="600"
+                            placeholder="Tell us what you offer and what makes you unique..." required></textarea>
+                        <div class="help">150–600 characters recommended.</div>
+                    </div>
+                </section>
+
+                <!-- Step 2: Contact & Links -->
+                <section class="step hidden" data-step="2">
+                    <div class="form-row">
+                        <div>
+                            <label>Email (public)</label>
+                            <input id="biz-email" type="email" placeholder="your@email.com">
+                        </div>
+                        <div>
+                            <label>Phone / WhatsApp (public)</label>
+                            <input id="biz-phone" placeholder="+965-12345678">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label>Website</label>
+                            <input id="biz-website" type="url" placeholder="https://yourwebsite.com">
+                        </div>
+                        <div>
+                            <label>Instagram</label>
+                            <input id="biz-instagram" placeholder="@yourbusiness">
+                        </div>
+                    </div>
+                    <div class="help">Provide at least one way for customers to reach you.</div>
+                </section>
+
+                <!-- Step 3: Media -->
+                <section class="step hidden" data-step="3">
+                    <div>
+                        <label class="required">Business Logo</label>
+                        <input id="biz-logo" type="file" accept="image/png,image/jpeg,image/webp" required>
+                        <div class="help">JPG/PNG/WEBP, up to 2MB.</div>
+                    </div>
+                    <div style="margin-top:12px">
+                        <label>Business Photos (optional)</label>
+                        <input id="biz-gallery" type="file" accept="image/png,image/jpeg,image/webp" multiple>
+                        <div class="help">Up to 5 photos, 2MB each.</div>
+                    </div>
+                </section>
+
+                <!-- Step 4: Story & Submit -->
+                <section class="step hidden" data-step="4">
+                    <div>
+                        <label>Why did you start this business? (optional)</label>
+                        <textarea id="biz-story" maxlength="1200"
+                            placeholder="Share your journey, inspiration, and what drives you..."></textarea>
+                    </div>
+                    <label style="display:flex;gap:8px;align-items:flex-start;margin-top:12px">
+                        <input type="checkbox" id="biz-consent" required>
+                        <span>I agree to publish this information on Chamber122.</span>
+                    </label>
+                    <div id="listing-error" class="error hidden"></div>
+                </section>
+
+                <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+                    <button type="button" class="btn-ghost" id="listing-back">Back</button>
+                    <button type="button" class="btn-primary" id="listing-next">Next</button>
+                    <button type="submit" class="btn-primary hidden" id="listing-submit">Complete Profile & Submit</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <div id="listing-toast"></div>
+
+    <script type="module" src="/js/business/create-listing.js?v=1"></script>
+</body>
+</html>
