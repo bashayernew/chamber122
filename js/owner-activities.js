@@ -1,9 +1,33 @@
-import { sb, requireAuth, getAccountAndCompleteness } from "./supabase.js";
+import { sb, requireAuth } from "./supabase.js";
 
 let userBusinesses = [];
 let userActivities = [];
 let userAccount = null;
 let isFullyLoggedIn = false;
+
+// Local implementation of getAccountAndCompleteness
+async function getAccountAndCompleteness() {
+  try {
+    const { data: { user }, error } = await sb().auth.getUser();
+    if (error) throw error;
+    if (!user) return { account: null, isFullyLoggedIn: false };
+
+    // Get business info
+    const { data: business } = await sb()
+      .from('businesses')
+      .select('*')
+      .eq('owner_user_id', user.id)
+      .maybeSingle();
+
+    return {
+      account: user,
+      isFullyLoggedIn: !!business
+    };
+  } catch (error) {
+    console.error('Error getting current account state:', error);
+    return { account: null, isFullyLoggedIn: false };
+  }
+}
 
 // Initialize activities dashboard
 async function initActivities() {

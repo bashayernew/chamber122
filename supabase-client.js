@@ -73,37 +73,6 @@ export async function getMyBusiness() {
   }
 }
 
-/**
- * Get account and completeness information
- * @returns {Promise<Object>} Account data, completeness, and next step
- */
-export async function getAccountAndCompleteness() {
-  try {
-    const { data, error } = await supabase.rpc('get_account_and_completeness');
-    
-    if (error) {
-      console.error('Error getting account completeness:', error);
-      return {
-        business: null,
-        completeness: { hasBusiness: false, percentage: 0 },
-        next_step: 'signup'
-      };
-    }
-    
-    return data || {
-      business: null,
-      completeness: { hasBusiness: false, percentage: 0 },
-      next_step: 'signup'
-    };
-  } catch (error) {
-    console.error('Error in getAccountAndCompleteness:', error);
-    return {
-      business: null,
-      completeness: { hasBusiness: false, percentage: 0 },
-      next_step: 'signup'
-    };
-  }
-}
 
 // ============================================================================
 // UTILITY FUNCTIONS

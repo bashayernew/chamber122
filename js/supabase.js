@@ -1,5 +1,33 @@
 // Import from supabase-client and re-export
-import { supabase, getCurrentAccountState } from './supabase-client.js';
+import { supabase } from './supabase-client.js';
+
+// Local implementation of getCurrentAccountState
+async function getCurrentAccountState() {
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error) throw error;
+    if (!user) return { user: null, business: null, completeness: { hasBusiness: false } };
+
+    // Get business info
+    const { data: business } = await supabase
+      .from('businesses')
+      .select('*')
+      .eq('owner_user_id', user.id)
+      .maybeSingle();
+
+    return {
+      user,
+      business,
+      completeness: {
+        hasBusiness: !!business,
+        percentage: business ? 100 : 0
+      }
+    };
+  } catch (error) {
+    console.error('Error getting current account state:', error);
+    return { user: null, business: null, completeness: { hasBusiness: false } };
+  }
+}
 
 // Re-export the main exports
 export { supabase, getCurrentAccountState };
@@ -28,7 +56,7 @@ export async function getMyBusiness() {
   const { data, error } = await supabase
     .from('businesses')
     .select('*')
-    .eq('owner_id', user.id)
+    .eq('owner_user_id', user.id)
     .single();
     
   if (error) {
