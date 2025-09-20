@@ -1,4 +1,4 @@
-// public/js/header-auth-slot.js
+// public/js/header-auth-slot.js v5
 import { supabase } from '/js/supabase-client.js';
 
 const SELS = [
@@ -112,19 +112,66 @@ async function paint() {
   if (!slot) return;
   slot.classList.add('hydrating');
 
-  const { data } = await supabase.auth.getSession();
-  const user = data?.session?.user;
-  if (!user) return renderSignedOut(slot);
+  try {
+    const { data } = await supabase.auth.getSession();
+    const user = data?.session?.user;
+    console.log('[auth-slot] paint - session check:', { hasUser: !!user, email: user?.email });
+    
+    if (!user) {
+      console.log('[auth-slot] paint - no user, rendering signed out');
+      return renderSignedOut(slot);
+    }
 
-  const profile = await getProfile(user.id);
-  renderSignedIn(slot, user, profile);
+    const profile = await getProfile(user.id);
+    console.log('[auth-slot] paint - rendering signed in for:', user.email);
+    renderSignedIn(slot, user, profile);
+  } catch (error) {
+    console.error('[auth-slot] paint error:', error);
+    renderSignedOut(slot);
+  }
 }
 
-supabase.auth.onAuthStateChange((_evt, session) => {
+// More robust auth state change handler
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('[auth-slot] auth state change:', { event, hasUser: !!session?.user, email: session?.user?.email });
+  
   const slot = document.querySelector('#auth-slot, [data-auth-slot], .auth-slot') || ensureSlot();
-  if (!slot) return;
-  if (!session?.user) renderSignedOut(slot);
-  else getProfile(session.user.id).then(p => renderSignedIn(slot, session.user, p));
+  if (!slot) {
+    console.warn('[auth-slot] no slot found for auth state change');
+    return;
+  }
+  
+  if (!session?.user) {
+    console.log('[auth-slot] auth state change - rendering signed out');
+    renderSignedOut(slot);
+  } else {
+    console.log('[auth-slot] auth state change - rendering signed in for:', session.user.email);
+    getProfile(session.user.id).then(p => renderSignedIn(slot, session.user, p));
+  }
 });
 
+// Paint on DOM ready
 document.addEventListener('DOMContentLoaded', paint);
+
+// Also paint on page show (back/forward navigation)
+window.addEventListener('pageshow', paint);
+
+// Periodic session check as fallback
+setInterval(async () => {
+  const slot = document.querySelector('#auth-slot, [data-auth-slot], .auth-slot');
+  if (!slot) return;
+  
+  try {
+    const { data } = await supabase.auth.getSession();
+    const user = data?.session?.user;
+    const isCurrentlySignedIn = slot.querySelector('#auth-avatar-btn');
+    
+    // If we think we're signed in but actually not, or vice versa, repaint
+    if ((user && !isCurrentlySignedIn) || (!user && isCurrentlySignedIn)) {
+      console.log('[auth-slot] periodic check - session mismatch, repainting');
+      paint();
+    }
+  } catch (error) {
+    console.error('[auth-slot] periodic check error:', error);
+  }
+}, 5000); // Check every 5 seconds

@@ -11,3 +11,13 @@ export const supabase = window._sb || createClient(url, anon, {
 });
 
 window._sb = supabase;
+
+// Debug session persistence
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('[supabase-client] auth state change:', { event, hasSession: !!session, email: session?.user?.email });
+});
+
+// Check session on load
+supabase.auth.getSession().then(({ data }) => {
+  console.log('[supabase-client] initial session check:', { hasSession: !!data.session, email: data.session?.user?.email });
+});
