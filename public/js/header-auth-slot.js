@@ -1,32 +1,5 @@
-/* Self-healing header auth slot */
-const PROJECT_REF = 'gidbvemmqffogakcepka';
-
-async function getSupabaseClient() {
-  // Prefer global client if another script already created it
-  if (window._sb) return window._sb;
-
-  // Try importing our client module (absolute path)
-  try {
-    const mod = await import('/js/supabase-client.js?v=20');
-    const sb = mod.supabase || window._sb;
-    if (sb) return (window._sb = sb);
-  } catch (e) { console.warn('[auth-slot] import supabase-client failed', e); }
-
-  // Last resort: create a client here
-  if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-    try {
-      const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.57.4');
-      const sb = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
-        auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true },
-        global: { headers: { 'x-client-info': 'ch122-header-auth-slot' } }
-      });
-      return (window._sb = sb);
-    } catch (e) {
-      console.warn('[auth-slot] fallback createClient failed', e);
-    }
-  }
-  return null;
-}
+/* Header auth slot using singleton client */
+import { supabase } from '/js/supabase-client.js';
 
 function findSlot() {
   return document.querySelector('#auth-slot') ||
@@ -36,12 +9,12 @@ function findSlot() {
 
 function initialsFrom(name='') { const s=(name||'').trim()||'?'; return s[0].toUpperCase(); }
 
-async function getProfile(sb, uid) {
+async function getProfile(uid) {
   if (!uid) return { full_name:'', avatar_url:'' };
   // try full_name+avatar_url; if column missing, retry with full_name only
-  let { data, error } = await sb.from('profiles').select('full_name, avatar_url').eq('user_id', uid).maybeSingle();
+  let { data, error } = await supabase.from('profiles').select('full_name, avatar_url').eq('user_id', uid).maybeSingle();
   if (error && (error.code === '42703' || (error.message||'').includes('avatar_url'))) {
-    ({ data, error } = await sb.from('profiles').select('full_name').eq('user_id', uid).maybeSingle());
+    ({ data, error } = await supabase.from('profiles').select('full_name').eq('user_id', uid).maybeSingle());
   }
   if (error) { console.warn('[auth-slot] profile fetch', error); return { full_name:'', avatar_url:'' }; }
   return data || { full_name:'', avatar_url:'' };
@@ -83,7 +56,7 @@ function renderSignedIn(slot, user, profile) {
     btn?.setAttribute('aria-expanded', open ? 'false' : 'true');
   });
   document.addEventListener('click', e => { if (!slot.contains(e.target)) { if (menu) menu.style.display='none'; btn?.setAttribute('aria-expanded','false'); }});
-  logoutBtn?.addEventListener('click', async () => { const sb = await getSupabaseClient(); await sb?.auth.signOut(); location.href='/auth.html'; });
+  logoutBtn?.addEventListener('click', async () => { await supabase.auth.signOut(); location.href='/auth.html'; });
 
   slot.classList.remove('hydrating'); slot.classList.add('hydrated');
 }
@@ -93,26 +66,23 @@ async function hydrate() {
   if (!slot) return;
   slot.classList.add('hydrating');
 
-  const sb = await getSupabaseClient();
-  if (!sb) { console.warn('[auth-slot] no supabase client'); return renderSignedOut(slot); }
-
   // If auth-session.js exists, great — but we can proceed without it.
   let email = null, user = null;
   try {
-    const { data } = await sb.auth.getSession();
+    const { data } = await supabase.auth.getSession();
     email = data?.session?.user?.email || null;
     user  = data?.session?.user || null;
   } catch (e) { console.warn('[auth-slot] getSession failed', e); }
 
   if (!email) return renderSignedOut(slot);
-  const profile = await getProfile(sb, user.id);
+  const profile = await getProfile(user.id);
   renderSignedIn(slot, user, profile);
 
   // Live updates
   try {
-    const { data: sub } = sb.auth.onAuthStateChange((_e, sess) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, sess) => {
       if (!sess?.user) return renderSignedOut(slot);
-      getProfile(sb, sess.user.id).then(p => renderSignedIn(slot, sess.user, p));
+      getProfile(sess.user.id).then(p => renderSignedIn(slot, sess.user, p));
     });
     window.addEventListener('beforeunload', () => sub?.subscription?.unsubscribe?.());
   } catch (e) { console.warn('[auth-slot] onAuthStateChange failed', e); }
