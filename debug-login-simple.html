@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Login - Simple</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background: #1a1a1a; color: white; }
+        .container { max-width: 400px; margin: 50px auto; padding: 20px; border: 1px solid #333; border-radius: 8px; background: #2a2a2a; }
+        input, button { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #555; background: #3a3a3a; color: white; }
+        button { background: #007bff; cursor: pointer; border-color: #007bff; }
+        button:hover { background: #0056b3; }
+        #status { margin-top: 15px; padding: 10px; border-radius: 4px; }
+        #status.success { background: #d4edda; color: #155724; }
+        #status.error { background: #f8d7da; color: #721c24; }
+        .log { background: #1a1a1a; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; margin-top: 10px; }
+    </style>
+    <script>
+        window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+        window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Debug Login</h1>
+        <form id="loginForm">
+            <input type="email" id="email" placeholder="Enter your email" required>
+            <input type="password" id="password" placeholder="Enter your password" required>
+            <button type="submit">Debug Login</button>
+        </form>
+        <div id="status">Ready to test...</div>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[DEBUG-LOGIN] ${message}`);
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = type;
+        }
+
+        log('Starting debug login test...');
+        
+        // Test environment
+        if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+            log('ERROR: Missing environment variables');
+            updateStatus('❌ Missing environment variables', 'error');
+        } else {
+            log('✅ Environment variables loaded');
+            log(`URL: ${window.SUPABASE_URL}`);
+            log(`Key: ${window.SUPABASE_ANON_KEY.substring(0, 20)}...`);
+        }
+
+        // Initialize Supabase
+        let supabase;
+        try {
+            supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
+                auth: {
+                    autoRefreshToken: true,
+                    persistSession: true,
+                    detectSessionInUrl: true,
+                },
+            });
+            log('✅ Supabase client created');
+        } catch (error) {
+            log(`❌ Supabase client creation failed: ${error.message}`);
+            updateStatus('❌ Client creation failed', 'error');
+        }
+
+        // Check for existing session
+        if (supabase) {
+            try {
+                const { data: sessionData } = await supabase.auth.getSession();
+                if (sessionData?.session) {
+                    log(`✅ Existing session found: ${sessionData.session.user.email}`);
+                    updateStatus(`✅ Already logged in: ${sessionData.session.user.email}`, 'success');
+                } else {
+                    log('ℹ️ No existing session');
+                }
+            } catch (error) {
+                log(`⚠️ Session check error: ${error.message}`);
+            }
+        }
+
+        // Handle login form
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            
+            log(`Attempting login for: ${email}`);
+            updateStatus('🔄 Attempting login...', 'info');
+            
+            if (!supabase) {
+                log('❌ Supabase client not available');
+                updateStatus('❌ Client not available', 'error');
+                return;
+            }
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({ 
+                    email, 
+                    password 
+                });
+                
+                if (error) {
+                    log(`❌ Login error: ${error.message}`);
+                    updateStatus(`❌ Login failed: ${error.message}`, 'error');
+                    return;
+                }
+                
+                log(`✅ Login response: ${JSON.stringify(data, null, 2)}`);
+                
+                if (data?.session?.user) {
+                    log(`✅ Session created for: ${data.session.user.email}`);
+                    updateStatus(`✅ Login successful! User: ${data.session.user.email}`, 'success');
+                    
+                    // Test session persistence
+                    setTimeout(async () => {
+                        try {
+                            const { data: sessionCheck } = await supabase.auth.getSession();
+                            if (sessionCheck?.session) {
+                                log(`✅ Session persists: ${sessionCheck.session.user.email}`);
+                            } else {
+                                log('❌ Session lost after login');
+                            }
+                        } catch (err) {
+                            log(`❌ Session check failed: ${err.message}`);
+                        }
+                    }, 1000);
+                } else {
+                    log('⚠️ Login successful but no session returned');
+                    updateStatus('⚠️ Login successful but no session (email confirmation required?)', 'error');
+                }
+                
+            } catch (err) {
+                log(`❌ Login exception: ${err.message}`);
+                updateStatus(`❌ Login failed: ${err.message}`, 'error');
+            }
+        });
+
+        log('Debug login test ready');
+    </script>
+</body>
+</html>
