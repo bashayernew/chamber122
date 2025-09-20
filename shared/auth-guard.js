@@ -1,4 +1,4 @@
-import { supabase } from '/js/supabase-client.js';
+import { supabase } from '../js/supabase-client.js';
 
 export async function requireAuth(redirect = '/auth.html#login') {
   const { data:{ user } } = await supabase.auth.getUser();

@@ -1,5 +1,5 @@
 // Bulletin List Management
-import { supabase } from '/js/supabase-client.js';
+import { supabase } from '../js/supabase-client.js';
 
 let bulletins = [];
 

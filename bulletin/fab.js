@@ -1,5 +1,5 @@
 // Bulletin FAB (Floating Action Button) Handler
-import { supabase } from '/js/supabase-client.js';
+import { supabase } from '../js/supabase-client.js';
 import { reloadBulletinFeed } from './list.js';
 
 let currentUser = null;

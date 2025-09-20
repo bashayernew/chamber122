@@ -1,4 +1,4 @@
-import { supabase } from '/js/supabase-client.js';
+import { supabase } from '../js/supabase-client.js';
 
 let finalizePostLogin = null;
 try { const m = await import('/js/signup-with-documents.js'); finalizePostLogin = m.finalizePostLogin ?? null; } catch {}
