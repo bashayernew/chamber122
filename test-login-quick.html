@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Login Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+    .test-section { background: #2a2a2a; padding: 15px; margin: 10px 0; border-radius: 8px; }
+    input, button { padding: 10px; margin: 5px; border-radius: 4px; border: 1px solid #555; width: 100%; max-width: 300px; }
+    input { background: #333; color: #fff; }
+    button { background: #007bff; color: #fff; cursor: pointer; }
+    .status { padding: 5px 10px; border-radius: 4px; margin: 5px 0; }
+    .status.ok { background: #28a745; color: white; }
+    .status.error { background: #dc3545; color: white; }
+  </style>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <script type="module" src="/js/supabase-client.js?v=20"></script>
+</head>
+<body>
+  <h1>🚀 Quick Login Test</h1>
+  
+  <div class="test-section">
+    <h3>Environment Check</h3>
+    <div id="env-status"></div>
+  </div>
+
+  <div class="test-section">
+    <h3>Login Test</h3>
+    <form id="login-form">
+      <input id="email" type="email" placeholder="Email" required>
+      <input id="password" type="password" placeholder="Password" required>
+      <button id="login-btn" type="submit">Test Login</button>
+    </form>
+    <div id="login-status"></div>
+  </div>
+
+  <div class="test-section">
+    <h3>Session Check</h3>
+    <button onclick="checkSession()">Check Current Session</button>
+    <div id="session-status"></div>
+  </div>
+
+  <script type="module">
+    import { supabase } from '/js/supabase-client.js';
+
+    // Environment check
+    document.getElementById('env-status').innerHTML = `
+      <div class="status ${window.SUPABASE_URL ? 'ok' : 'error'}">
+        ${window.SUPABASE_URL ? '✅ Environment loaded' : '❌ Missing environment'}
+      </div>
+    `;
+
+    // Login form
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      document.getElementById('login-status').innerHTML = '<div class="status">🔄 Testing login...</div>';
+      
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        
+        if (error) {
+          document.getElementById('login-status').innerHTML = `
+            <div class="status error">❌ Login failed: ${error.message}</div>
+          `;
+        } else {
+          document.getElementById('login-status').innerHTML = `
+            <div class="status ok">✅ Login successful! User: ${data.user?.email}</div>
+          `;
+          setTimeout(() => {
+            window.location.href = '/dashboard.html';
+          }, 1000);
+        }
+      } catch (err) {
+        document.getElementById('login-status').innerHTML = `
+          <div class="status error">❌ Exception: ${err.message}</div>
+        `;
+      }
+    });
+
+    // Session check
+    window.checkSession = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const user = data.session?.user;
+        
+        if (user) {
+          document.getElementById('session-status').innerHTML = `
+            <div class="status ok">✅ Logged in as: ${user.email}</div>
+          `;
+        } else {
+          document.getElementById('session-status').innerHTML = `
+            <div class="status error">❌ Not logged in</div>
+          `;
+        }
+      } catch (err) {
+        document.getElementById('session-status').innerHTML = `
+          <div class="status error">❌ Session check failed: ${err.message}</div>
+        `;
+      }
+    };
+
+    // Auto-check session on load
+    window.checkSession();
+  </script>
+</body>
+</html>
