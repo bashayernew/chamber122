@@ -134,12 +134,13 @@ async function onSubmit(e) {
   const is_published = !draftEl?.checked;
   const status = is_published ? 'published' : 'draft';
 
-  const start_at = normalizeOptionalDate(startEl);
-  const end_at   = normalizeOptionalDate(endEl);
-
-  if (start_at && end_at && new Date(start_at) > new Date(end_at)) {
-    alert('End must be after Start');
-    return;
+  // Sanitize dates
+  const normalize = el => (!el?.value || !el.validity?.valid) ? null : new Date(el.value).toISOString();
+  const start_at = normalize(startEl);
+  const end_at   = normalize(endEl);
+  if (start_at && end_at && new Date(start_at) > new Date(end_at)) { 
+    alert('End must be after Start'); 
+    return; 
   }
 
   // ensure auth
