@@ -1,5 +1,6 @@
 // Admin Dashboard functionality
-import { sb, requireAuth } from './supabase.js';
+import { supabase } from './supabase-client.js';
+import { requireAuth } from './supabase.js';
 import { checkAccountCompleteness } from './account-completeness.js';
 
 class AdminDashboard {
@@ -56,16 +57,16 @@ class AdminDashboard {
   async loadStats() {
     try {
       // Load MSME stats
-      const { data: msmes } = await sb().from('businesses').select('id, status');
+      const { data: msmes } = await supabase.from('businesses').select('id, status');
       const totalMsmes = msmes?.length || 0;
       const pendingApprovals = msmes?.filter(m => m.status === 'pending').length || 0;
 
       // Load event stats
-      const { data: events } = await sb().from('events').select('id');
+      const { data: events } = await supabase.from('events').select('id');
       const totalEvents = events?.length || 0;
 
       // Load bulletin stats
-      const { data: bulletins } = await sb().from('bulletins').select('id');
+      const { data: bulletins } = await supabase.from('bulletins').select('id');
       const totalBulletins = bulletins?.length || 0;
 
       // Update UI
@@ -81,7 +82,7 @@ class AdminDashboard {
 
   async loadApprovals() {
     try {
-      const { data: accounts } = await sb()
+      const { data: accounts } = await supabase
         .from('businesses')
         .select('*')
         .eq('status', 'pending')
@@ -128,7 +129,7 @@ class AdminDashboard {
   async loadNeedsSetup() {
     try {
       // Get all users with draft bulletins
-      const { data: draftBulletins } = await sb()
+      const { data: draftBulletins } = await supabase
         .from('bulletins')
         .select(`
           id,
@@ -202,7 +203,7 @@ class AdminDashboard {
 
   async loadEventSuggestions() {
     try {
-      const { data: suggestions } = await sb()
+      const { data: suggestions } = await supabase
         .from('event_suggestions')
         .select('*')
         .eq('status', 'pending')
@@ -242,7 +243,7 @@ class AdminDashboard {
 
   async loadBulletinSubmissions() {
     try {
-      const { data: submissions } = await sb()
+      const { data: submissions } = await supabase
         .from('bulletin_submissions')
         .select('*')
         .eq('status', 'pending')
@@ -300,7 +301,7 @@ class AdminDashboard {
 
   async approveAccount(accountId) {
     try {
-      const { error } = await sb()
+      const { error } = await supabase
         .from('businesses')
         .update({ status: 'approved' })
         .eq('id', accountId);
@@ -319,7 +320,7 @@ class AdminDashboard {
   async rejectAccount(accountId) {
     try {
       // Get the business details first
-      const { data: business } = await sb()
+      const { data: business } = await supabase
         .from('businesses')
         .select('*, profiles:owner_id(*)')
         .eq('id', accountId)
@@ -328,7 +329,7 @@ class AdminDashboard {
       if (!business) throw new Error('Business not found');
 
       // Update business status
-      const { error } = await sb()
+      const { error } = await supabase
         .from('businesses')
         .update({ status: 'rejected' })
         .eq('id', accountId);
@@ -355,7 +356,7 @@ class AdminDashboard {
 
   async createNotification(notificationData) {
     try {
-      const { error } = await sb()
+      const { error } = await supabase
         .from('notifications')
         .insert([{
           user_id: notificationData.user_id,
@@ -377,7 +378,7 @@ class AdminDashboard {
   async approveEventSuggestion(suggestionId) {
     try {
       // Get the suggestion
-      const { data: suggestion } = await sb()
+      const { data: suggestion } = await supabase
         .from('event_suggestions')
         .select('*')
         .eq('id', suggestionId)
@@ -386,7 +387,7 @@ class AdminDashboard {
       if (!suggestion) throw new Error('Suggestion not found');
 
       // Create event (you might want to link to an account)
-      const { error: eventError } = await sb()
+      const { error: eventError } = await supabase
         .from('events')
         .insert({
           title: suggestion.title,
@@ -399,7 +400,7 @@ class AdminDashboard {
       if (eventError) throw eventError;
 
       // Mark suggestion as approved
-      const { error: updateError } = await sb()
+      const { error: updateError } = await supabase
         .from('event_suggestions')
         .update({ status: 'approved' })
         .eq('id', suggestionId);
@@ -416,7 +417,7 @@ class AdminDashboard {
 
   async rejectEventSuggestion(suggestionId) {
     try {
-      const { error } = await sb()
+      const { error } = await supabase
         .from('event_suggestions')
         .update({ status: 'rejected' })
         .eq('id', suggestionId);
@@ -434,7 +435,7 @@ class AdminDashboard {
   async approveBulletinSubmission(submissionId) {
     try {
       // Get the submission
-      const { data: submission } = await sb()
+      const { data: submission } = await supabase
         .from('bulletin_submissions')
         .select('*')
         .eq('id', submissionId)
@@ -443,7 +444,7 @@ class AdminDashboard {
       if (!submission) throw new Error('Submission not found');
 
       // Create bulletin (you might want to link to an account)
-      const { error: bulletinError } = await sb()
+      const { error: bulletinError } = await supabase
         .from('bulletins')
         .insert({
           title: submission.title,
@@ -454,7 +455,7 @@ class AdminDashboard {
       if (bulletinError) throw bulletinError;
 
       // Mark submission as approved
-      const { error: updateError } = await sb()
+      const { error: updateError } = await supabase
         .from('bulletin_submissions')
         .update({ status: 'approved' })
         .eq('id', submissionId);
@@ -471,7 +472,7 @@ class AdminDashboard {
 
   async rejectBulletinSubmission(submissionId) {
     try {
-      const { error } = await sb()
+      const { error } = await supabase
         .from('bulletin_submissions')
         .update({ status: 'rejected' })
         .eq('id', submissionId);

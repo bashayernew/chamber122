@@ -1,11 +1,11 @@
 // Analytics tracking and management with RTL support
-import { sb } from './supabase.js';
+import { supabase } from './supabase-client.js';
 import { getCurrentLanguage } from './i18n.js';
 
 // Track content view in Supabase
 async function trackContentView(contentType, contentId, accountId) {
   try {
-    await sb()
+    await supabase
       .from('content_views')
       .insert({
         content_type: contentType,
@@ -60,7 +60,7 @@ class Analytics {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
 
-      const { data: views } = await sb()
+      const { data: views } = await supabase
         .from('content_views')
         .select('*')
         .eq('account_id', accountId)

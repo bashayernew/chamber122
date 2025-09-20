@@ -1,5 +1,6 @@
 // MSME Profile Overlay Component with RTL Support
-import { sb, trackContentView } from './supabase.js';
+import { supabase } from './supabase-client.js';
+import { trackContentView } from './analytics.js';
 import { formatTimeAgo, formatDate } from './time-ago.js';
 import { getCurrentLanguage } from './i18n.js';
 
@@ -140,7 +141,7 @@ class MSMEOverlay {
   async open(accountId) {
     try {
       // Load account data
-      const { data: account, error } = await sb().from('businesses').select('*').eq('id', accountId).single();
+      const { data: account, error } = await supabase.from('businesses').select('*').eq('id', accountId).single();
       
       if (error || !account) {
         console.error('Error loading account:', error);
@@ -249,7 +250,7 @@ class MSMEOverlay {
     const noBulletinsText = lang === 'ar' ? 'لا توجد نشرات بعد' : 'No bulletins yet';
     
     // Load events
-    const { data: events } = await sb().from('events').select('*').eq('account_id', accountId).eq('status', 'published').order('starts_at', { ascending: false }).limit(5);
+    const { data: events } = await supabase.from('events').select('*').eq('account_id', accountId).eq('status', 'published').order('starts_at', { ascending: false }).limit(5);
     
     if (events && events.length > 0) {
       document.getElementById('msme-events').innerHTML = events.map(event => `
@@ -264,7 +265,7 @@ class MSMEOverlay {
     }
 
     // Load bulletins
-    const { data: bulletins } = await sb().from('bulletins').select('*').eq('account_id', accountId).eq('status', 'published').order('created_at', { ascending: false }).limit(5);
+    const { data: bulletins } = await supabase.from('bulletins').select('*').eq('account_id', accountId).eq('status', 'published').order('created_at', { ascending: false }).limit(5);
     
     if (bulletins && bulletins.length > 0) {
       document.getElementById('msme-bulletins').innerHTML = bulletins.map(bulletin => `
