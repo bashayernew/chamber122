@@ -20,3 +20,12 @@ textarea { min-height: 140px; resize: vertical; }
 .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px; border:1px solid #2a2f4a; background:#14172a; color:#e8e9f3; font-weight:700; cursor:pointer; }
 .btn.primary { background:#6f75ff; border-color:#6f75ff; color:#fff; }
 .btn[disabled] { opacity:.6; cursor:not-allowed; }
+
+.form-grid { display:grid; gap:10px; }
+.form-row-2 { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+.form-help { color:#9aa4d6; font-size:.85rem; }
+input[type="url"], input[type="datetime-local"], select { 
+  width:100%; padding:12px 14px; border-radius:12px; border:1px solid #2a2f4a; background:#0c1022; color:#f2f3ff;
+}
+.switch { display:flex; align-items:center; gap:10px; }
+.switch input { width:auto; }
