@@ -13,16 +13,13 @@
     window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
   </script>
   <link rel="stylesheet" href="/css/header.css?v=1">
-  <script type="module" src="/js/supabase-client.js?v=20"></script>
-  <script type="module" src="/js/auth-session.js?v=1"></script>
-  <script type="module" src="/js/site-header.js?v=1"></script>
+  <script type="module" src="/js/auth-persist-guard.js?v=1"></script>
+  <script type="module" src="/js/header-auth-slot.js?v=2"></script>
   <link rel="stylesheet" href="css/style.css?v=17">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-  <div id="site-header"></div>
-
   <!-- Navigation -->
   <nav class="navbar">
     <div class="nav-container">
@@ -43,9 +40,11 @@
           <button data-lang="en" class="lang-btn" data-testid="lang-switch-en">EN</button> |
           <button data-lang="ar" class="lang-btn" data-testid="lang-switch-ar">AR</button>
         </span>
-        <!-- New Role-Aware Account Menu -->
-        <div id="accountMenu"></div>
-        <script type="module" src="shared/header-menu.js"></script>
+        <!-- Auth slot for session-aware header -->
+        <span id="auth-slot">
+          <a class="btn" href="/auth.html">Login</a>
+          <a class="btn primary" href="/auth.html#signup">Sign Up & Get Listed</a>
+        </span>
       </div>
       <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
         <i class="fas fa-bars"></i>
