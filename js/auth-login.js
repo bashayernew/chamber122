@@ -12,8 +12,14 @@ if (window.__authLoginBound) {
     const form = document.querySelector('#login-form');
     const btn  = document.querySelector('#login-btn');
 
+    console.log('[auth-login] Form found:', !!form);
+    console.log('[auth-login] Button found:', !!btn);
+    console.log('[auth-login] Supabase client available:', !!window._sb);
+
     if (!form || !btn) {
       console.warn('[auth-login] Missing #login-form or #login-btn');
+      console.warn('[auth-login] Available forms:', document.querySelectorAll('form'));
+      console.warn('[auth-login] Available buttons:', document.querySelectorAll('button'));
       return;
     }
 

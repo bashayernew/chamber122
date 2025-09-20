@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Debug Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+    .debug-section { background: #2a2a2a; padding: 15px; margin: 10px 0; border-radius: 8px; }
+    input, button { padding: 10px; margin: 5px; border-radius: 4px; border: 1px solid #555; }
+    input { background: #333; color: #fff; }
+    button { background: #007bff; color: #fff; cursor: pointer; }
+    button:disabled { background: #555; cursor: not-allowed; }
+    .log { background: #000; padding: 10px; margin: 10px 0; border-radius: 4px; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+    .error { color: #ff6b6b; }
+    .success { color: #51cf66; }
+    .warning { color: #ffd43b; }
+  </style>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <script type="module" src="/js/supabase-client.js?v=20"></script>
+</head>
+<body>
+  <h1>🔧 Login Debug Test</h1>
+  
+  <div class="debug-section">
+    <h3>1. Environment Check</h3>
+    <div id="env-check">Checking environment...</div>
+  </div>
+
+  <div class="debug-section">
+    <h3>2. Supabase Client Test</h3>
+    <div id="client-check">Checking Supabase client...</div>
+    <button onclick="testClient()">Test Supabase Client</button>
+  </div>
+
+  <div class="debug-section">
+    <h3>3. Login Test</h3>
+    <form id="debug-login-form">
+      <input id="debug-email" type="email" placeholder="Email" required>
+      <input id="debug-password" type="password" placeholder="Password" required>
+      <button type="submit">Test Login</button>
+    </form>
+    <div id="login-result"></div>
+  </div>
+
+  <div class="debug-section">
+    <h3>4. Console Log</h3>
+    <div id="console-log" class="log">Console messages will appear here...</div>
+    <button onclick="clearLog()">Clear Log</button>
+  </div>
+
+  <script type="module">
+    import { supabase } from '/js/supabase-client.js';
+
+    let logContainer = document.getElementById('console-log');
+    
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      const logEntry = `[${timestamp}] ${message}\n`;
+      logContainer.textContent += logEntry;
+      logContainer.scrollTop = logContainer.scrollHeight;
+      console.log(`[DEBUG] ${message}`);
+    }
+
+    function logError(message) {
+      log(`ERROR: ${message}`, 'error');
+    }
+
+    function logSuccess(message) {
+      log(`SUCCESS: ${message}`, 'success');
+    }
+
+    function logWarning(message) {
+      log(`WARNING: ${message}`, 'warning');
+    }
+
+    // Make functions global for onclick handlers
+    window.log = log;
+    window.logError = logError;
+    window.logSuccess = logSuccess;
+    window.logWarning = logWarning;
+
+    window.clearLog = () => {
+      logContainer.textContent = 'Console messages will appear here...\n';
+    };
+
+    // Environment check
+    document.addEventListener('DOMContentLoaded', () => {
+      log('DOM loaded, starting debug checks...');
+      
+      // Check environment
+      const envDiv = document.getElementById('env-check');
+      if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+        envDiv.innerHTML = '<span class="success">✅ Environment variables loaded</span>';
+        logSuccess('Environment variables found');
+        log(`URL: ${window.SUPABASE_URL}`);
+        log(`Key: ${window.SUPABASE_ANON_KEY.substring(0, 20)}...`);
+      } else {
+        envDiv.innerHTML = '<span class="error">❌ Missing environment variables</span>';
+        logError('Missing SUPABASE_URL or SUPABASE_ANON_KEY');
+      }
+
+      // Check client
+      const clientDiv = document.getElementById('client-check');
+      if (window._sb) {
+        clientDiv.innerHTML = '<span class="success">✅ Supabase client available</span>';
+        logSuccess('Supabase client loaded');
+      } else {
+        clientDiv.innerHTML = '<span class="error">❌ Supabase client not found</span>';
+        logError('window._sb not found');
+      }
+
+      // Test client function
+      window.testClient = async () => {
+        log('Testing Supabase client...');
+        try {
+          const { data, error } = await supabase.auth.getSession();
+          if (error) {
+            logError(`getSession error: ${error.message}`);
+          } else {
+            logSuccess(`getSession successful: ${data.session ? 'User logged in' : 'No session'}`);
+          }
+        } catch (err) {
+          logError(`Client test failed: ${err.message}`);
+        }
+      };
+
+      // Login form handler
+      const form = document.getElementById('debug-login-form');
+      const resultDiv = document.getElementById('login-result');
+      
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        log('Login form submitted...');
+        
+        const email = document.getElementById('debug-email').value.trim();
+        const password = document.getElementById('debug-password').value;
+        
+        if (!email || !password) {
+          logError('Email and password required');
+          resultDiv.innerHTML = '<span class="error">Please enter email and password</span>';
+          return;
+        }
+        
+        log(`Attempting login with email: ${email}`);
+        resultDiv.innerHTML = '<span class="warning">Logging in...</span>';
+        
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+          
+          if (error) {
+            logError(`Login failed: ${error.message}`);
+            resultDiv.innerHTML = `<span class="error">Login failed: ${error.message}</span>`;
+          } else {
+            logSuccess(`Login successful! User: ${data.user?.email}`);
+            resultDiv.innerHTML = `<span class="success">Login successful! Redirecting...</span>`;
+            setTimeout(() => {
+              window.location.href = '/dashboard.html';
+            }, 2000);
+          }
+        } catch (err) {
+          logError(`Login exception: ${err.message}`);
+          resultDiv.innerHTML = `<span class="error">Login exception: ${err.message}</span>`;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

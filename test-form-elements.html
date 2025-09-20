@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Form Elements Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+    .test-section { background: #2a2a2a; padding: 15px; margin: 10px 0; border-radius: 8px; }
+    input, button { padding: 10px; margin: 5px; border-radius: 4px; border: 1px solid #555; }
+    input { background: #333; color: #fff; }
+    button { background: #007bff; color: #fff; cursor: pointer; }
+    .found { color: #51cf66; }
+    .not-found { color: #ff6b6b; }
+  </style>
+</head>
+<body>
+  <h1>Form Elements Test</h1>
+  
+  <!-- Test form with the same structure as auth.html -->
+  <form id="login-form" novalidate>
+    <input id="email" name="email" type="email" placeholder="Email" required>
+    <input id="password" name="password" type="password" placeholder="Password" required>
+    <button id="login-btn" type="submit">Log In</button>
+  </form>
+
+  <div class="test-section">
+    <h3>Element Detection Test</h3>
+    <div id="test-results"></div>
+    <button onclick="testElements()">Test Element Detection</button>
+  </div>
+
+  <div class="test-section">
+    <h3>Form Submit Test</h3>
+    <div id="submit-results"></div>
+  </div>
+
+  <script>
+    function testElements() {
+      const results = document.getElementById('test-results');
+      results.innerHTML = '';
+      
+      // Test the same selectors used in auth-login.js
+      const form = document.querySelector('#login-form');
+      const btn = document.querySelector('#login-btn');
+      
+      results.innerHTML += `<div>Form: ${form ? '<span class="found">✅ Found</span>' : '<span class="not-found">❌ Not found</span>'}</div>`;
+      results.innerHTML += `<div>Button: ${btn ? '<span class="found">✅ Found</span>' : '<span class="not-found">❌ Not found</span>'}</div>`;
+      
+      if (form) {
+        // Test the pick function logic
+        const pick = (root, selectors) => {
+          for (const s of selectors) {
+            const el = root.querySelector(s);
+            if (el) return el;
+          }
+          return null;
+        };
+        
+        const emailEl = pick(form, ['input[name="email"]', '#email', 'input[type="email"]']);
+        const passEl = pick(form, ['input[name="password"]', '#password', 'input[type="password"]']);
+        
+        results.innerHTML += `<div>Email input: ${emailEl ? '<span class="found">✅ Found</span>' : '<span class="not-found">❌ Not found</span>'}</div>`;
+        results.innerHTML += `<div>Password input: ${passEl ? '<span class="found">✅ Found</span>' : '<span class="not-found">❌ Not found</span>'}</div>`;
+        
+        if (emailEl) results.innerHTML += `<div>Email selector used: ${emailEl.matches('input[name="email"]') ? 'name="email"' : emailEl.matches('#email') ? '#email' : 'type="email"'}</div>`;
+        if (passEl) results.innerHTML += `<div>Password selector used: ${passEl.matches('input[name="password"]') ? 'name="password"' : passEl.matches('#password') ? '#password' : 'type="password"'}</div>`;
+      }
+    }
+    
+    // Test form submission
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('login-form');
+      const submitResults = document.getElementById('submit-results');
+      
+      if (form) {
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const email = document.getElementById('email').value;
+          const password = document.getElementById('password').value;
+          
+          submitResults.innerHTML = `
+            <div>Form submitted successfully!</div>
+            <div>Email: ${email || 'empty'}</div>
+            <div>Password: ${password ? '***' : 'empty'}</div>
+          `;
+        });
+      }
+    });
+    
+    // Run test on load
+    document.addEventListener('DOMContentLoaded', testElements);
+  </script>
+</body>
+</html>
