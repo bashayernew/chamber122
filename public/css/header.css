@@ -1,35 +1,30 @@
 :root { color-scheme: dark; }
-.topbar {
-  position: sticky; top: 0; z-index: 50;
-  display: grid; grid-template-columns: 1fr auto; align-items: center;
-  padding: 12px 16px; background: #0e1018; border-bottom: 1px solid #1e2340;
-}
-.brand a { color:#e8e9f3; text-decoration:none; font-weight:800; letter-spacing:.3px }
-.nav { display:flex; gap:10px; }
-.nav a { color:#cfd3ff; text-decoration:none; padding:8px 10px; border-radius:10px; border:1px solid #232744; background:#121528; }
-.nav a.active { outline:2px solid #6f75ff; }
-.auth-ctas { display:flex; gap:10px; align-items:center; }
-.btn { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; border:1px solid #2a2f4a; background:#14172a; color:#e8e9f3; text-decoration:none; font-weight:600; }
-.btn.primary { background:#6f75ff; border-color:#6f75ff; color:#fff; }
-.avatar {
-  width:34px; height:34px; border-radius:50%; object-fit:cover; border:1px solid #2d3150;
-  background:#1a1f38; color:#cfd3ff; display:flex; align-items:center; justify-content:center; font-weight:800;
-}
-.userbox { display:flex; align-items:center; gap:10px; }
-.dropdown { position:relative; }
-.dropdown-menu {
-  position:absolute; right:0; top:40px; min-width:180px; background:#0f1224; border:1px solid #232744; border-radius:12px; padding:6px;
-  display:none;
-}
-.dropdown.open .dropdown-menu { display:block; }
-.dropdown-menu a, .dropdown-menu button {
-  width:100%; text-align:left; background:transparent; border:0; color:#e8e9f3; padding:8px 10px; border-radius:8px; cursor:pointer;
-}
-.dropdown-menu a:hover, .dropdown-menu button:hover { background:#161a33; }
+.topbar { position: sticky; top: 0; z-index: 1000; background: var(--bg-1, #0b0c12); border-bottom: 1px solid var(--border-1, #1a1d29); }
+.navbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; max-width: 1200px; margin: 0 auto; }
+.nav-container { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text-1, #e9e9f1); font-weight: 700; }
+.logo img { height: 32px; width: auto; }
+.nav-menu { display: flex; align-items: center; gap: 24px; }
+.nav-link { color: var(--text-2, #b8bcc8); text-decoration: none; font-weight: 500; transition: color 0.2s; }
+.nav-link:hover { color: var(--text-1, #e9e9f1); }
+.nav-actions { display: flex; align-items: center; gap: 16px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border-2, #232744); background: var(--ui-1, #101321); color: var(--text-1, #e9e9f1); text-decoration: none; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn:hover { background: var(--ui-2, #14172a); border-color: var(--border-3, #2a2f4a); }
+.btn.primary { background: var(--accent-1, #6f75ff); border-color: var(--accent-1, #6f75ff); color: white; }
+.btn.primary:hover { background: var(--accent-2, #5a61e8); border-color: var(--accent-2, #5a61e8); }
+.btn.ghost { background: transparent; border-color: transparent; }
+.btn.ghost:hover { background: var(--ui-2, #14172a); border-color: var(--border-2, #232744); }
+.text-sm { font-size: 0.875rem; }
+.px-4 { padding-left: 1rem; padding-right: 1rem; }
+.py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.rounded-2xl { border-radius: 1rem; }
+.shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
+.lang-toggle { display: flex; align-items: center; gap: 4px; }
+.lang-btn { background: transparent; border: none; color: var(--text-2, #b8bcc8); cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 0.875rem; }
+.lang-btn:hover { color: var(--text-1, #e9e9f1); background: var(--ui-2, #14172a); }
+.lang-btn.active { color: var(--accent-1, #6f75ff); font-weight: 600; }
+.hide-sm { display: none; }
+@media (min-width: 640px) { .hide-sm { display: inline; } }
 
-#site-header { min-height: 56px; }
-#site-header:not(.hydrated) { visibility: hidden; }
-
-#auth-slot.hydrating,
-[data-auth-slot].hydrating,
-.auth-slot.hydrating { visibility: hidden; }
+#auth-slot { display:inline-block; min-height: 36px; }
+#auth-slot.hydrating { visibility: hidden; }

@@ -285,6 +285,8 @@ WHERE created_at < NOW() - INTERVAL '30 days';
 If you encounter issues:
 1. Check the browser console for errors
 2. Verify Supabase connection and permissions
+
+
 3. Check database migration was applied correctly
 4. Ensure all scripts are loading properly
 

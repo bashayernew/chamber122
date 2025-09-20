@@ -1,43 +1,16 @@
 /**
  * Supabase Client for Chamber122
- * Standalone ES module for Supabase integration
- * Reads configuration from meta tags and provides helper functions
+ * Uses singleton client from /js/supabase-client.js
  */
 
-// Export configuration first
+// Import the singleton client
+import { supabase as mainSupabase } from '/js/supabase-client.js';
+
+// Re-export the singleton client
+export const supabase = mainSupabase;
+
+// Export configuration
 export const SUPABASE_ENABLED = true;
-
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
-
-// Read configuration from meta tags
-function getMetaContent(name) {
-  const meta = document.querySelector(`meta[name="${name}"]`);
-  return meta ? meta.getAttribute('content') : null;
-}
-
-const SUPABASE_URL = getMetaContent('supabase-url') || 'https://gidbvemmqffogakcepka.supabase.co';
-const SUPABASE_ANON_KEY = getMetaContent('supabase-anon-key') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w';
-
-// ============================================================================
-// SUPABASE CLIENT
-// ============================================================================
-
-// Create and export Supabase client
-export const supabase = window.supabase ?? (window.supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    storage: window.localStorage
-  },
-  global: { 
-    headers: { 'x-application-name': 'web' } 
-  }
-}));
 
 // ============================================================================
 // AUTHENTICATION HELPERS
@@ -265,7 +238,6 @@ export async function createActivity(activityData) {
 
 // Log initialization
 console.log('Supabase client initialized:', {
-  url: SUPABASE_URL,
   enabled: SUPABASE_ENABLED
 });
 

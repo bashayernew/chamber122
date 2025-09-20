@@ -1006,7 +1006,7 @@
           try {
             // Import the signup utils
             const { ensureSignedIn, collectStepOneFields, collectStepTwoFields, collectStepThreeFields, collectStepFourFields } = await import('./js/signup-utils.js');
-            const { supabase, getAccountAndCompleteness } = await import('./js/supabase-client.js');
+            const { supabase, getAccountAndCompleteness } = await import('/js/supabase-client.js');
             
             // Ensure user is signed in
             const user = await ensureSignedIn();
