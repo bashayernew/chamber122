@@ -1,4 +1,4 @@
-// public/js/header-auth-slot.js v7
+// public/js/header-auth-slot.js v8
 import { supabase } from '/js/supabase-client.js';
 
 const SELS = [
@@ -77,9 +77,10 @@ function renderSignedIn(slot, user, profile){
       </button>
       <div id="auth-menu"
            style="position:absolute;right:0;top:calc(100% + 6px);display:none;background:var(--ui-1,#101321);
-                  border:1px solid var(--border-2,#232744);border-radius:12px;min-width:180px;z-index:1000;padding:8px">
+                  border:1px solid var(--border-2,#232744);border-radius:12px;min-width:200px;z-index:1000;padding:8px">
         <a class="btn" style="width:100%;margin:4px 0" href="/dashboard.html">Dashboard</a>
-        <a class="btn" style="width:100%;margin:4px 0" href="/owner.html">My Profile</a>
+        <a class="btn" style="width:100%;margin:4px 0" href="/dashboard.html#profile">Profile</a>
+        <!-- if you have a dedicated page, swap to /profile.html -->
         <button class="btn" id="auth-logout" style="width:100%;margin:4px 0">Log out</button>
       </div>
     </div>
