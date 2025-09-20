@@ -67,25 +67,39 @@ const eventsData = [
 // Initialize events page
 document.addEventListener('DOMContentLoaded', function() {
   loadEvents();
-  safeInitCalendar();
 });
 
-// Safe calendar initialization - only runs if calendar elements exist
-function safeInitCalendar() {
-  const calendarGrid = document.getElementById('calendar-grid');
-  const monthYear = document.getElementById('calendar-month-year');
-  
-  if (!calendarGrid || !monthYear) {
-    console.warn('Calendar elements missing; skipping calendar init');
-    return; // Prevents the crash
+// --- SAFE INIT START ---
+function q(sel) { return document.querySelector(sel); }
+
+export function safeInitCalendar() {
+  // Support multiple naming schemes (ids or data-attrs)
+  const el = {
+    container: q('[data-cal="container"], #calendar'),
+    grid:      q('[data-cal="grid"], #calendar-grid, .calendar-grid'),
+    prev:      q('[data-cal="prev"], #calendar-prev, #cal-prev, .calendar-prev'),
+    next:      q('[data-cal="next"], #calendar-next, #cal-next, .calendar-next'),
+    month:     q('[data-cal="month"], #calendar-month, #cal-month, .calendar-month'),
+  };
+
+  const missing = Object.entries(el).filter(([, node]) => !node).map(([k]) => k);
+  if (missing.length) {
+    console.warn('Calendar elements missing; skipping calendar init →', missing);
+    return; // no-op on pages without a calendar
   }
-  
-  try {
-    generateCalendar();
-  } catch (e) {
-    console.error('generateCalendar failed:', e);
-  }
+
+  // TODO: plug your existing calendar rendering here.
+  // Example skeleton:
+  // renderMonth(el.grid, currentYear, currentMonth);
+  // el.prev.addEventListener('click', () => { /* update month + render */ });
+  // el.next.addEventListener('click', () => { /* update month + render */ });
+
+  console.debug('[events] calendar initialized');
 }
+
+// auto-init on pages that have the markup
+document.addEventListener('DOMContentLoaded', safeInitCalendar);
+// --- SAFE INIT END ---
 
 // Load events from database
 async function loadEvents() {

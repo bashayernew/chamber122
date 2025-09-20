@@ -153,6 +153,18 @@
     </div>
   </section>
 
+  <!-- Calendar View -->
+  <section class="events-calendar-section" id="events-calendar-view" style="display: none;">
+    <div id="calendar" data-cal="container" class="card" style="max-width: 800px; margin: 0 auto; padding: 20px;">
+      <div class="row" style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <button id="calendar-prev" data-cal="prev" aria-label="Previous month" style="padding: 8px 12px; border: 1px solid #333; background: #1a1a1a; color: #fff; border-radius: 6px; cursor: pointer;">‹</button>
+        <div id="calendar-month" data-cal="month" style="flex:1;text-align:center;font-weight:700; color: #fff; font-size: 18px;"></div>
+        <button id="calendar-next" data-cal="next" aria-label="Next month" style="padding: 8px 12px; border: 1px solid #333; background: #1a1a1a; color: #fff; border-radius: 6px; cursor: pointer;">›</button>
+      </div>
+      <div id="calendar-grid" data-cal="grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-top: 10px;"></div>
+    </div>
+  </section>
+
   <!-- Footer -->
   <footer class="footer">
     <div class="footer-content">
@@ -197,6 +209,7 @@
   <script type="module" src="js/activities-list.js"></script>
   <script type="module" src="js/language-switcher.js"></script>
   <script type="module" src="./js/i18n.js"></script>
+  <script type="module" src="js/events.js?v=4" defer></script>
   <!-- Auth Required Modal -->
   <div id="auth-required-modal" data-testid="auth-required-modal" style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.6); z-index:9999;">
     <div style="width:min(520px,92vw); background:#0f0f0f; color:#eaeaea; border:1px solid #2a2a2a; border-radius:16px; padding:20px;">
