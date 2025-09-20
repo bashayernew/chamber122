@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete Login Debug</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+    .debug-section { background: #2a2a2a; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #007bff; }
+    .error { border-left-color: #ff6b6b; }
+    .success { border-left-color: #51cf66; }
+    .warning { border-left-color: #ffd43b; }
+    input, button { padding: 10px; margin: 5px; border-radius: 4px; border: 1px solid #555; width: 100%; max-width: 300px; }
+    input { background: #333; color: #fff; }
+    button { background: #007bff; color: #fff; cursor: pointer; }
+    button:disabled { background: #555; cursor: not-allowed; }
+    .log { background: #000; padding: 10px; margin: 10px 0; border-radius: 4px; font-family: monospace; white-space: pre-wrap; max-height: 200px; overflow-y: auto; font-size: 12px; }
+    .status { padding: 5px 10px; border-radius: 4px; margin: 5px 0; }
+    .status.ok { background: #28a745; color: white; }
+    .status.error { background: #dc3545; color: white; }
+    .status.warning { background: #ffc107; color: black; }
+  </style>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <script type="module" src="/js/supabase-client.js?v=20"></script>
+</head>
+<body>
+  <h1>🔧 Complete Login Debug Tool</h1>
+  
+  <div class="debug-section">
+    <h3>📋 Environment Check</h3>
+    <div id="env-status"></div>
+  </div>
+
+  <div class="debug-section">
+    <h3>🔌 Supabase Client Check</h3>
+    <div id="client-status"></div>
+    <button onclick="testSupabaseConnection()">Test Supabase Connection</button>
+    <div id="connection-result"></div>
+  </div>
+
+  <div class="debug-section">
+    <h3>📝 Form Test (Same as auth.html)</h3>
+    <form id="login-form" novalidate>
+      <input id="email" name="email" type="email" placeholder="Email" required>
+      <input id="password" name="password" type="password" placeholder="Password" required>
+      <button id="login-btn" type="submit">Log In</button>
+    </form>
+    <div id="form-test-results"></div>
+  </div>
+
+  <div class="debug-section">
+    <h3>🔐 Login Test</h3>
+    <div id="login-status"></div>
+    <button onclick="testLogin()">Test Login with Test Credentials</button>
+    <div id="login-result"></div>
+  </div>
+
+  <div class="debug-section">
+    <h3>📊 Console Log</h3>
+    <div id="console-log" class="log">Loading...</div>
+    <button onclick="clearLog()">Clear Log</button>
+  </div>
+
+  <script type="module">
+    import { supabase } from '/js/supabase-client.js';
+
+    let logContainer = document.getElementById('console-log');
+    
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      const logEntry = `[${timestamp}] ${message}`;
+      logContainer.textContent += logEntry + '\n';
+      logContainer.scrollTop = logContainer.scrollHeight;
+      console.log(`[DEBUG] ${message}`);
+    }
+
+    function setStatus(elementId, message, type = 'ok') {
+      const element = document.getElementById(elementId);
+      element.innerHTML = `<div class="status ${type}">${message}</div>`;
+    }
+
+    // Make functions global
+    window.log = log;
+    window.setStatus = setStatus;
+
+    window.clearLog = () => {
+      logContainer.textContent = 'Console cleared...\n';
+    };
+
+    // Environment check
+    document.addEventListener('DOMContentLoaded', () => {
+      log('🚀 Starting complete login debug...');
+      
+      // Check environment
+      if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+        setStatus('env-status', '✅ Environment variables loaded correctly', 'ok');
+        log('✅ Environment variables found');
+        log(`URL: ${window.SUPABASE_URL}`);
+        log(`Key: ${window.SUPABASE_ANON_KEY.substring(0, 30)}...`);
+      } else {
+        setStatus('env-status', '❌ Missing environment variables', 'error');
+        log('❌ Missing SUPABASE_URL or SUPABASE_ANON_KEY');
+      }
+
+      // Check client
+      if (window._sb) {
+        setStatus('client-status', '✅ Supabase client loaded', 'ok');
+        log('✅ Supabase client available');
+      } else {
+        setStatus('client-status', '❌ Supabase client not found', 'error');
+        log('❌ window._sb not found');
+      }
+
+      // Test connection
+      window.testSupabaseConnection = async () => {
+        log('🔌 Testing Supabase connection...');
+        try {
+          const { data, error } = await supabase.auth.getSession();
+          if (error) {
+            log(`❌ Connection error: ${error.message}`);
+            setStatus('connection-result', `❌ Error: ${error.message}`, 'error');
+          } else {
+            log(`✅ Connection successful. Session: ${data.session ? 'Active' : 'None'}`);
+            setStatus('connection-result', `✅ Connected. Session: ${data.session ? 'Active' : 'None'}`, 'ok');
+          }
+        } catch (err) {
+          log(`❌ Connection failed: ${err.message}`);
+          setStatus('connection-result', `❌ Failed: ${err.message}`, 'error');
+        }
+      };
+
+      // Test form
+      const form = document.getElementById('login-form');
+      const emailInput = document.getElementById('email');
+      const passwordInput = document.getElementById('password');
+      const loginBtn = document.getElementById('login-btn');
+
+      log('📝 Testing form elements...');
+      if (form && emailInput && passwordInput && loginBtn) {
+        setStatus('form-test-results', '✅ All form elements found', 'ok');
+        log('✅ Form elements found correctly');
+        
+        // Test form submission
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          log('📝 Form submitted!');
+          
+          const email = emailInput.value.trim();
+          const password = passwordInput.value;
+          
+          if (!email || !password) {
+            log('❌ Email or password empty');
+            setStatus('form-test-results', '❌ Please enter email and password', 'error');
+            return;
+          }
+          
+          log(`📧 Email: ${email}`);
+          log(`🔒 Password length: ${password.length}`);
+          
+          // Test with Supabase
+          try {
+            log('🔐 Attempting login...');
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            
+            if (error) {
+              log(`❌ Login failed: ${error.message}`);
+              setStatus('form-test-results', `❌ Login failed: ${error.message}`, 'error');
+            } else {
+              log(`✅ Login successful! User: ${data.user?.email}`);
+              setStatus('form-test-results', `✅ Login successful! Redirecting...`, 'ok');
+              setTimeout(() => {
+                window.location.href = '/dashboard.html';
+              }, 2000);
+            }
+          } catch (err) {
+            log(`❌ Login exception: ${err.message}`);
+            setStatus('form-test-results', `❌ Exception: ${err.message}`, 'error');
+          }
+        });
+      } else {
+        setStatus('form-test-results', '❌ Form elements missing', 'error');
+        log('❌ Form elements missing');
+        log(`Form: ${!!form}, Email: ${!!emailInput}, Password: ${!!passwordInput}, Button: ${!!loginBtn}`);
+      }
+
+      // Test login function
+      window.testLogin = async () => {
+        log('🔐 Testing login with demo credentials...');
+        setStatus('login-status', '🔄 Testing login...', 'warning');
+        
+        try {
+          // Use a test email - replace with a real one you know works
+          const testEmail = 'test@example.com';
+          const testPassword = 'testpassword123';
+          
+          log(`Testing with: ${testEmail}`);
+          
+          const { data, error } = await supabase.auth.signInWithPassword({ 
+            email: testEmail, 
+            password: testPassword 
+          });
+          
+          if (error) {
+            log(`❌ Test login failed: ${error.message}`);
+            setStatus('login-result', `❌ Test failed: ${error.message}`, 'error');
+            setStatus('login-status', '❌ Test login failed', 'error');
+          } else {
+            log(`✅ Test login successful! User: ${data.user?.email}`);
+            setStatus('login-result', `✅ Test successful! User: ${data.user?.email}`, 'ok');
+            setStatus('login-status', '✅ Test login successful', 'ok');
+          }
+        } catch (err) {
+          log(`❌ Test login exception: ${err.message}`);
+          setStatus('login-result', `❌ Exception: ${err.message}`, 'error');
+          setStatus('login-status', '❌ Test login failed', 'error');
+        }
+      };
+    });
+  </script>
+</body>
+</html>

@@ -47,17 +47,28 @@ if (window.__authLoginBound) {
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      console.log('[auth-login] Form submit event triggered!');
+      
       const email = String(emailEl.value || '').trim();
       const password = String(passEl.value || '');
 
+      console.log('[auth-login] Email:', email);
+      console.log('[auth-login] Password length:', password.length);
+      console.log('[auth-login] Supabase client:', !!supabase);
+
       if (!email || !password) {
+        console.warn('[auth-login] Missing email or password');
         alert('Please enter your email and password.');
         return;
       }
 
       setBusy(true);
+      console.log('[auth-login] Starting login process...');
+      
       try {
+        console.log('[auth-login] Calling supabase.auth.signInWithPassword...');
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        
         if (error) {
           console.warn('[auth-login] signIn error', error);
           alert(error.message || 'Sign in failed');
@@ -65,6 +76,7 @@ if (window.__authLoginBound) {
           return;
         }
         console.log('[auth-login] signed in as', data.user?.email);
+        alert('Login successful! Redirecting...');
         location.href = '/dashboard.html';
       } catch (err) {
         console.warn('[auth-login] exception', err);
