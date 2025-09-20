@@ -16,7 +16,8 @@ export async function reloadBulletinFeed() {
     const { data, error } = await supabase
       .from('bulletins')
       .select('*')
-      .eq('status', 'published')
+      .or('status.eq.published,is_published.is.true')
+      .order('pinned', { ascending: false })
       .order('created_at', { ascending: false });
 
     if (error) {

@@ -132,20 +132,20 @@ async function onSubmit(e) {
   const is_public = !!publicEl?.checked;
   const pinned = !!pinnedEl?.checked;
   const is_published = !draftEl?.checked;
+  const status = is_published ? 'published' : 'draft';
 
   const start_at = normalizeOptionalDate(startEl);
   const end_at   = normalizeOptionalDate(endEl);
 
   if (start_at && end_at && new Date(start_at) > new Date(end_at)) {
     alert('End must be after Start');
-    saveBtn.disabled = false; saveBtn.textContent = 'Publish';
     return;
   }
 
   // ensure auth
-  const session = await ensureSessionHydrated();
-  if (!session?.user) { location.href = '/auth.html'; return; }
-  const userId = session.user.id;
+  const { data: s } = await supabase.auth.getSession();
+  if (!s?.session?.user) { location.href = '/auth.html'; return; }
+  const userId = s.session.user.id;
 
   // generate UUID client-side so we can upload image at a predictable path even before refresh
   const id = (crypto?.randomUUID && crypto.randomUUID()) || (Math.random().toString(36).slice(2) + Date.now());
@@ -156,10 +156,14 @@ async function onSubmit(e) {
     const insert = {
       id, owner_user_id: userId, title, body,
       category, link_url, start_at, end_at,
-      is_public, pinned, is_published
+      is_public, pinned, is_published, status
     };
     const { data: row, error: insErr } = await supabase.from('bulletins').insert(insert).select().single();
-    if (insErr) throw insErr;
+    if (insErr) { 
+      console.warn('[bulletins] insert error', insErr); 
+      alert(insErr.message || 'Insert failed'); 
+      throw insErr; 
+    }
 
     // 2) optional image upload
     const file = imgEl?.files?.[0] || null;

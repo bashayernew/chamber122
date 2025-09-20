@@ -250,7 +250,7 @@ class MSMEOverlay {
     const noBulletinsText = lang === 'ar' ? 'لا توجد نشرات بعد' : 'No bulletins yet';
     
     // Load events
-    const { data: events } = await supabase.from('events').select('*').eq('account_id', accountId).eq('status', 'published').order('starts_at', { ascending: false }).limit(5);
+    const { data: events } = await supabase.from('events').select('*').eq('account_id', accountId).or('status.eq.published,is_published.is.true').order('starts_at', { ascending: false }).limit(5);
     
     if (events && events.length > 0) {
       document.getElementById('msme-events').innerHTML = events.map(event => `

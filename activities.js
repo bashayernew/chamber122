@@ -64,12 +64,19 @@ btn?.addEventListener('click', async ()=>{
     const { data:{ user } } = await supabase.auth.getUser();
     if (!user) return alert('Not logged in');
     
-    await supabase.from('activities').insert({ 
+    const { data: row, error } = await supabase.from('activities').insert({ 
       owner_user_id: user.id, 
       title, 
-      status:'draft',
+      status: 'draft',
+      is_published: false,
       description: 'Event created from events page'
-    });
+    }).select().single();
+    
+    if (error) { 
+      console.warn('[activities] insert error', error); 
+      alert(error.message || 'Insert failed'); 
+      throw error; 
+    }
     load();
   } catch (e) {
     alert('Failed to create event: ' + e.message);

@@ -107,7 +107,8 @@ async function loadEvents() {
     const { data, error } = await supabase
       .from('activities')
       .select('*')
-      .eq('status', 'published')
+      .or('status.eq.published,is_published.is.true')
+      .or(`end_at.is.null,end_at.gte.${new Date().toISOString()}`)
       .order('created_at', { ascending: true });
 
     if (error) throw error;
