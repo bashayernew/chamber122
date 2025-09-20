@@ -7,7 +7,7 @@
   </script>
   <link rel="stylesheet" href="/css/header.css?v=1">
   <script type="module" src="/js/supabase-client.js?v=20"></script>
-  <script type="module" src="/js/header-auth-slot.js?v=3"></script>
+  <script type="module" src="/js/header-auth-slot.js?v=5"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -106,11 +106,138 @@
         <div class="form-note">
           <i class="fas fa-info-circle"></i>
           <div>
-            <strong>No businesses found.</strong><br>
-            You haven't submitted any business listings yet. 
-            <a href="get-listed.html">Get started here</a>.
+            <strong>Complete Your Business Profile</strong><br>
+            Fill out your business information to get listed in our directory and connect with customers.
           </div>
         </div>
+
+        <!-- Business Profile Completion Form -->
+        <form id="msme-form" action="#" method="post" enctype="multipart/form-data">
+          <!-- Business Information -->
+          <div class="form-section-group">
+            <h3><i class="fas fa-building"></i> Business Information</h3>
+            
+            <div class="form-group">
+              <label for="businessName">Business Name *</label>
+              <input type="text" id="businessName" name="businessName" class="form-input" required placeholder="Enter your business name">
+            </div>
+
+            <div class="form-group">
+              <label for="ownerName">Owner's Full Name *</label>
+              <input type="text" id="ownerName" name="ownerName" class="form-input" required placeholder="Enter owner's full name">
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email Address *</label>
+              <input type="email" id="email" name="email" class="form-input" required placeholder="your@email.com">
+            </div>
+
+            <div class="form-group">
+              <label for="phone">Phone Number *</label>
+              <input type="tel" id="phone" name="phone" class="form-input" required placeholder="+965-12345678">
+            </div>
+          </div>
+
+          <!-- Business Details -->
+          <div class="form-section-group">
+            <h3><i class="fas fa-info-circle"></i> Business Details</h3>
+            
+            <div class="form-group">
+              <label for="category">Business Category *</label>
+              <select id="category" name="category" class="form-input" required>
+                <option value="">Select a category...</option>
+                <option value="food">Food & Beverage</option>
+                <option value="fashion">Fashion & Beauty</option>
+                <option value="technology">Technology</option>
+                <option value="healthcare">Healthcare</option>
+                <option value="education">Education</option>
+                <option value="retail">Retail</option>
+                <option value="services">Professional Services</option>
+                <option value="manufacturing">Manufacturing</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="city">City *</label>
+              <select id="city" name="city" class="form-input" required>
+                <option value="">Select your city...</option>
+                <option value="kuwait-city">Kuwait City</option>
+                <option value="hawally">Hawally</option>
+                <option value="farwaniya">Farwaniya</option>
+                <option value="ahmadi">Ahmadi</option>
+                <option value="jahra">Jahra</option>
+                <option value="mubarak-al-kabeer">Mubarak Al-Kabeer</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="country">Country</label>
+              <input type="text" id="country" name="country" class="form-input" value="Kuwait" readonly>
+            </div>
+
+            <div class="form-group">
+              <label for="description">Business Description *</label>
+              <textarea id="description" name="description" class="form-input" rows="4" required placeholder="Tell us about your business, what you offer, and what makes you unique..."></textarea>
+            </div>
+          </div>
+
+          <!-- Story Section -->
+          <div class="form-section-group">
+            <h3><i class="fas fa-heart"></i> Your Story</h3>
+            
+            <div class="form-group">
+              <label for="story">Why Did You Start This Business? *</label>
+              <textarea id="story" name="story" class="form-input" rows="4" required placeholder="Share your journey, inspiration, and what drives you..."></textarea>
+              <p class="field-note">This helps customers connect with your brand and understand your mission.</p>
+            </div>
+          </div>
+
+          <!-- Media & Links -->
+          <div class="form-section-group">
+            <h3><i class="fas fa-link"></i> Media & Links</h3>
+            
+            <div class="form-group">
+              <label for="logo">Business Logo</label>
+              <input type="file" id="logo" name="logo" class="form-input" accept="image/*">
+              <p class="field-note">Upload your business logo (JPG, PNG, max 2MB)</p>
+            </div>
+
+            <div class="form-group">
+              <label for="photos">Business Photos (Optional)</label>
+              <input type="file" id="photos" name="photos" class="form-input" multiple accept="image/*">
+              <p class="field-note">Add up to 5 photos of your business, products, or services</p>
+            </div>
+
+            <div class="form-group">
+              <label for="website">Website (Optional)</label>
+              <input type="url" id="website" name="website" class="form-input" placeholder="https://yourwebsite.com">
+            </div>
+
+            <div class="form-group">
+              <label for="instagram">Instagram Handle (Optional)</label>
+              <input type="text" id="instagram" name="instagram" class="form-input" placeholder="@yourbusiness">
+            </div>
+          </div>
+
+          <!-- Submission -->
+          <div class="form-section-group">
+            <p id="form-status"></p>
+            
+            <div class="form-note">
+              <i class="fas fa-info-circle"></i>
+              <div>
+                <strong>What happens next?</strong><br>
+                Once submitted, your listing will be reviewed by our team within 2-3 business days. 
+                We'll notify you via email once it's live on our directory.
+              </div>
+            </div>
+
+            <button type="submit" class="submit-btn">
+              <i class="fas fa-paper-plane"></i> Complete Profile & Submit Listing
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </section>
@@ -167,6 +294,126 @@
   <script type="module">
     import { requireAuth } from '/shared/auth-guard.js';
     const user = await requireAuth(); // redirects if not logged in
+  </script>
+
+  <!-- Profile Completion Form Handler -->
+  <script type="module">
+    import { supabase } from '/js/supabase-client.js';
+    
+    // Show the form when no businesses are found
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Check if user has any businesses
+        const { data: businesses, error } = await supabase
+          .from('businesses')
+          .select('*')
+          .eq('owner_user_id', user.id);
+
+        if (error) {
+          console.error('Error fetching businesses:', error);
+          return;
+        }
+
+        // If no businesses found, show the form
+        if (!businesses || businesses.length === 0) {
+          document.getElementById('no-businesses').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Error checking businesses:', error);
+      }
+    });
+
+    // Handle form submission
+    document.getElementById('msme-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const statusEl = document.getElementById('form-status');
+      
+      // Disable submit button
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+      
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          throw new Error('User not authenticated');
+        }
+
+        // Get form data
+        const formData = new FormData(e.target);
+        const businessData = {
+          owner_user_id: user.id,
+          business_name: formData.get('businessName'),
+          owner_name: formData.get('ownerName'),
+          email: formData.get('email'),
+          phone: formData.get('phone'),
+          category: formData.get('category'),
+          city: formData.get('city'),
+          country: formData.get('country'),
+          description: formData.get('description'),
+          story: formData.get('story'),
+          website: formData.get('website') || null,
+          instagram: formData.get('instagram') || null,
+          status: 'pending' // Will be reviewed by admin
+        };
+
+        // Insert business record
+        const { data: business, error: businessError } = await supabase
+          .from('businesses')
+          .insert(businessData)
+          .select()
+          .single();
+
+        if (businessError) {
+          throw businessError;
+        }
+
+        // Handle file uploads if any
+        const logoFile = formData.get('logo');
+        if (logoFile && logoFile.size > 0) {
+          const logoExt = logoFile.name.split('.').pop();
+          const logoPath = `businesses/${user.id}/${business.id}/logo.${logoExt}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('business-assets')
+            .upload(logoPath, logoFile);
+
+          if (!uploadError) {
+            const { data: logoUrl } = supabase.storage
+              .from('business-assets')
+              .getPublicUrl(logoPath);
+            
+            await supabase
+              .from('businesses')
+              .update({ logo_url: logoUrl.publicUrl })
+              .eq('id', business.id);
+          }
+        }
+
+        // Success message
+        statusEl.innerHTML = '<div style="color: green; padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin: 10px 0;"><i class="fas fa-check-circle"></i> Profile submitted successfully! You will be notified once it\'s approved.</div>';
+        
+        // Hide the form and show success
+        e.target.style.display = 'none';
+        
+        // Refresh the page after 3 seconds
+        setTimeout(() => {
+          location.reload();
+        }, 3000);
+
+      } catch (error) {
+        console.error('Form submission error:', error);
+        statusEl.innerHTML = `<div style="color: red; padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin: 10px 0;"><i class="fas fa-exclamation-circle"></i> Error: ${error.message}</div>`;
+      } finally {
+        // Re-enable submit button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Complete Profile & Submit Listing';
+      }
+    });
   </script>
 </body>
 </html>
