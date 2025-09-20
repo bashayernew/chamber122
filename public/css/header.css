@@ -30,6 +30,6 @@
 #site-header { min-height: 56px; }
 #site-header:not(.hydrated) { visibility: hidden; }
 
-#auth-slot:not(.hydrated),
-[data-auth-slot]:not(.hydrated),
-.auth-slot:not(.hydrated) { visibility: hidden; }
+#auth-slot.hydrating,
+[data-auth-slot].hydrating,
+.auth-slot.hydrating { visibility: hidden; }

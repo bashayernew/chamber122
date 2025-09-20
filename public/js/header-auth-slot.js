@@ -1,6 +1,6 @@
 // header-auth-slot.js — upgrade only the auth portion of your existing header
-import { supabase } from './supabase-client.js';
-import { ensureSessionHydrated, onAnyAuthChange } from './auth-session.js';
+import { supabase } from '/js/supabase-client.js';
+import { ensureSessionHydrated, onAnyAuthChange } from '/js/auth-session.js';
 
 const SLOT_SELECTORS = ['#auth-slot', '[data-auth-slot]', '.auth-slot'];
 
@@ -20,19 +20,13 @@ function initialsFrom(name = '') {
 
 async function getProfile(userId) {
   if (!userId) return { full_name: '', avatar_url: '' };
-
-  // Prefer full_name + avatar_url; if avatar_url column doesn't exist, retry without it.
   let { data, error } = await supabase
     .from('profiles').select('full_name, avatar_url').eq('user_id', userId).maybeSingle();
-
   if (error && (error.code === '42703' || error.message?.includes('avatar_url'))) {
     ({ data, error } = await supabase
       .from('profiles').select('full_name').eq('user_id', userId).maybeSingle());
   }
-  if (error) {
-    console.warn('[auth-slot] profiles fetch', error);
-    return { full_name: '', avatar_url: '' };
-  }
+  if (error) { console.warn('[auth-slot] profiles fetch', error); return { full_name: '', avatar_url: '' }; }
   return data || { full_name: '', avatar_url: '' };
 }
 
@@ -42,13 +36,14 @@ function renderSignedOut(slot) {
     <a class="btn primary" href="/auth.html#signup">Sign Up &amp; Get Listed</a>
   `;
   slot.classList.add('hydrated');
+  slot.classList.remove('hydrating');
 }
 
 function renderSignedIn(slot, { user, profile }) {
   const name = profile?.full_name || user?.email || 'Account';
   const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url || '';
   const avatar = avatarUrl
-    ? `<img class="avatar" src="${avatarUrl}" alt="avatar" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border-2, #232744)">`
+    ? `<img class="avatar" src="${avatarUrl}" alt="avatar" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border-2,#232744)">`
     : `<div class="avatar" style="width:32px;height:32px;border-radius:50%;display:inline-grid;place-items:center;background:var(--ui-2,#14172a);border:1px solid var(--border-2,#232744)">${initialsFrom(name)}</div>`;
 
   slot.innerHTML = `
@@ -74,29 +69,33 @@ function renderSignedIn(slot, { user, profile }) {
     btn.setAttribute('aria-expanded', open ? 'false' : 'true');
   });
   document.addEventListener('click', (e) => {
-    if (!slot.contains(e.target)) {
-      if (menu) menu.style.display = 'none';
-      btn?.setAttribute('aria-expanded', 'false');
-    }
+    if (!slot.contains(e.target)) { if (menu) menu.style.display = 'none'; btn?.setAttribute('aria-expanded', 'false'); }
   });
-  logoutBtn?.addEventListener('click', async () => {
-    await supabase.auth.signOut();
-    location.href = '/auth.html';
-  });
+  logoutBtn?.addEventListener('click', async () => { await supabase.auth.signOut(); location.href = '/auth.html'; });
 
   slot.classList.add('hydrated');
+  slot.classList.remove('hydrating');
 }
 
 async function paint() {
   const slot = findSlot();
   if (!slot) return;
+  slot.classList.add('hydrating'); // hide only while we hydrate
 
-  // Wait for/rehydrate session first
-  const session = await ensureSessionHydrated();
-  if (!session?.user) return renderSignedOut(slot);
+  // Fallback timer: if we can't hydrate in 1500ms, show signed-out buttons
+  const fallback = setTimeout(() => !slot.classList.contains('hydrated') && renderSignedOut(slot), 1500);
 
-  const profile = await getProfile(session.user.id);
-  renderSignedIn(slot, { user: session.user, profile });
+  try {
+    const session = await ensureSessionHydrated();
+    if (!session?.user) { renderSignedOut(slot); return; }
+    const profile = await getProfile(session.user.id);
+    renderSignedIn(slot, { user: session.user, profile });
+  } catch (e) {
+    console.warn('[auth-slot] paint error', e);
+    renderSignedOut(slot);
+  } finally {
+    clearTimeout(fallback);
+  }
 }
 
 onAnyAuthChange((_evt, session) => {

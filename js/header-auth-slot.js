@@ -1,6 +1,6 @@
 // header-auth-slot.js — upgrade only the auth portion of your existing header
-import { supabase } from './supabase-client.js';
-import { ensureSessionHydrated, onAnyAuthChange } from './auth-session.js';
+import { supabase } from '/js/supabase-client.js';
+import { ensureSessionHydrated, onAnyAuthChange } from '/js/auth-session.js';
 
 const SLOT_SELECTORS = ['#auth-slot', '[data-auth-slot]', '.auth-slot'];
 
@@ -42,6 +42,7 @@ function renderSignedOut(slot) {
     <a class="btn primary" href="/auth.html#signup">Sign Up &amp; Get Listed</a>
   `;
   slot.classList.add('hydrated');
+  slot.classList.remove('hydrating');
 }
 
 function renderSignedIn(slot, { user, profile }) {
@@ -85,18 +86,28 @@ function renderSignedIn(slot, { user, profile }) {
   });
 
   slot.classList.add('hydrated');
+  slot.classList.remove('hydrating');
 }
 
 async function paint() {
   const slot = findSlot();
   if (!slot) return;
+  slot.classList.add('hydrating'); // hide only while we hydrate
 
-  // Wait for/rehydrate session first
-  const session = await ensureSessionHydrated();
-  if (!session?.user) return renderSignedOut(slot);
+  // Fallback timer: if we can't hydrate in 1500ms, show signed-out buttons
+  const fallback = setTimeout(() => !slot.classList.contains('hydrated') && renderSignedOut(slot), 1500);
 
-  const profile = await getProfile(session.user.id);
-  renderSignedIn(slot, { user: session.user, profile });
+  try {
+    const session = await ensureSessionHydrated();
+    if (!session?.user) { renderSignedOut(slot); return; }
+    const profile = await getProfile(session.user.id);
+    renderSignedIn(slot, { user: session.user, profile });
+  } catch (e) {
+    console.warn('[auth-slot] paint error', e);
+    renderSignedOut(slot);
+  } finally {
+    clearTimeout(fallback);
+  }
 }
 
 onAnyAuthChange((_evt, session) => {
