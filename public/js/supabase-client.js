@@ -14,3 +14,41 @@ export const supabase = (() => {
   window._sb = sb;
   return sb;
 })();
+
+// Export getCurrentAccountState function
+export async function getCurrentAccountState() {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error) {
+    console.error('Error getting user:', error);
+    return { user: null, error };
+  }
+  return { user, error: null };
+}
+
+// Export getAccountAndCompleteness function
+export async function getAccountAndCompleteness() {
+  try {
+    const { data, error } = await supabase.rpc('get_account_and_completeness');
+    if (error) {
+      console.error('Error in getAccountAndCompleteness:', error);
+      return {
+        business: null,
+        completeness: { hasBusiness: false, percentage: 0 },
+        next_step: 'signup'
+      };
+    }
+    
+    return data || {
+      business: null,
+      completeness: { hasBusiness: false, percentage: 0 },
+      next_step: 'signup'
+    };
+  } catch (error) {
+    console.error('Error in getAccountAndCompleteness:', error);
+    return {
+      business: null,
+      completeness: { hasBusiness: false, percentage: 0 },
+      next_step: 'signup'
+    };
+  }
+}
