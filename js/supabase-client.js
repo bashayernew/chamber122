@@ -7,7 +7,7 @@ const SUPABASE_URL = window.SUPABASE_URL || CONFIG_URL || import.meta?.env?.VITE
 const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || CONFIG_ANON_KEY || import.meta?.env?.VITE_SUPABASE_ANON_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.warn('[Supabase] Missing URL or ANON key on window or env.');
+  console.warn('[supabase-client] Missing SUPABASE_URL/ANON_KEY on window. Check your <script> env block.');
 }
 
 // Use global instance to prevent multiple GoTrueClient instances

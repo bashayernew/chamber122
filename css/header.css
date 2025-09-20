@@ -26,3 +26,6 @@
   width:100%; text-align:left; background:transparent; border:0; color:#e8e9f3; padding:8px 10px; border-radius:8px; cursor:pointer;
 }
 .dropdown-menu a:hover, .dropdown-menu button:hover { background:#161a33; }
+
+#site-header { min-height: 56px; }
+#site-header:not(.hydrated) { visibility: hidden; }

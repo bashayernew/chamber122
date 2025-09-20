@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Debug Test</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background: #1a1a1a; color: white; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .status { padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .success { background: #2d5016; border: 1px solid #4ade80; }
+        .error { background: #7f1d1d; border: 1px solid #ef4444; }
+        .info { background: #1e3a8a; border: 1px solid #3b82f6; }
+        .warning { background: #78350f; border: 1px solid #f59e0b; }
+        .btn { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-secondary { background: #6b7280; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        pre { background: #0f0f0f; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .nav-links { margin: 20px 0; }
+        .nav-links a { color: #3b82f6; text-decoration: none; margin-right: 15px; }
+        .nav-links a:hover { text-decoration: underline; }
+    </style>
+    <script>
+        window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+        window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+    </script>
+    <script type="module" src="js/supabase-client.js?v=20"></script>
+    <script type="module" src="js/auth-session.js?v=1"></script>
+    <script type="module" src="js/site-header.js?v=1"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Session Debug Test</h1>
+        
+        <div id="site-header"></div>
+        
+        <div class="nav-links">
+            <a href="/dashboard.html">Dashboard</a>
+            <a href="/events.html">Events</a>
+            <a href="/bulletin.html">Bulletin</a>
+            <a href="/auth.html">Login</a>
+        </div>
+        
+        <div id="session-status" class="status info">
+            Checking session status...
+        </div>
+        
+        <div id="localStorage-info" class="status info">
+            Checking localStorage...
+        </div>
+        
+        <div id="debug-output">
+            <h3>Debug Output:</h3>
+            <pre id="debug-log"></pre>
+        </div>
+        
+        <div>
+            <button class="btn btn-primary" onclick="testSession()">Test Current Session</button>
+            <button class="btn btn-secondary" onclick="checkLocalStorage()">Check localStorage</button>
+            <button class="btn btn-danger" onclick="clearAllData()">Clear All Data</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { supabase } from './js/supabase-client.js';
+        import { ensureSessionHydrated, debugSessionState } from './js/auth-session.js';
+        
+        function log(message, type = 'info') {
+            const debugLog = document.getElementById('debug-log');
+            const timestamp = new Date().toLocaleTimeString();
+            debugLog.textContent += `[${timestamp}] ${message}\n`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateStatus(elementId, message, className = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${className}`;
+        }
+        
+        async function checkSession() {
+            log('Checking session status...');
+            try {
+                const session = await ensureSessionHydrated();
+                if (session?.user) {
+                    updateStatus('session-status', `✅ Logged in as: ${session.user.email}`, 'success');
+                    log(`✅ Session active for: ${session.user.email}`);
+                } else {
+                    updateStatus('session-status', '❌ No active session', 'error');
+                    log('❌ No active session found');
+                }
+            } catch (error) {
+                updateStatus('session-status', `❌ Error: ${error.message}`, 'error');
+                log(`❌ Session check error: ${error.message}`);
+            }
+        }
+        
+        function checkLocalStorageData() {
+            const keys = Object.keys(localStorage).filter(k => k.includes('sb-'));
+            if (keys.length > 0) {
+                updateStatus('localStorage-info', `✅ Found ${keys.length} Supabase keys: ${keys.join(', ')}`, 'success');
+                log(`✅ localStorage keys: ${keys.join(', ')}`);
+                keys.forEach(key => {
+                    try {
+                        const data = JSON.parse(localStorage.getItem(key));
+                        log(`Key ${key}: ${JSON.stringify(data, null, 2)}`);
+                    } catch (e) {
+                        log(`Key ${key}: Invalid JSON`);
+                    }
+                });
+            } else {
+                updateStatus('localStorage-info', '❌ No Supabase keys found in localStorage', 'error');
+                log('❌ No Supabase keys found in localStorage');
+            }
+        }
+        
+        // Make functions available globally
+        window.testSession = checkSession;
+        window.checkLocalStorage = checkLocalStorageData;
+        window.clearAllData = () => {
+            localStorage.clear();
+            log('🧹 Cleared all localStorage data');
+            checkLocalStorageData();
+        };
+        
+        // Initial checks
+        document.addEventListener('DOMContentLoaded', () => {
+            log('🚀 Session debug page loaded');
+            checkSession();
+            checkLocalStorageData();
+            
+            // Listen for auth state changes
+            supabase.auth.onAuthStateChange((event, session) => {
+                log(`🔄 Auth state changed: ${event} - ${session ? `User: ${session.user?.email}` : 'No session'}`);
+                checkSession();
+            });
+        });
+    </script>
+</body>
+</html>

@@ -32,6 +32,8 @@ function renderLoggedOut(container){
       </div>
     </header>
   `;
+  const mount = document.getElementById('site-header');
+  mount?.classList.add('hydrated');
 }
 
 function renderLoggedIn(container, { user, profile }){
@@ -76,6 +78,9 @@ function renderLoggedIn(container, { user, profile }){
     await supabase.auth.signOut();
     location.href = '/auth.html';
   });
+  
+  const mount = document.getElementById('site-header');
+  mount?.classList.add('hydrated');
 }
 
 async function paint(){
