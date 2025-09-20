@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple Login Test</title>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <script type="module" src="/js/supabase-client.js?v=20"></script>
+</head>
+<body>
+  <h1>Simple Login Test</h1>
+  <form id="test-form">
+    <input id="email" type="email" placeholder="Email" required>
+    <input id="password" type="password" placeholder="Password" required>
+    <button id="login-btn" type="submit">Login</button>
+  </form>
+  <div id="result"></div>
+
+  <script type="module">
+    import { supabase } from '/js/supabase-client.js';
+    
+    console.log('Script loaded, supabase:', !!supabase);
+    
+    document.getElementById('test-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      document.getElementById('result').innerHTML = 'Testing...';
+      
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        
+        if (error) {
+          document.getElementById('result').innerHTML = `Error: ${error.message}`;
+        } else {
+          document.getElementById('result').innerHTML = `Success! User: ${data.user?.email}`;
+        }
+      } catch (err) {
+        document.getElementById('result').innerHTML = `Exception: ${err.message}`;
+      }
+    });
+  </script>
+</body>
+</html>

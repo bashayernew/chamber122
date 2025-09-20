@@ -26,5 +26,6 @@
 .hide-sm { display: none; }
 @media (min-width: 640px) { .hide-sm { display: inline; } }
 
-#auth-slot { display:inline-block; min-height: 36px; }
-#auth-slot.hydrating { visibility: hidden; }
+/* reserve space and avoid flash */
+#auth-slot { display:inline-block; min-height:36px }
+#auth-slot.hydrating { visibility:hidden }

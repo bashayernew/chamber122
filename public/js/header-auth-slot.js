@@ -1,11 +1,50 @@
 // public/js/header-auth-slot.js
 import { supabase } from '/js/supabase-client.js';
 
-function el(sel){ return document.querySelector(sel); }
-function initials(n=''){ const s=(n||'').trim(); return (s[0]||'?').toUpperCase(); }
+const SELS = [
+  '#auth-slot', '[data-auth-slot]', '.auth-slot',
+  '.nav-actions', '.header-actions', '.header-right', '.navbar-right'
+];
+
+function findHeaderRight() {
+  for (const s of SELS) {
+    const el = document.querySelector(s);
+    if (el) return el;
+  }
+  // Heuristic: last flex child in header/nav
+  const headers = document.querySelectorAll('header, .header, nav, .navbar');
+  for (const h of headers) {
+    const kids = [...h.querySelectorAll('*')].filter(e => getComputedStyle(e).display.includes('flex'));
+    if (kids.length) return kids[kids.length - 1];
+  }
+  return null;
+}
+
+function ensureSlot() {
+  let slot = document.querySelector('#auth-slot, [data-auth-slot], .auth-slot');
+  if (slot) return slot;
+
+  const mount = findHeaderRight();
+  if (!mount) {
+    console.warn('[auth-slot] no header container found; create a <span id="auth-slot"> where your login buttons live.');
+    return null;
+  }
+
+  slot = document.createElement('span');
+  slot.id = 'auth-slot';
+  // Fallback buttons (no-JS & while hydrating)
+  slot.innerHTML = `
+    <a class="btn" href="/auth.html">Login</a>
+    <a class="btn primary" href="/auth.html#signup">Sign Up &amp; Get Listed</a>
+  `;
+  mount.appendChild(slot);
+  return slot;
+}
+
+function initials(name='') { const s=(name||'').trim(); return (s[0]||'?').toUpperCase(); }
 
 async function getProfile(userId){
-  if(!userId) return { full_name:'', avatar_url:'' };
+  if (!userId) return { full_name: '', avatar_url: '' };
   let q = supabase.from('profiles').select('full_name, avatar_url').eq('user_id', userId).maybeSingle();
   let { data, error } = await q;
   if (error && (error.code === '42703' || (error.message||'').includes('avatar_url'))) {
@@ -32,10 +71,13 @@ function renderSignedIn(slot, user, profile){
 
   slot.innerHTML = `
     <div class="userbox" style="position:relative;display:inline-block">
-      <button id="auth-avatar-btn" class="btn" aria-haspopup="true" aria-expanded="false" style="display:inline-flex;gap:8px;align-items:center">
+      <button id="auth-avatar-btn" class="btn" aria-haspopup="true" aria-expanded="false"
+              style="display:inline-flex;gap:8px;align-items:center">
         ${avatar}<span class="hide-sm">@${(user.email||'').split('@')[0]}</span>
       </button>
-      <div id="auth-menu" style="position:absolute;right:0;top:calc(100% + 6px);display:none;background:var(--ui-1,#101321);border:1px solid var(--border-2,#232744);border-radius:12px;min-width:180px;z-index:1000;padding:8px">
+      <div id="auth-menu"
+           style="position:absolute;right:0;top:calc(100% + 6px);display:none;background:var(--ui-1,#101321);
+                  border:1px solid var(--border-2,#232744);border-radius:12px;min-width:180px;z-index:1000;padding:8px">
         <a class="btn" style="width:100%;margin:4px 0" href="/dashboard.html">Dashboard</a>
         <button class="btn" id="auth-logout" style="width:100%;margin:4px 0">Log out</button>
       </div>
@@ -65,23 +107,23 @@ function renderSignedIn(slot, user, profile){
   slot.classList.remove('hydrating');
 }
 
-async function paint(){
-  const slot = el('#auth-slot') || el('[data-auth-slot]') || el('.auth-slot');
-  if(!slot) return;
+async function paint() {
+  const slot = ensureSlot();
+  if (!slot) return;
   slot.classList.add('hydrating');
 
-  const { data: s } = await supabase.auth.getSession();
-  const user = s?.session?.user;
-  if(!user){ renderSignedOut(slot); return; }
+  const { data } = await supabase.auth.getSession();
+  const user = data?.session?.user;
+  if (!user) return renderSignedOut(slot);
 
   const profile = await getProfile(user.id);
   renderSignedIn(slot, user, profile);
 }
 
 supabase.auth.onAuthStateChange((_evt, session) => {
-  const slot = el('#auth-slot') || el('[data-auth-slot]') || el('.auth-slot');
-  if(!slot) return;
-  if(!session?.user) renderSignedOut(slot);
+  const slot = document.querySelector('#auth-slot, [data-auth-slot], .auth-slot') || ensureSlot();
+  if (!slot) return;
+  if (!session?.user) renderSignedOut(slot);
   else getProfile(session.user.id).then(p => renderSignedIn(slot, session.user, p));
 });
 

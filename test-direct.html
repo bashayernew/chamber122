@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Direct Login Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+    input, button { padding: 10px; margin: 5px; border-radius: 4px; border: 1px solid #555; width: 100%; max-width: 300px; }
+    input { background: #333; color: #fff; }
+    button { background: #007bff; color: #fff; cursor: pointer; }
+    .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+    .error { background: #dc3545; color: white; }
+    .success { background: #28a745; color: white; }
+  </style>
+</head>
+<body>
+  <h1>🔐 Direct Login Test</h1>
+  <p>This tests the Supabase client directly without a server.</p>
+  
+  <form id="login-form">
+    <input id="email" type="email" placeholder="Your email" required>
+    <input id="password" type="password" placeholder="Your password" required>
+    <button id="login-btn" type="submit">Test Login</button>
+  </form>
+  
+  <div id="status"></div>
+  <div id="debug"></div>
+
+  <script>
+    // Set up Supabase environment
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  
+  <script type="module">
+    // Import Supabase client
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.57.4');
+    
+    // Create client
+    const supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true
+      }
+    });
+    
+    console.log('Supabase client created:', !!supabase);
+    document.getElementById('debug').innerHTML = 'Supabase client: ' + (supabase ? '✅ Created' : '❌ Failed');
+    
+    // Handle login form
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      document.getElementById('status').innerHTML = '<div class="status">🔄 Testing login...</div>';
+      
+      try {
+        console.log('Attempting login with:', email);
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        
+        if (error) {
+          console.error('Login error:', error);
+          document.getElementById('status').innerHTML = `<div class="status error">❌ Login failed: ${error.message}</div>`;
+        } else {
+          console.log('Login success:', data);
+          document.getElementById('status').innerHTML = `<div class="status success">✅ Login successful! User: ${data.user?.email}</div>`;
+          
+          // Test session persistence
+          setTimeout(async () => {
+            const { data: sessionData } = await supabase.auth.getSession();
+            console.log('Session check:', sessionData);
+            document.getElementById('debug').innerHTML += '<br>Session: ' + (sessionData.session ? '✅ Active' : '❌ None');
+          }, 1000);
+        }
+      } catch (err) {
+        console.error('Login exception:', err);
+        document.getElementById('status').innerHTML = `<div class="status error">❌ Exception: ${err.message}</div>`;
+      }
+    });
+    
+    // Check if already logged in
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData.session) {
+      document.getElementById('status').innerHTML = `<div class="status success">✅ Already logged in as: ${sessionData.session.user.email}</div>`;
+    }
+  </script>
+</body>
+</html>
