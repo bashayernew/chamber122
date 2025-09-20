@@ -14,6 +14,22 @@ function ensureModalRoot() {
   if (!modalRoot) { modalRoot = document.createElement('div'); modalRoot.id = modalRootId; modalRoot.className = 'modal-root'; document.body.appendChild(modalRoot); }
 }
 
+function normalizeOptionalDate(el) {
+  if (!el || !el.value) return null;
+  // If the control shows an invalid text (e.g., "08/01/2026 --:--"), drop it.
+  if (!el.validity.valid) { el.value = ''; return null; }
+  const d = new Date(el.value);          // datetime-local string -> local time
+  return isNaN(+d) ? null : d.toISOString(); // store as UTC ISO
+}
+
+function addDateFieldGuards(startEl, endEl) {
+  [startEl, endEl].forEach((el) => {
+    el?.addEventListener('blur', () => {
+      if (el.value && !el.validity.valid) el.value = ''; // auto-clear bad text
+    });
+  });
+}
+
 function buildModal() {
   ensureModalRoot();
   modalRoot.innerHTML = `
@@ -23,7 +39,7 @@ function buildModal() {
         <div class="modal-title" id="add-bulletin-title">Add Bulletin</div>
         <button class="modal-close" title="Close" data-close>&times;</button>
       </div>
-      <form id="bulletin-form" class="modal-body form-grid">
+      <form id="bulletin-form" novalidate class="modal-body form-grid">
         <label>Title</label>
         <input id="bulletin-title" type="text" placeholder="e.g. Weekend 50% Sale" required />
         
@@ -96,6 +112,9 @@ function buildModal() {
 
   modalRoot.addEventListener('click', (e) => { if (e.target.closest('[data-close]')) closeModal(); });
   form.addEventListener('submit', onSubmit);
+  
+  // Wire date field guards
+  addDateFieldGuards(startEl, endEl);
 }
 
 function openModal() { if (!modalRoot) buildModal(); modalRoot.classList.add('is-open'); setTimeout(() => titleEl?.focus(), 0); }
@@ -114,15 +133,14 @@ async function onSubmit(e) {
   const pinned = !!pinnedEl?.checked;
   const is_published = !draftEl?.checked;
 
-  const toTs = (el) => {
-    const v = el?.value?.trim();
-    if (!v) return null;
-    // Convert local datetime-local to UTC ISO string
-    const d = new Date(v);
-    return isNaN(d) ? null : d.toISOString();
-  };
-  const start_at = toTs(startEl);
-  const end_at = toTs(endEl);
+  const start_at = normalizeOptionalDate(startEl);
+  const end_at   = normalizeOptionalDate(endEl);
+
+  if (start_at && end_at && new Date(start_at) > new Date(end_at)) {
+    alert('End must be after Start');
+    saveBtn.disabled = false; saveBtn.textContent = 'Publish';
+    return;
+  }
 
   // ensure auth
   const session = await ensureSessionHydrated();
