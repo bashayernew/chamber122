@@ -1,4 +1,4 @@
-// public/js/header-auth-slot.js v6
+// public/js/header-auth-slot.js v7
 import { supabase } from '/js/supabase-client.js';
 
 const SELS = [
