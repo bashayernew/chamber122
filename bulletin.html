@@ -11,11 +11,13 @@
   </script>
   <link rel="stylesheet" href="css/style.css?v=16">
   <link rel="stylesheet" href="css/header.css?v=1">
+  <link rel="stylesheet" href="css/modal.css?v=1">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <script type="module" src="js/supabase-client.js?v=20"></script>
 <script type="module" src="js/auth-session.js?v=1"></script>
   <script type="module" src="js/site-header.js?v=1"></script>
+  <script type="module" src="js/bulletins.js?v=1"></script>
   <style>
     /* Bulletin List Styling */
     .bulletin-list-container {
@@ -445,8 +447,14 @@
 
   <!-- Required Elements for Bulletin Feature -->
   <div id="bulletinList"></div>
-  <button id="fabAddBulletin" class="fab-red" aria-label="Add bulletin">+</button>
+  <button id="fabAddBulletin" class="fab-red" data-bulletin="add" aria-label="Add bulletin">+</button>
   <div id="bulletinModal" hidden></div>
+  
+  <!-- Bulletin List Container for New Modal System -->
+  <div id="bulletins-list" data-bulletins="list"></div>
+  
+  <!-- Modal Root (script will create if missing) -->
+  <div id="modal-root" class="modal-root"></div>
 
   <!-- Footer -->
   <footer class="footer">
