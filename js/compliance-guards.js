@@ -44,7 +44,7 @@ class ComplianceGuards {
         .from('v_business_verification_latest')
         .select('*')
         .eq('business_id', business.id)
-        .single();
+        .maybeSingle();
 
       this.complianceStatus = {
         business_id: business.id,

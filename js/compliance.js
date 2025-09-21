@@ -80,7 +80,7 @@ class ComplianceManager {
           .from('v_business_verification_latest')
           .select('*')
           .eq('business_id', business.id)
-          .single();
+          .maybeSingle();
 
         if (verification) {
           this.complianceStatus = verification;
@@ -101,7 +101,7 @@ class ComplianceManager {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (profile && !profileError) {
         this.businessData = { ...this.businessData, ...profile };

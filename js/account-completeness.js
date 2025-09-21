@@ -25,7 +25,7 @@ export async function checkAccountCompleteness() {
       .from('profiles')
       .select('*')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     if (profileError || !profile) {
       return {

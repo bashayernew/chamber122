@@ -47,7 +47,7 @@ class ComplianceBanner {
         .from('v_business_verification_latest')
         .select('*')
         .eq('business_id', business.id)
-        .single();
+        .maybeSingle();
 
       if (verification) {
         this.complianceStatus = {

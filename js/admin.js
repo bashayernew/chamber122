@@ -31,9 +31,9 @@ async function checkAdminAccess() {
     const { data, error } = await sb().from('admins')
       .select('*')
       .eq('user_id', user.data.user.id)
-      .single();
+      .maybeSingle();
     
-    if (error && error.code !== 'PGRST116') throw error;
+    if (error) throw error;
     
     isAdmin = !!data;
     return isAdmin;
