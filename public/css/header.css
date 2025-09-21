@@ -29,3 +29,6 @@
 /* reserve space and avoid flash */
 #auth-slot { display:inline-block; min-height:36px }
 #auth-slot.hydrating { visibility:hidden }
+
+/* Ensure the menu looks consistent */
+.dropdown .btn { text-align:left; }

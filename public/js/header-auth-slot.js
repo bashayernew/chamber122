@@ -1,4 +1,4 @@
-// public/js/header-auth-slot.js v10
+// public/js/header-auth-slot.js v11
 import { supabase } from '/js/supabase-client.js';
 
 const SELS = [
@@ -72,15 +72,12 @@ function renderSignedIn(slot, user, profile){
 
   slot.innerHTML = `
     <div class="userbox" style="position:relative;display:inline-block">
-      <button id="auth-avatar-btn" class="btn" aria-haspopup="true" aria-expanded="false"
-              style="display:inline-flex;gap:8px;align-items:center">
-        ${avatar}<span class="hide-sm">@${(user.email||'').split('@')[0]}</span>
+      <button id="auth-avatar-btn" class="btn" aria-haspopup="true" aria-expanded="false" style="display:inline-flex;align-items:center;gap:8px">
+        ${avatar}<span class="hide-sm">@${(user?.email||'').split('@')[0]}</span>
       </button>
-      <div id="auth-menu"
-           style="position:absolute;right:0;top:calc(100% + 6px);display:none;background:var(--ui-1,#101321);
-                  border:1px solid var(--border-2,#232744);border-radius:12px;min-width:200px;z-index:1000;padding:8px">
+      <div id="auth-menu" class="dropdown" style="position:absolute;right:0;top:calc(100% + 6px);display:none;background:var(--ui-1,#101321);border:1px solid var(--border-2,#232744);border-radius:12px;min-width:200px;z-index:1000;padding:8px">
         <a class="btn" style="width:100%;margin:4px 0" href="/dashboard.html">Dashboard</a>
-        <a class="btn" style="width:100%;margin:4px 0" href="/owner.html">My Profile</a>
+        <a class="btn" style="width:100%;margin:4px 0" id="auth-profile-link" href="#">Profile</a>
         <button class="btn" id="auth-logout" style="width:100%;margin:4px 0">Log out</button>
       </div>
     </div>
@@ -91,6 +88,14 @@ function renderSignedIn(slot, user, profile){
   const btn = slot.querySelector('#auth-avatar-btn');
   const menu = slot.querySelector('#auth-menu');
   const logoutBtn = slot.querySelector('#auth-logout');
+
+  // Wire up profile link with override support
+  const profileHref =
+    window.PROFILE_URL ||               // optional global override if you have one
+    '/owner.html';                      // default profile page
+
+  const profileLink = slot.querySelector('#auth-profile-link');
+  if (profileLink) profileLink.href = profileHref;
 
   btn?.addEventListener('click', () => {
     const open = menu.style.display === 'block';
