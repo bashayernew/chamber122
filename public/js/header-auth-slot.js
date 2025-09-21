@@ -1,4 +1,4 @@
-// public/js/header-auth-slot.js v9
+// public/js/header-auth-slot.js v10
 import { supabase } from '/js/supabase-client.js';
 
 const SELS = [
@@ -63,6 +63,7 @@ function renderSignedOut(slot){
 }
 
 function renderSignedIn(slot, user, profile){
+  console.log('[auth-slot] renderSignedIn called with:', { user: user?.email, profile: profile?.full_name });
   const name = profile?.full_name || user?.email || 'Account';
   const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url || '';
   const avatar = avatarUrl
@@ -84,6 +85,8 @@ function renderSignedIn(slot, user, profile){
       </div>
     </div>
   `;
+  
+  console.log('[auth-slot] renderSignedIn - HTML set, buttons should be visible');
 
   const btn = slot.querySelector('#auth-avatar-btn');
   const menu = slot.querySelector('#auth-menu');
