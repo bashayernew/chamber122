@@ -17,7 +17,12 @@ class NotificationSystem {
       return;
     }
 
-    await this.loadNotifications();
+    try {
+      await this.loadNotifications();
+    } catch (error) {
+      console.warn('Failed to load notifications during init:', error);
+    }
+    
     this.createNotificationUI();
     this.setupEventListeners();
     this.startPolling();
@@ -29,7 +34,8 @@ class NotificationSystem {
       if (!user) return;
 
       // Temporarily disabled - notifications table doesn't exist
-      const { data: notifications, error } = null;
+      const notifications = null;
+      const error = null;
       // await supabase
       //   .from('notifications')
       //   .select('*')
@@ -43,7 +49,10 @@ class NotificationSystem {
       this.unreadCount = this.notifications.filter(n => !n.read_at).length;
       
     } catch (error) {
-      console.error('Error loading notifications:', error);
+      console.warn('Error loading notifications (network issue):', error);
+      // Set empty notifications for offline mode
+      this.notifications = [];
+      this.unreadCount = 0;
     }
   }
 

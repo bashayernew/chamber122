@@ -12,7 +12,7 @@ async function getCurrentAccountState() {
     const { data: business } = await supabase
       .from('businesses')
       .select('*')
-      .eq('owner_user_id', user.id)
+      .eq('owner_id', user.id)
       .maybeSingle();
 
     return {
@@ -56,8 +56,8 @@ export async function getMyBusiness() {
   const { data, error } = await supabase
     .from('businesses')
     .select('*')
-    .eq('owner_user_id', user.id)
-    .single();
+    .eq('owner_id', user.id)
+    .maybeSingle();
     
   if (error) {
     if (error.code === 'PGRST116') {

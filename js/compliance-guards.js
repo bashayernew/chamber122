@@ -30,7 +30,7 @@ class ComplianceGuards {
         .from('businesses')
         .select('*')
         .eq('owner_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (businessError && businessError.code !== 'PGRST116') {
         console.error('Error loading business:', businessError);

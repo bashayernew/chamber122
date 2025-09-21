@@ -476,7 +476,7 @@ async function loadBulletins() {
     const { data, error } = await supabase
       .from('bulletins')
       .select('*')
-      .eq('owner_user_id', currentUser.id)
+      .eq('owner_id', currentUser.id)
       .order('created_at', { ascending: false });
     
     if (error) {

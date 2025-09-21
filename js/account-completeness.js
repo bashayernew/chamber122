@@ -41,7 +41,7 @@ export async function checkAccountCompleteness() {
       .from('businesses')
       .select('*')
       .eq('owner_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (businessError || !business) {
       return {

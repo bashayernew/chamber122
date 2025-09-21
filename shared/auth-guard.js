@@ -3,7 +3,8 @@ import { supabase } from '../js/supabase-client.js';
 export async function requireAuth(redirect = '/auth.html#login') {
   const { data:{ user } } = await supabase.auth.getUser();
   if (!user) {
-    window.location.href = redirect;
+    const url = new URL(redirect, location.origin);
+    window.location.href = url.href;
     throw new Error('Not authenticated');
   }
   // finish post-signup if needed

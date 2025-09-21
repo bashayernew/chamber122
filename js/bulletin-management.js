@@ -290,7 +290,7 @@ async function saveBulletin(status) {
       .from('businesses')
       .select('id')
       .eq('owner_id', currentUser.id)
-      .single();
+      .maybeSingle();
     
     const bulletinData = {
       type: bulletinType.value,

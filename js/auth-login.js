@@ -1,5 +1,6 @@
 // public/js/auth-login.js (v24)
 import { supabase } from '/js/supabase-client.js';
+import { go } from '/js/nav.js';
 
 const LOG = (...a) => console.log('[auth-login]', ...a);
 
@@ -33,7 +34,7 @@ function bindLogin(form) {
         return;
       }
       LOG('signed in as', data.user?.email);
-      location.href = '/dashboard.html';
+      go('/dashboard.html');
     } catch (err) {
       console.warn('[auth-login] exception', err);
       alert(String(err));

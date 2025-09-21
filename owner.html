@@ -8,6 +8,9 @@
   <link rel="stylesheet" href="/css/header.css?v=1">
   <script type="module" src="/js/supabase-client.js?v=20"></script>
   <script type="module" src="/js/header-auth-slot.js?v=11"></script>
+  <script type="module" src="/js/businesses.api.js?v=1"></script>
+  <script type="module" src="/js/business-form.js?v=1"></script>
+  <script type="module" src="/js/network-status.js?v=1"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -112,29 +115,29 @@
         </div>
 
         <!-- Business Profile Completion Form -->
-        <form id="msme-form" action="#" method="post" enctype="multipart/form-data">
+        <form id="biz-form" novalidate action="#" method="post" enctype="multipart/form-data">
           <!-- Business Information -->
           <div class="form-section-group">
             <h3><i class="fas fa-building"></i> Business Information</h3>
             
             <div class="form-group">
-              <label for="businessName">Business Name *</label>
-              <input type="text" id="businessName" name="businessName" class="form-input" required placeholder="Enter your business name">
+              <label for="biz_name">Business Name *</label>
+              <input type="text" id="biz_name" name="biz_name" class="form-input" required placeholder="Enter your business name">
             </div>
 
             <div class="form-group">
-              <label for="ownerName">Owner's Full Name *</label>
-              <input type="text" id="ownerName" name="ownerName" class="form-input" required placeholder="Enter owner's full name">
+              <label for="owner_full_name">Owner's Full Name *</label>
+              <input type="text" id="owner_full_name" name="owner_full_name" class="form-input" required placeholder="Enter owner's full name">
             </div>
 
             <div class="form-group">
-              <label for="email">Email Address *</label>
-              <input type="email" id="email" name="email" class="form-input" required placeholder="your@email.com">
+              <label for="biz_email">Email Address *</label>
+              <input type="email" id="biz_email" name="biz_email" class="form-input" required placeholder="your@email.com">
             </div>
 
             <div class="form-group">
-              <label for="phone">Phone Number *</label>
-              <input type="tel" id="phone" name="phone" class="form-input" required placeholder="+965-12345678">
+              <label for="biz_phone">Phone Number *</label>
+              <input type="tel" id="biz_phone" name="biz_phone" class="form-input" required placeholder="+965-12345678">
             </div>
           </div>
 
@@ -143,8 +146,8 @@
             <h3><i class="fas fa-info-circle"></i> Business Details</h3>
             
             <div class="form-group">
-              <label for="category">Business Category *</label>
-              <select id="category" name="category" class="form-input" required>
+              <label for="biz_category">Business Category *</label>
+              <select id="biz_category" name="biz_category" class="form-input" required>
                 <option value="">Select a category...</option>
                 <option value="food">Food & Beverage</option>
                 <option value="fashion">Fashion & Beauty</option>
@@ -159,8 +162,8 @@
             </div>
 
             <div class="form-group">
-              <label for="city">City *</label>
-              <select id="city" name="city" class="form-input" required>
+              <label for="biz_city">City *</label>
+              <select id="biz_city" name="biz_city" class="form-input" required>
                 <option value="">Select your city...</option>
                 <option value="kuwait-city">Kuwait City</option>
                 <option value="hawally">Hawally</option>
@@ -172,13 +175,13 @@
             </div>
 
             <div class="form-group">
-              <label for="country">Country</label>
-              <input type="text" id="country" name="country" class="form-input" value="Kuwait" readonly>
+              <label for="biz_country">Country</label>
+              <input type="text" id="biz_country" name="biz_country" class="form-input" value="Kuwait" readonly>
             </div>
 
             <div class="form-group">
-              <label for="description">Business Description *</label>
-              <textarea id="description" name="description" class="form-input" rows="4" required placeholder="Tell us about your business, what you offer, and what makes you unique..."></textarea>
+              <label for="biz_description">Business Description *</label>
+              <textarea id="biz_description" name="biz_description" class="form-input" rows="4" required placeholder="Tell us about your business, what you offer, and what makes you unique..."></textarea>
             </div>
           </div>
 
@@ -187,8 +190,8 @@
             <h3><i class="fas fa-heart"></i> Your Story</h3>
             
             <div class="form-group">
-              <label for="story">Why Did You Start This Business? *</label>
-              <textarea id="story" name="story" class="form-input" rows="4" required placeholder="Share your journey, inspiration, and what drives you..."></textarea>
+              <label for="biz_story">Why Did You Start This Business? *</label>
+              <textarea id="biz_story" name="biz_story" class="form-input" rows="4" required placeholder="Share your journey, inspiration, and what drives you..."></textarea>
               <p class="field-note">This helps customers connect with your brand and understand your mission.</p>
             </div>
           </div>
@@ -206,17 +209,46 @@
             <div class="form-group">
               <label for="photos">Business Photos (Optional)</label>
               <input type="file" id="photos" name="photos" class="form-input" multiple accept="image/*">
+              <div id="photos-preview" class="photos-preview" style="display: none;">
+                <p class="photos-count">Selected files:</p>
+                <ul id="photos-list" class="photos-list"></ul>
+              </div>
               <p class="field-note">Add up to 5 photos of your business, products, or services</p>
             </div>
 
             <div class="form-group">
-              <label for="website">Website (Optional)</label>
-              <input type="url" id="website" name="website" class="form-input" placeholder="https://yourwebsite.com">
+              <label for="biz_website">Website (Optional)</label>
+              <input type="url" id="biz_website" name="biz_website" class="form-input" placeholder="https://yourwebsite.com">
             </div>
 
             <div class="form-group">
-              <label for="instagram">Instagram Handle (Optional)</label>
-              <input type="text" id="instagram" name="instagram" class="form-input" placeholder="@yourbusiness">
+              <label for="biz_instagram">Instagram Handle (Optional)</label>
+              <input type="text" id="biz_instagram" name="biz_instagram" class="form-input" placeholder="@yourbusiness">
+            </div>
+
+            <div class="form-group">
+              <label for="biz_facebook">Facebook Page (Optional)</label>
+              <input type="url" id="biz_facebook" name="biz_facebook" class="form-input" placeholder="https://facebook.com/yourbusiness">
+            </div>
+
+            <div class="form-group">
+              <label for="twitter">Twitter Handle (Optional)</label>
+              <input type="text" id="twitter" name="twitter" class="form-input" placeholder="@yourbusiness">
+            </div>
+
+            <div class="form-group">
+              <label for="linkedin">LinkedIn Profile (Optional)</label>
+              <input type="url" id="linkedin" name="linkedin" class="form-input" placeholder="https://linkedin.com/in/yourbusiness">
+            </div>
+
+            <div class="form-group">
+              <label for="tiktok">TikTok Handle (Optional)</label>
+              <input type="text" id="tiktok" name="tiktok" class="form-input" placeholder="@yourbusiness">
+            </div>
+
+            <div class="form-group">
+              <label for="youtube">YouTube Channel (Optional)</label>
+              <input type="url" id="youtube" name="youtube" class="form-input" placeholder="https://youtube.com/@yourbusiness">
             </div>
           </div>
 
@@ -227,14 +259,13 @@
             <div class="form-note">
               <i class="fas fa-info-circle"></i>
               <div>
-                <strong>What happens next?</strong><br>
-                Once submitted, your listing will be reviewed by our team within 2-3 business days. 
-                We'll notify you via email once it's live on our directory.
+                <strong>Profile Complete!</strong><br>
+                Your business profile has been saved and is ready to use.
           </div>
         </div>
 
-            <button type="submit" class="submit-btn">
-              <i class="fas fa-paper-plane"></i> Complete Profile & Submit Listing
+            <button type="submit" id="biz_submit" class="submit-btn">
+              <i class="fas fa-save"></i> Save Profile
             </button>
           </div>
         </form>

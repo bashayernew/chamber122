@@ -5,6 +5,7 @@
 
 // Import the singleton client
 import { supabase as mainSupabase } from '/js/supabase-client.js';
+import { go } from '/js/nav.js';
 
 // Re-export the singleton client
 export const supabase = mainSupabase;
@@ -34,11 +35,11 @@ export async function logoutAndRedirect(redirectTo = "/") {
     sessionStorage.clear();
     
     // Redirect
-    window.location.href = redirectTo;
+    go(redirectTo);
   } catch (error) {
     console.error('Logout error:', error);
     // Force redirect even if logout fails
-    window.location.href = redirectTo;
+    go(redirectTo);
   }
 }
 

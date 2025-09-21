@@ -1,4 +1,5 @@
 import { supabase } from '../js/supabase-client.js';
+import { go } from '../js/nav.js';
 
 let finalizePostLogin = null;
 try { const m = await import('/js/signup-with-documents.js'); finalizePostLogin = m.finalizePostLogin ?? null; } catch {}
@@ -77,12 +78,12 @@ async function init() {
   // actions
   document.getElementById('logoutBtn')?.addEventListener('click', async ()=>{
     await supabase.auth.signOut();
-    window.location.href = '/auth.html#login';
+    go('/auth.html#login');
   });
   document.getElementById('becomeProviderBtn')?.addEventListener('click', async ()=>{
     const { error } = await supabase.from('profiles').upsert({ user_id: user.id, role: 'provider_individual' }, { onConflict:'user_id' });
     if (error) return alert(error.message);
-    window.location.href = '/owner.html';
+    go('/owner.html');
   });
 }
 

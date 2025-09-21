@@ -290,7 +290,7 @@ class OnboardingIntegration {
         .from('businesses')
         .select('*')
         .eq('owner_id', userId)
-        .single();
+        .maybeSingle();
     }
     return { data: null, error: new Error('Supabase client not available') };
   }

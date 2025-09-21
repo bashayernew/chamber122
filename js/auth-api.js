@@ -99,7 +99,8 @@ export async function loginWithEmailPassword(email, password, { redirectTo = DAS
   if (res.error) throw new Error(mapAuthError(res.error));
   if (!res.data?.session?.access_token) throw new Error('Login succeeded but no session was returned.');
 
-  window.location.href = redirectTo; // hard redirect avoids SPA race conditions
+  const url = new URL(redirectTo, location.origin);
+  window.location.href = url.href; // hard redirect avoids SPA race conditions
 }
 
 export async function sendPasswordReset(email) {
