@@ -46,20 +46,25 @@ async function hydrateForm() {
   const { data: sess } = await supabase.auth.getSession();
   if (!sess?.session?.user) { go('/auth.html#login'); return; }
 
-  const { data: biz } = await getMyBusiness();
-  if (!biz) return;
+  try {
+    const biz = await getMyBusiness();
+    if (!biz) return;
 
-  setVal(SEL.name,            biz.name);
-  setVal(SEL.owner_full_name, biz.owner_full_name);
-  setVal(SEL.email,           biz.email);
-  setVal(SEL.phone,           biz.phone);
-  setVal(SEL.category,        biz.category);
-  setVal(SEL.city,            biz.city);
-  setVal(SEL.country,         biz.country ?? 'Kuwait');
-  setVal(SEL.description,     biz.description);
-  setVal(SEL.story,           biz.story);
-  setVal(SEL.website,         biz.website);
-  setVal(SEL.instagram,       biz.instagram);
+    setVal(SEL.name,            biz.name);
+    setVal(SEL.owner_full_name, biz.owner_full_name);
+    setVal(SEL.email,           biz.email);
+    setVal(SEL.phone,           biz.phone);
+    setVal(SEL.category,        biz.category);
+    setVal(SEL.city,            biz.city);
+    setVal(SEL.country,         biz.country ?? 'Kuwait');
+    setVal(SEL.description,     biz.description);
+    setVal(SEL.story,           biz.story);
+    setVal(SEL.website,         biz.website);
+    setVal(SEL.instagram,       biz.instagram);
+  } catch (error) {
+    console.warn('[business-form] Error loading existing business data:', error);
+    // Continue with empty form - this is not a critical error
+  }
 }
 
 function buildPayload() {
