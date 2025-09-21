@@ -21,7 +21,7 @@ async function loadUserBusinesses() {
     
     const { data, error } = await sb().from('businesses')
       .select('*')
-      .eq('owner_id', user.data.user.id)
+      .eq('owner_user_id', user.data.user.id)
       .order('created_at', { ascending: false });
     
     if (error) throw error;

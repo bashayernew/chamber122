@@ -28,16 +28,18 @@ class NotificationSystem {
       const user = await this.getCurrentUser();
       if (!user) return;
 
-      const { data: notifications, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      // Temporarily disabled - notifications table doesn't exist
+      const { data: notifications, error } = null;
+      // await supabase
+      //   .from('notifications')
+      //   .select('*')
+      //   .eq('user_id', user.id)
+      //   .order('created_at', { ascending: false })
+      //   .limit(50);
 
-      if (error) throw error;
+      // if (error) throw error;
 
-      this.notifications = notifications || [];
+      this.notifications = [];
       this.unreadCount = this.notifications.filter(n => !n.read_at).length;
       
     } catch (error) {
@@ -387,10 +389,12 @@ class NotificationSystem {
 
   async markAsRead(notificationId) {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read_at: new Date().toISOString() })
-        .eq('id', notificationId);
+      // Temporarily disabled - notifications table doesn't exist
+      const { error } = null;
+      // await supabase
+      //   .from('notifications')
+      //   .update({ read_at: new Date().toISOString() })
+      //   .eq('id', notificationId);
 
       if (error) throw error;
 
@@ -416,10 +420,12 @@ class NotificationSystem {
 
       if (unreadIds.length === 0) return;
 
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read_at: new Date().toISOString() })
-        .in('id', unreadIds);
+      // Temporarily disabled - notifications table doesn't exist
+      const { error } = null;
+      // await supabase
+      //   .from('notifications')
+      //   .update({ read_at: new Date().toISOString() })
+      //   .in('id', unreadIds);
 
       if (error) throw error;
 
