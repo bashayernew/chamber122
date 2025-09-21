@@ -55,7 +55,7 @@ function renderLoggedIn(container, { user, profile }){
           ${avatar}<span class="hide-sm">@${(user?.email||'').split('@')[0]}</span>
         </div>
         <div class="dropdown-menu" id="user-menu">
-          <a href="/dashboard.html#profile">Profile</a>
+          <a href="/owner.html">My Profile</a>
           <a href="/settings.html">Settings</a>
           <a href="/documents.html">Documents</a>
           <button id="logout-btn">Log out</button>
