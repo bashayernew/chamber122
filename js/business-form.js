@@ -26,21 +26,6 @@ const setVal = (keys, v) => {
   for (const s of keys) { const el = $1(s); if (el) { el.value = v ?? ''; return; } }
 };
 
-function requireField(label, value, keys) {
-  if (value) return true;
-  // flag first matching element
-  for (const s of keys) {
-    const el = $1(s);
-    if (el) {
-      el.style.outline = '2px solid #f33';
-      el.focus();
-      alert(`${label} is required`);
-      return false;
-    }
-  }
-  alert(`${label} is required`);
-  return false;
-}
 
 async function hydrateForm() {
   const { data: sess } = await supabase.auth.getSession();
@@ -67,49 +52,44 @@ async function hydrateForm() {
   }
 }
 
-function buildPayload() {
-  const payload = {
-    name:            getVal(SEL.name),
-    owner_full_name: getVal(SEL.owner_full_name),
-    email:           getVal(SEL.email),
-    phone:           getVal(SEL.phone),
-    category:        getVal(SEL.category),
-    city:            getVal(SEL.city),
-    country:         getVal(SEL.country) || 'Kuwait',
-    description:     getVal(SEL.description),
-    story:           getVal(SEL.story),
-    website:         getVal(SEL.website),
-    instagram:       getVal(SEL.instagram),
-    status: 'draft',
-    is_published: false,
-  };
-  // strip empty strings so we don't send NULL/empty columns
-  return Object.fromEntries(Object.entries(payload).filter(([,v]) => v !== ''));
-}
 
 async function onSubmit(e) {
-  e.preventDefault();
-  const btn = e.submitter || document.getElementById('biz_submit');
-  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  e.preventDefault()
 
-  const payload = buildPayload();
+  const { data: userData, error: userErr } = await supabase.auth.getUser()
+  if (userErr || !userData?.user) {
+    alert('Not signed in')
+    return
+  }
 
-  // hard-required fields
-  if (!requireField('Business Name', payload.name, SEL.name))               { if (btn){btn.disabled=false;btn.textContent='Complete Profile & Submit Listing';} return; }
-  if (!requireField('Owner Name',    payload.owner_full_name, SEL.owner_full_name)) { if (btn){btn.disabled=false;btn.textContent='Complete Profile & Submit Listing';} return; }
-  if (!requireField('Email',         payload.email, SEL.email))             { if (btn){btn.disabled=false;btn.textContent='Complete Profile & Submit Listing';} return; }
-  if (!requireField('Phone',         payload.phone, SEL.phone))             { if (btn){btn.disabled=false;btn.textContent='Complete Profile & Submit Listing';} return; }
-  if (!requireField('Category',      payload.category, SEL.category))       { if (btn){btn.disabled=false;btn.textContent='Complete Profile & Submit Listing';} return; }
-  if (!requireField('City',          payload.city, SEL.city))               { if (btn){btn.disabled=false;btn.textContent='Complete Profile & Submit Listing';} return; }
-  if (!requireField('Description',   payload.description, SEL.description)) { if (btn){btn.disabled=false;btn.textContent='Complete Profile & Submit Listing';} return; }
+  const payload = {
+    owner_id: userData.user.id,
+    name: getVal(SEL.name),
+    owner_full_name: getVal(SEL.owner_full_name),
+    email: getVal(SEL.email),
+    phone: getVal(SEL.phone),
+    category: getVal(SEL.category),
+    city: getVal(SEL.city),
+    country: getVal(SEL.country) || 'Kuwait',
+    description: getVal(SEL.description),
+    story: getVal(SEL.story),
+    website: getVal(SEL.website),
+    instagram: getVal(SEL.instagram),
+    status: 'draft',
+    is_published: false,
+  }
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('businesses')
-    .upsert({ ...payload, owner_id: (await supabase.auth.getUser()).data.user.id }, { onConflict: 'owner_id' })
-    .select('id')
-    .single()
+    .upsert(payload, { onConflict: 'owner_id' })
 
-  if (error) { console.error(error); return }
+  if (error) {
+    console.error('Save failed', error)
+    alert('Error saving profile')
+    return
+  }
+
+  // ✅ Redirect to profile page
   window.location.href = '/owner.html'
 }
 
