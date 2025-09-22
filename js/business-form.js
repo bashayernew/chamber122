@@ -1,6 +1,6 @@
 // public/js/business-form.js
 import { supabase } from '/js/supabase-client.js';
-import { getMyBusiness, upsertMyBusiness } from '/js/businesses.api.js';
+import { getMyBusiness } from '/js/businesses.api.js';
 import { go } from '/js/nav.js';
 
 const SEL = {
@@ -103,18 +103,14 @@ async function onSubmit(e) {
   if (!requireField('City',          payload.city, SEL.city))               { if (btn){btn.disabled=false;btn.textContent='Complete Profile & Submit Listing';} return; }
   if (!requireField('Description',   payload.description, SEL.description)) { if (btn){btn.disabled=false;btn.textContent='Complete Profile & Submit Listing';} return; }
 
-  const { error } = await upsertMyBusiness(payload);
-  if (btn) { btn.disabled = false; btn.textContent = 'Complete Profile & Submit Listing'; }
+  const { data, error } = await supabase
+    .from('businesses')
+    .upsert({ ...payload, owner_id: (await supabase.auth.getUser()).data.user.id }, { onConflict: 'owner_id' })
+    .select('id')
+    .single()
 
-  if (error) {
-    console.warn('[business-form] save error', error);
-    alert(`Save failed: ${error.message || 'Unknown error'}`);
-    return;
-  }
-
-  // success → send them somewhere sensible
-  const next = new URL('/owner.html?saved=1', location.origin);
-  location.href = next.href;
+  if (error) { console.error(error); return }
+  window.location.href = '/owner.html'
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

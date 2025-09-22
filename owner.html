@@ -93,185 +93,20 @@
     </div>
   </nav>
 
-  <!-- Owner Dashboard -->
-  <section class="form-section">
-    <div class="form-wrapper">
-      <div class="form-header">
-        <h1>My Business</h1>
-        <p>Manage your business listing and keep your information up to date.</p>
-      </div>
-
-      <div id="business-list">
-        <!-- Business listings will be populated by JavaScript -->
-      </div>
-
-      <div id="no-businesses" style="display: none;">
-        <div class="form-note">
-          <i class="fas fa-info-circle"></i>
-          <div>
-            <strong>Complete Your Business Profile</strong><br>
-            Fill out your business information to get listed in our directory and connect with customers.
-          </div>
-        </div>
-
-        <!-- Business Profile Completion Form -->
-        <form id="biz-form" novalidate action="#" method="post" enctype="multipart/form-data">
-          <!-- Business Information -->
-          <div class="form-section-group">
-            <h3><i class="fas fa-building"></i> Business Information</h3>
-            
-            <div class="form-group">
-              <label for="biz_name">Business Name *</label>
-              <input type="text" id="biz_name" name="biz_name" class="form-input" required placeholder="Enter your business name">
-            </div>
-
-            <div class="form-group">
-              <label for="owner_full_name">Owner's Full Name *</label>
-              <input type="text" id="owner_full_name" name="owner_full_name" class="form-input" required placeholder="Enter owner's full name">
-            </div>
-
-            <div class="form-group">
-              <label for="biz_email">Email Address *</label>
-              <input type="email" id="biz_email" name="biz_email" class="form-input" required placeholder="your@email.com">
-            </div>
-
-            <div class="form-group">
-              <label for="biz_phone">Phone Number *</label>
-              <input type="tel" id="biz_phone" name="biz_phone" class="form-input" required placeholder="+965-12345678">
-            </div>
-          </div>
-
-          <!-- Business Details -->
-          <div class="form-section-group">
-            <h3><i class="fas fa-info-circle"></i> Business Details</h3>
-            
-            <div class="form-group">
-              <label for="biz_category">Business Category *</label>
-              <select id="biz_category" name="biz_category" class="form-input" required>
-                <option value="">Select a category...</option>
-                <option value="food">Food & Beverage</option>
-                <option value="fashion">Fashion & Beauty</option>
-                <option value="technology">Technology</option>
-                <option value="healthcare">Healthcare</option>
-                <option value="education">Education</option>
-                <option value="retail">Retail</option>
-                <option value="services">Professional Services</option>
-                <option value="manufacturing">Manufacturing</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="biz_city">City *</label>
-              <select id="biz_city" name="biz_city" class="form-input" required>
-                <option value="">Select your city...</option>
-                <option value="kuwait-city">Kuwait City</option>
-                <option value="hawally">Hawally</option>
-                <option value="farwaniya">Farwaniya</option>
-                <option value="ahmadi">Ahmadi</option>
-                <option value="jahra">Jahra</option>
-                <option value="mubarak-al-kabeer">Mubarak Al-Kabeer</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="biz_country">Country</label>
-              <input type="text" id="biz_country" name="biz_country" class="form-input" value="Kuwait" readonly>
-            </div>
-
-            <div class="form-group">
-              <label for="biz_description">Business Description *</label>
-              <textarea id="biz_description" name="biz_description" class="form-input" rows="4" required placeholder="Tell us about your business, what you offer, and what makes you unique..."></textarea>
-            </div>
-          </div>
-
-          <!-- Story Section -->
-          <div class="form-section-group">
-            <h3><i class="fas fa-heart"></i> Your Story</h3>
-            
-            <div class="form-group">
-              <label for="biz_story">Why Did You Start This Business? *</label>
-              <textarea id="biz_story" name="biz_story" class="form-input" rows="4" required placeholder="Share your journey, inspiration, and what drives you..."></textarea>
-              <p class="field-note">This helps customers connect with your brand and understand your mission.</p>
-            </div>
-          </div>
-
-          <!-- Media & Links -->
-          <div class="form-section-group">
-            <h3><i class="fas fa-link"></i> Media & Links</h3>
-            
-            <div class="form-group">
-              <label for="logo">Business Logo</label>
-              <input type="file" id="logo" name="logo" class="form-input" accept="image/*">
-              <p class="field-note">Upload your business logo (JPG, PNG, max 2MB)</p>
-            </div>
-
-            <div class="form-group">
-              <label for="photos">Business Photos (Optional)</label>
-              <input type="file" id="photos" name="photos" class="form-input" multiple accept="image/*">
-              <div id="photos-preview" class="photos-preview" style="display: none;">
-                <p class="photos-count">Selected files:</p>
-                <ul id="photos-list" class="photos-list"></ul>
-              </div>
-              <p class="field-note">Add up to 5 photos of your business, products, or services</p>
-            </div>
-
-            <div class="form-group">
-              <label for="biz_website">Website (Optional)</label>
-              <input type="url" id="biz_website" name="biz_website" class="form-input" placeholder="https://yourwebsite.com">
-            </div>
-
-            <div class="form-group">
-              <label for="biz_instagram">Instagram Handle (Optional)</label>
-              <input type="text" id="biz_instagram" name="biz_instagram" class="form-input" placeholder="@yourbusiness">
-            </div>
-
-            <div class="form-group">
-              <label for="biz_facebook">Facebook Page (Optional)</label>
-              <input type="url" id="biz_facebook" name="biz_facebook" class="form-input" placeholder="https://facebook.com/yourbusiness">
-            </div>
-
-            <div class="form-group">
-              <label for="twitter">Twitter Handle (Optional)</label>
-              <input type="text" id="twitter" name="twitter" class="form-input" placeholder="@yourbusiness">
-            </div>
-
-            <div class="form-group">
-              <label for="linkedin">LinkedIn Profile (Optional)</label>
-              <input type="url" id="linkedin" name="linkedin" class="form-input" placeholder="https://linkedin.com/in/yourbusiness">
-            </div>
-
-            <div class="form-group">
-              <label for="tiktok">TikTok Handle (Optional)</label>
-              <input type="text" id="tiktok" name="tiktok" class="form-input" placeholder="@yourbusiness">
-            </div>
-
-            <div class="form-group">
-              <label for="youtube">YouTube Channel (Optional)</label>
-              <input type="url" id="youtube" name="youtube" class="form-input" placeholder="https://youtube.com/@yourbusiness">
-            </div>
-          </div>
-
-          <!-- Submission -->
-          <div class="form-section-group">
-            <p id="form-status"></p>
-            
-            <div class="form-note">
-              <i class="fas fa-info-circle"></i>
-              <div>
-                <strong>Profile Complete!</strong><br>
-                Your business profile has been saved and is ready to use.
-          </div>
-        </div>
-
-            <button type="submit" id="biz_submit" class="submit-btn">
-              <i class="fas fa-save"></i> Save Profile
-            </button>
-          </div>
-        </form>
-      </div>
+<section class="container max-w-5xl mx-auto px-4 py-10">
+  <div class="bg-zinc-900/70 rounded-2xl p-8 shadow">
+    <h1 class="text-4xl font-bold mb-2">My Business</h1>
+    <p class="text-zinc-300 mb-6">Manage your business listing and keep your information up to date.</p>
+    <div id="owner-state" class="text-zinc-400">Loading…</div>
+    <div id="owner-content" class="mt-6 hidden"></div>
+    <div id="owner-cta" class="mt-6 hidden">
+      <a href="/owner-form.html" class="inline-block rounded-xl px-5 py-3 bg-amber-500/90 hover:bg-amber-500 text-black font-semibold">
+        Complete Your Business Profile
+      </a>
     </div>
-  </section>
+  </div>
+</section>
+<script type="module" src="/js/owner.js"></script>
 
   <!-- Footer -->
   <footer class="footer">

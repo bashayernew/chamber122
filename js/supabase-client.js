@@ -7,14 +7,11 @@ if (!url || !anon) {
   console.warn('[supabase-client] Missing SUPABASE_URL/ANON_KEY on window.');
 }
 
-// Reuse existing client if already created on the page.
-export const supabase = window._sb || createClient(url, anon, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-  },
-  global: { headers: { 'x-client-info': 'chamber122-web' } }
-});
-
-window._sb = supabase; // expose for debugging
+if (!window.__supabase) {
+  window.__supabase = createClient(
+    window.SUPABASE_URL,
+    window.SUPABASE_ANON_KEY,
+    { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } }
+  )
+}
+export const supabase = window.__supabase
