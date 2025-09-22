@@ -89,6 +89,61 @@ async function main() {
 
   showState('')
   showContent(renderBusinessCard(biz))
+  await loadActivity(biz.id)
+}
+
+const el = (id) => document.getElementById(id)
+function liItem(title, sub) {
+  return `
+    <li style="padding:10px 12px;border:1px solid #2f3036;border-radius:12px;margin-bottom:8px;background:#141518">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:baseline">
+        <div style="font-weight:600;color:#e5e7eb">${title}</div>
+        ${sub ? `<div class="owner-sub" style="white-space:nowrap">${sub}</div>` : ''}
+      </div>
+    </li>
+  `
+}
+async function loadActivity(businessId) {
+  try {
+    // EVENTS
+    const { data: events, error: evErr } = await supabase
+      .from('events')
+      .select('id,title,start_at,end_at,is_published,status')
+      .eq('business_id', businessId)
+      .order('start_at', { ascending: false })
+    if (evErr) throw evErr
+
+    const now = new Date(), running=[], previous=[]
+    for (const e of (events || [])) {
+      const s = e.start_at ? new Date(e.start_at) : null
+      const d = e.end_at ? new Date(e.end_at) : null
+      const isRunning = (s && s <= now && (!d || d >= now)) || (s && s > now)
+      const label = [e.is_published ? 'Published' : (e.status || 'draft'), s ? s.toLocaleString() : null].filter(Boolean).join(' · ')
+      ;(isRunning ? running : previous).push(liItem(e.title, label))
+    }
+    el('events-running').innerHTML = running.join('') || `<li class="owner-sub">None</li>`
+    el('events-previous').innerHTML = previous.join('') || `<li class="owner-sub">None</li>`
+
+    // BULLETINS
+    const { data: bulletins, error: buErr } = await supabase
+      .from('bulletins')
+      .select('id,title,is_published,status,created_at')
+      .eq('business_id', businessId)
+      .order('created_at', { ascending: false })
+    if (buErr) throw buErr
+
+    const pubs=[], drafts=[]
+    for (const b of (bulletins || [])) {
+      const label = [b.is_published ? 'Published' : (b.status || 'draft'), b.created_at ? new Date(b.created_at).toLocaleString() : null].filter(Boolean).join(' · ')
+      ;(b.is_published ? pubs : drafts).push(liItem(b.title, label))
+    }
+    el('bulletins-published').innerHTML = pubs.join('') || `<li class="owner-sub">None</li>`
+    el('bulletins-draft').innerHTML = drafts.join('') || `<li class="owner-sub">None</li>`
+
+    el('owner-activity')?.classList.remove('hidden')
+  } catch (e) {
+    console.error('[owner activity] error', e)
+  }
 }
 
 main()

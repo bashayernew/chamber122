@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Edit Business Profile | Chamber122</title>
+  <link rel="stylesheet" href="/css/styles.css"/>
+  <style>
+    .card{background:#111214;border:1px solid #232428;border-radius:16px;padding:24px;max-width:720px;margin:32px auto;box-shadow:0 8px 28px rgba(0,0,0,.45)}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    @media(max-width:768px){.row{grid-template-columns:1fr}}
+    label{display:block;color:#c7c9d1;font-size:14px;margin-bottom:6px}
+    input,select,textarea{width:100%;background:#17181c;border:1px solid #2a2b31;border-radius:12px;color:#e5e7eb;padding:10px 12px}
+    .actions{display:flex;gap:12px;justify-content:flex-end;margin-top:20px}
+    .btn{border-radius:12px;padding:10px 16px;border:1px solid #3a3b42}
+    .btn.primary{background:#fbbf24;color:#111}
+    .btn.ghost{background:#2b2c31;color:#fff}
+  </style>
+</head>
+<body class="bg-black text-zinc-100">
+  <main class="card">
+    <h1 style="font-size:28px;font-weight:800;margin:0 0 8px">Edit Business Profile</h1>
+    <p style="color:#9ca3af;margin:0 0 16px">Update your details and save. You'll return to your profile.</p>
+
+    <form id="business-form">
+      <div class="row">
+        <div>
+          <label for="name">Business Name</label>
+          <input id="name" required />
+        </div>
+        <div>
+          <label for="industry">Industry</label>
+          <input id="industry" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="phone">Phone</label>
+          <input id="phone" />
+        </div>
+        <div>
+          <label for="whatsapp">WhatsApp</label>
+          <input id="whatsapp" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="website">Website</label>
+          <input id="website" />
+        </div>
+        <div>
+          <label for="instagram">Instagram</label>
+          <input id="instagram" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="country">Country</label>
+          <input id="country" />
+        </div>
+        <div>
+          <label for="city">City</label>
+          <input id="city" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="area">Area</label>
+          <input id="area" />
+        </div>
+        <div>
+          <label for="address_line">Address</label>
+          <input id="address_line" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="logo_url">Logo URL</label>
+          <input id="logo_url" />
+        </div>
+        <div>
+          <label for="is_published">Visible Publicly</label>
+          <select id="is_published">
+            <option value="false">No (draft)</option>
+            <option value="true">Yes (published)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="actions">
+        <a class="btn ghost" href="/owner.html">Cancel</a>
+        <button class="btn primary" type="submit">Save</button>
+      </div>
+    </form>
+    <div id="form-msg" style="margin-top:10px;color:#a1a1aa"></div>
+  </main>
+
+  <script type="module" src="/js/supabase-client.js"></script>
+  <script type="module" src="/js/owner-form.js"></script>
+</body>
+</html>
