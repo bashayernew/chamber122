@@ -30,66 +30,49 @@ async function getBusiness(uid) {
 
 function renderBusinessCard(b) {
   const loc = [b.country, b.city, b.area, b.address_line].filter(Boolean).join(', ') || '—'
-  const publishedBadge = b.is_published
-    ? '<span class="inline-flex items-center rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-medium px-2 py-1">Published</span>'
-    : `<span class="inline-flex items-center rounded-full bg-zinc-700 text-zinc-200 text-xs font-medium px-2 py-1">${(b.status || 'pending')}</span>`
+  const updated = b.updated_at ? new Date(b.updated_at).toLocaleString() : '—'
+  const badge = b.is_published
+    ? '<span class="badge badge--ok">Published</span>'
+    : `<span class="badge badge--pending">${(b.status || 'pending')}</span>`
 
   return `
-    <div class="grid gap-8 md:grid-cols-[160px,1fr] items-start">
-      <!-- Logo / Placeholder -->
-      <div class="w-[160px] h-[160px] rounded-2xl bg-zinc-800 flex items-center justify-center overflow-hidden ring-1 ring-zinc-700">
+    <div class="owner-grid">
+      <div class="owner-logo">
         ${b.logo_url
-          ? `<img src="${b.logo_url}" alt="${b.name || 'Logo'}" class="w-full h-full object-cover">`
-          : `<span class="text-zinc-500">No logo</span>`}
+          ? `<img src="${b.logo_url}" alt="${b.name || 'Logo'}" style="width:100%;height:100%;object-fit:cover">`
+          : `No logo`}
       </div>
 
-      <!-- Details -->
       <div>
-        <div class="flex items-center gap-3">
-          <h2 class="text-3xl font-semibold">${b.name || 'Untitled Business'}</h2>
-          ${publishedBadge}
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <h2 class="owner-title" style="font-size:28px">${b.name || 'Untitled Business'}</h2>
+          ${badge}
         </div>
-        <div class="text-zinc-400 mt-1">${b.industry || '—'}</div>
+        <div class="owner-sub" style="margin-top:4px">${b.industry || '—'}</div>
 
-        <div class="mt-6 grid gap-6 md:grid-cols-2">
-          <dl class="space-y-3">
-            <div class="flex items-baseline gap-3">
-              <dt class="w-28 text-zinc-500">Phone</dt>
-              <dd class="text-zinc-200">${b.phone ? `${b.phone}` : '—'}</dd>
-            </div>
-            <div class="flex items-baseline gap-3">
-              <dt class="w-28 text-zinc-500">WhatsApp</dt>
-              <dd class="text-zinc-200">${b.whatsapp || '—'}</dd>
-            </div>
-            <div class="flex items-baseline gap-3">
-              <dt class="w-28 text-zinc-500">Website</dt>
-              <dd class="text-zinc-200">
-                ${b.website ? `<a class="underline hover:no-underline" href="${b.website}" target="_blank" rel="noopener">${b.website}</a>` : '—'}
-              </dd>
-            </div>
+        <div class="owner-rows">
+          <dl class="row">
+            <dt>Phone</dt><dd>${b.phone || '—'}</dd>
           </dl>
-
-          <dl class="space-y-3">
-            <div class="flex items-baseline gap-3">
-              <dt class="w-28 text-zinc-500">Instagram</dt>
-              <dd class="text-zinc-200">${b.instagram || '—'}</dd>
-            </div>
-            <div class="flex items-baseline gap-3">
-              <dt class="w-28 text-zinc-500">Location</dt>
-              <dd class="text-zinc-200">${loc}</dd>
-            </div>
-            <div class="flex items-baseline gap-3">
-              <dt class="w-28 text-zinc-500">Updated</dt>
-              <dd class="text-zinc-400">${b.updated_at ? new Date(b.updated_at).toLocaleString() : '—'}</dd>
-            </div>
+          <dl class="row">
+            <dt>WhatsApp</dt><dd>${b.whatsapp || '—'}</dd>
+          </dl>
+          <dl class="row">
+            <dt>Website</dt>
+            <dd>${b.website ? `<a href="${b.website}" target="_blank" rel="noopener" style="text-decoration:underline">${b.website}</a>` : '—'}</dd>
+          </dl>
+          <dl class="row">
+            <dt>Instagram</dt><dd>${b.instagram || '—'}</dd>
+          </dl>
+          <dl class="row">
+            <dt>Location</dt><dd>${loc}</dd>
+          </dl>
+          <dl class="row">
+            <dt>Updated</dt><dd class="owner-sub">${updated}</dd>
           </dl>
         </div>
 
-        <div class="mt-8 flex gap-3">
-          <a href="/owner-form.html" class="rounded-xl px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white">
-            Edit Profile
-          </a>
-        </div>
+        <a href="/owner-form.html" class="edit-btn">Edit Profile</a>
       </div>
     </div>
   `

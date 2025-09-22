@@ -18,6 +18,26 @@
   <meta http-equiv="Expires" content="0">
   <title>My Business | Chamber122</title>
   <meta name="description" content="Manage your business listing on Chamber122. Update information, upload new logos, and track your listing status.">
+  
+  <style>
+    /* Owner profile scoped styles */
+    .owner-card{background:#111214;border-radius:16px;padding:28px;box-shadow:0 8px 28px rgba(0,0,0,.45);border:1px solid #232428}
+    .owner-grid{display:grid;grid-template-columns:160px 1fr;gap:24px}
+    @media (max-width: 768px){.owner-grid{grid-template-columns:1fr}}
+    .owner-logo{width:160px;height:160px;border-radius:16px;background:#1a1b1f;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid #2a2b31;color:#8b8d98}
+    .owner-title{font-size:32px;line-height:1.15;font-weight:800;margin:0}
+    .owner-sub{color:#a1a1aa;margin-top:4px}
+    .badge{display:inline-flex;align-items:center;border-radius:9999px;padding:4px 10px;font-size:12px;font-weight:700}
+    .badge--ok{background:rgba(16,185,129,.15);color:#86efac}
+    .badge--pending{background:#2f3036;color:#e5e7eb}
+    .owner-rows{display:grid;grid-template-columns:1fr 1fr;gap:14px 28px;margin-top:18px}
+    @media (max-width: 768px){.owner-rows{grid-template-columns:1fr}}
+    .row{display:flex;gap:12px;align-items:baseline}
+    .row dt{width:110px;color:#9ca3af}
+    .row dd{color:#e5e7eb;margin:0}
+    .edit-btn{background:#2b2c31;color:#fff;padding:10px 16px;border-radius:12px;text-decoration:none;display:inline-block;margin-top:22px;border:1px solid #3a3b42}
+    .edit-btn:hover{background:#3a3b42}
+  </style>
   <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
   <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
   <link rel="stylesheet" href="css/style.css?v=16">
@@ -93,17 +113,15 @@
     </div>
   </nav>
 
-<section class="max-w-5xl mx-auto px-4 py-10">
-  <div class="rounded-2xl bg-zinc-900/70 shadow p-8">
-    <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-2">My Business</h1>
-    <p class="text-zinc-300 mb-8">Manage your business listing and keep your information up to date.</p>
+<section class="max-w-5xl mx-auto" style="padding:32px 16px">
+  <div class="owner-card">
+    <h1 class="owner-title" style="margin-bottom:6px">My Business</h1>
+    <p class="owner-sub" style="margin-bottom:20px">Manage your business listing and keep your information up to date.</p>
 
-    <div id="owner-state" class="text-zinc-400">Loading…</div>
+    <div id="owner-state" class="owner-sub">Loading…</div>
     <div id="owner-content" class="hidden"></div>
-    <div id="owner-cta" class="mt-6 hidden">
-      <a href="/owner-form.html" class="inline-block rounded-xl px-5 py-3 bg-amber-500/90 hover:bg-amber-500 text-black font-semibold">
-        Complete Your Business Profile
-      </a>
+    <div id="owner-cta" class="hidden" style="margin-top:18px">
+      <a href="/owner-form.html" class="edit-btn">Complete Your Business Profile</a>
     </div>
   </div>
 </section>
