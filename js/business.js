@@ -21,7 +21,6 @@ function render(b) {
         <div class="mt-6 grid sm:grid-cols-2 gap-4 text-sm">
           ${b.website ? `<a class="underline" href="${b.website}" target="_blank" rel="noopener">Website</a>` : ''}
           ${b.instagram ? `<a class="underline" href="https://instagram.com/${b.instagram.replace('@','')}" target="_blank" rel="noopener">Instagram</a>` : ''}
-          ${b.x_handle ? `<a class="underline" href="https://x.com/${b.x_handle.replace('@','')}" target="_blank" rel="noopener">X</a>` : ''}
           ${b.phone ? `<div>Phone: ${b.phone}</div>` : ''}
           ${b.whatsapp ? `<div>WhatsApp: ${b.whatsapp}</div>` : ''}
         </div>
@@ -41,7 +40,7 @@ async function load() {
     // Rely on RLS: owners can read drafts; others only see rows where is_published=true.
     const { data, error } = await supabase
       .from('businesses')
-      .select('id,name,industry,logo_url,website,instagram,x_handle,phone,whatsapp,country,city,area,address_line,is_published,status')
+      .select('id,name,industry,phone,whatsapp,website,instagram,country,city,area,address_line,logo_url,status,is_published')
       .eq('id', id)
       .maybeSingle()
 
