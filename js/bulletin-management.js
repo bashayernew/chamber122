@@ -285,13 +285,6 @@ async function saveBulletin(status) {
   try {
     const formData = new FormData(bulletinForm);
     
-    // Get business ID if available
-    const { data: business } = await supabase
-      .from('businesses')
-      .select('id')
-      .eq('owner_id', currentUser.id)
-      .maybeSingle();
-    
     const bulletinData = {
       type: bulletinType.value,
       title: bulletinTitle.value,
@@ -299,7 +292,6 @@ async function saveBulletin(status) {
       location: bulletinLocation.value || null,
       deadline_date: bulletinDeadline.value ? new Date(bulletinDeadline.value).toISOString() : null,
       status: status,
-      owner_business_id: business?.id || null,
       tags: bulletinTags.value ? bulletinTags.value.split(',').map(t => t.trim()).filter(t => t) : []
     };
     
@@ -333,13 +325,10 @@ async function saveBulletin(status) {
         .select()
         .single();
     } else {
-      // Create new bulletin
+      // Create new bulletin - owner_user_id will be auto-set by trigger
       result = await supabase
         .from('bulletins')
-        .insert({
-          ...bulletinData,
-          owner_user_id: currentUser.id
-        })
+        .insert(bulletinData)
         .select()
         .single();
     }

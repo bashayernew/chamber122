@@ -506,12 +506,9 @@ async function handleEventSubmission() {
     if (!title) throw new Error('Event title is required');
     if (!date) throw new Error('Event date is required');
     if (!type) throw new Error('Event type is required');
-    if (!businessId) throw new Error('Please select a business');
 
-    // Prepare event data
+    // Prepare event data - business_id will be auto-set by trigger
     const eventData = {
-      created_by: user.id,
-      business_id: businessId,
       type: type,
       title: title,
       description: formData.get('description').trim() || null,

@@ -174,14 +174,8 @@ async function handleCreateActivity(e) {
       throw new Error('Title is required');
     }
     
-    if (!businessId) {
-      throw new Error('Please select a business');
-    }
-    
-    // Prepare activity data
+    // Prepare activity data - business_id will be auto-set by trigger
     const activityData = {
-      created_by: currentUser.id,
-      business_id: businessId,
       title: title,
       description: description || null,
       starts_at: startsAt || null,
@@ -364,28 +358,18 @@ async function handleCreateBulletin(e) {
       throw new Error('Bulletin type is required');
     }
     
-    // Get user's business info
-    const business = userBusinesses[0];
-    if (!business) {
-      throw new Error('No business found. Please create a business profile first.');
-    }
-    
     // Check account completeness before publishing
     const completeness = await checkAccountCompleteness();
     
     if (!completeness.isComplete) {
-      // Auto-save as draft first
+      // Auto-save as draft first - business_id will be auto-set by trigger
       const bulletinData = {
-        owner_user_id: currentUser.id,
-        business_id: business.id,
-        business_name: business.name,
         title: title,
         description: description,
         type: type,
         location: location || null,
         deadline_date: deadline || null,
-        status: 'draft',
-        created_at: new Date().toISOString()
+        status: 'draft'
       };
       
       const { data: draftData, error: draftError } = await supabase
@@ -416,19 +400,15 @@ async function handleCreateBulletin(e) {
       return;
     }
     
-    // Account is complete, proceed with publishing
+    // Account is complete, proceed with publishing - business_id will be auto-set by trigger
     const bulletinData = {
-      owner_user_id: currentUser.id,
-      business_id: business.id,
-      business_name: business.name,
       title: title,
       description: description,
       type: type,
       location: location || null,
       deadline_date: deadline || null,
       status: 'published',
-      published_at: new Date().toISOString(),
-      created_at: new Date().toISOString()
+      published_at: new Date().toISOString()
     };
     
     // Insert into database
