@@ -1,10 +1,24 @@
-<!doctype html>
-<html lang="en" class="dark">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <link rel="stylesheet" href="/css/header.css?v=1">
+  <script type="module" src="/js/supabase-client.js?v=20"></script>
+  <script type="module" src="/js/header-auth-slot.js?v=11"></script>
+  <script type="module" src="/js/businesses.api.js?v=1"></script>
+  <script type="module" src="/js/business-form.js?v=1"></script>
+  <script type="module" src="/js/network-status.js?v=1"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Edit Business Profile | Chamber122</title>
-  <link rel="stylesheet" href="/css/styles.css"/>
+  <meta name="description" content="Edit your business profile on Chamber122. Update information, upload new logos, and manage your listing.">
+  
   <style>
     .card{background:#111214;border:1px solid #232428;border-radius:16px;padding:24px;max-width:720px;margin:32px auto;box-shadow:0 8px 28px rgba(0,0,0,.45)}
     .row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -16,8 +30,17 @@
     .btn.primary{background:#fbbf24;color:#111}
     .btn.ghost{background:#2b2c31;color:#fff}
   </style>
+  <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+  <link rel="stylesheet" href="css/style.css?v=16">
+  <link rel="stylesheet" href="css/header.css?v=1">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body class="bg-black text-zinc-100">
+  <!-- Global Header -->
+  <div id="site-header"></div>
+  
   <main class="card">
     <h1 style="font-size:28px;font-weight:800;margin:0 0 8px">Edit Business Profile</h1>
     <p style="color:#9ca3af;margin:0 0 16px">Update your details and save. You'll return to your profile.</p>
@@ -100,7 +123,7 @@
     <div id="form-msg" style="margin-top:10px;color:#a1a1aa"></div>
   </main>
 
-  <script type="module" src="/js/supabase-client.js"></script>
+  <script type="module" src="/js/site-header.js"></script>
   <script type="module" src="/js/owner-form.js"></script>
 </body>
 </html>
