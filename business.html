@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Business | Chamber122</title>
+  <link rel="stylesheet" href="css/style.css?v=16" />
+  <link rel="stylesheet" href="css/header.css?v=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-black text-zinc-100">
+  <!-- Global Header -->
+  <div id="site-header"></div>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="logo site-logo">
+        <img src="images/logo.png" alt="Chamber122 Logo">
+      </a>
+      <div class="nav-menu">
+        <a href="index.html" class="nav-link" data-i18n="nav.home">Home</a>
+        <a href="directory.html" class="nav-link" data-i18n="nav.directory">Directory</a>
+        <a href="events.html" class="nav-link" data-i18n="nav.events">Events</a>
+        <a href="bulletin.html" class="nav-link" data-i18n="nav.bulletin">Bulletin</a>
+        <a href="about.html" class="nav-link" data-i18n="nav.about">About</a>
+        <a href="contact.html" class="nav-link" data-i18n="nav.contact">Contact</a>
+      </div>
+      <div class="nav-actions">
+        <!-- Language toggle -->
+        <span id="lang-toggle" class="lang-toggle" aria-label="Language">
+          <button data-lang="en" class="lang-btn">EN</button> |
+          <button data-lang="ar" class="lang-btn">AR</button>
+        </span>
+        <!-- Auth slot for session-aware header -->
+        <span id="auth-slot">
+          <a class="btn" href="/auth.html">Login</a>
+          <a class="btn primary" href="/auth.html#signup">Sign Up &amp; Get Listed</a>
+        </span>
+      </div>
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+    <div class="mobile-menu" id="mobile-menu">
+      <a href="index.html" class="mobile-link">Home</a>
+      <a href="directory.html" class="mobile-link">Directory</a>
+      <a href="events.html" class="mobile-link">Events</a>
+      <a href="bulletin.html" class="mobile-link">Bulletin</a>
+      <a href="about.html" class="mobile-link">About</a>
+      <a href="contact.html" class="mobile-link">Contact</a>
+      <div class="mobile-divider"></div>
+      <a href="owner.html" class="mobile-link">
+        <i class="fas fa-building"></i>
+        My Business
+      </a>
+      <a href="owner-activities.html" class="mobile-link">
+        <i class="fas fa-calendar-alt"></i>
+        My Activities
+      </a>
+      <a href="admin.html" class="mobile-link">
+        <i class="fas fa-cog"></i>
+        Admin Panel
+      </a>
+      <div class="mobile-divider"></div>
+      <a href="auth.html" class="mobile-link">
+        <i class="fas fa-sign-in-alt"></i>
+        Login
+      </a>
+    </div>
+  </nav>
+
+  <main class="max-w-5xl mx-auto px-4 py-10">
+    <div class="bg-zinc-900/70 rounded-2xl p-8 shadow">
+      <div id="biz-state" class="text-zinc-400 mb-4">Loading…</div>
+      <div id="biz-content" class="hidden"></div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <img src="images/logo.png" alt="Chamber122" class="footer-logo">
+        <p class="footer-description">Connecting businesses and communities in Kuwait</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-column">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="directory.html">Directory</a></li>
+            <li><a href="events.html">Events</a></li>
+            <li><a href="bulletin.html">Bulletin</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Business</h4>
+          <ul>
+            <li><a href="get-listed.html">Get Listed</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Support</h4>
+          <ul>
+            <li><a href="contact.html">Help Center</a></li>
+            <li><a href="contact.html">Privacy Policy</a></li>
+            <li><a href="contact.html">Terms of Service</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2024 Chamber122. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Use the SAME paths that owner.html uses for JS files -->
+  <script type="module" src="/js/supabase-client.js?v=20"></script>
+  <script type="module" src="/js/header-auth-slot.js?v=11"></script>
+  <script type="module" src="/js/business.js"></script>
+  <script src="js/main.js?v=7"></script>
+</body>
+</html>

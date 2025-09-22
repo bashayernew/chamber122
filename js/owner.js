@@ -35,7 +35,7 @@ function render(b) {
       <p class="text-zinc-400">${b.industry ?? '—'}</p>
       <div class="mt-4">
         <a href="/owner-form.html" class="rounded-xl px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white">Edit Profile</a>
-        <a href="/business.html?id=${b.id}" class="rounded-xl px-4 py-2 bg-amber-500/90 hover:bg-amber-500 text-black font-semibold">View Public</a>
+        <a href="/business.html?id=${b.id}" class="rounded-xl px-4 py-2 bg-amber-500/90 hover:bg-amber-500 text-black font-semibold">View public page</a>
       </div>
     </div>
   `
