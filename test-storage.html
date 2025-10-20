@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storage Test - Chamber122</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: #fff; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 8px; }
+        .success { border-color: #4CAF50; background: #1e3a1e; }
+        .error { border-color: #f44336; background: #3a1e1e; }
+        button { padding: 10px 20px; margin: 5px; background: #ffd166; color: #111; border: none; border-radius: 5px; cursor: pointer; }
+        pre { background: #222; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Supabase Storage Test</h1>
+    
+    <div id="status" class="test-section">
+        <h3>Status</h3>
+        <p id="status-text">Initializing...</p>
+    </div>
+
+    <div class="test-section">
+        <h3>Tests</h3>
+        <button onclick="testBuckets()">Test Storage Buckets</button>
+        <button onclick="testUpload()">Test File Upload</button>
+        <button onclick="clearLog()">Clear Output</button>
+    </div>
+
+    <div id="results" class="test-section">
+        <h3>Results</h3>
+        <pre id="output">Click a test button to see results...</pre>
+    </div>
+
+    <script type="module" src="/public/js/supabase-client.global.js?v=3"></script>
+    <script type="module">
+        import { supabase } from '/public/js/supabase-client.global.js?v=3';
+        
+        let supabaseClient = null;
+        
+        // Wait for Supabase to be ready
+        async function waitForSupabase() {
+            let attempts = 0;
+            while (attempts < 20) {
+                if (window.__supabaseClient) {
+                    supabaseClient = window.__supabaseClient;
+                    updateStatus('Supabase client ready', 'success');
+                    return true;
+                }
+                attempts++;
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            updateStatus('Failed to load Supabase client', 'error');
+            return false;
+        }
+
+        function updateStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            const textEl = document.getElementById('status-text');
+            textEl.textContent = message;
+            statusEl.className = `test-section ${type}`;
+        }
+
+        function log(message) {
+            const output = document.getElementById('output');
+            output.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+        }
+
+        function clearLog() {
+            const output = document.getElementById('output');
+            output.textContent = 'Test output cleared...\n';
+        }
+
+        async function testBuckets() {
+            log('Testing storage buckets...');
+            
+            try {
+                const { data: buckets, error } = await supabaseClient.storage.listBuckets();
+                
+                if (error) {
+                    log('ERROR: ' + JSON.stringify(error, null, 2));
+                } else {
+                    log('✅ Buckets found: ' + JSON.stringify(buckets, null, 2));
+                }
+            } catch (err) {
+                log('EXCEPTION: ' + err.message);
+            }
+        }
+
+        async function testUpload() {
+            log('Testing file upload...');
+            
+            try {
+                // Create a simple test file
+                const testContent = 'This is a test file for Chamber122';
+                const testFile = new File([testContent], 'test.txt', { type: 'text/plain' });
+                
+                const { data, error } = await supabaseClient.storage
+                    .from('business-media')
+                    .upload('test/test.txt', testFile);
+                
+                if (error) {
+                    log('❌ Upload failed: ' + JSON.stringify(error, null, 2));
+                } else {
+                    log('✅ Upload successful: ' + JSON.stringify(data, null, 2));
+                }
+            } catch (err) {
+                log('EXCEPTION: ' + err.message);
+            }
+        }
+
+        // Make functions global
+        window.testBuckets = testBuckets;
+        window.testUpload = testUpload;
+        window.clearLog = clearLog;
+
+        // Initialize
+        waitForSupabase();
+    </script>
+</body>
+</html>

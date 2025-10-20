@@ -14,10 +14,10 @@ export async function reloadBulletinFeed() {
     console.log('Loading bulletin feed...');
     
     const { data, error } = await supabase
-      .from('bulletins')
-      .select('*')
+      .from('activities_base')
+      .select('*,businesses:business_id(name,logo_url)')
+      .eq('type', 'bulletin')
       .or('status.eq.published,is_published.is.true')
-      .order('pinned', { ascending: false })
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -77,17 +77,14 @@ function createBulletinCard(bulletin) {
   const description = bulletin.description || '';
   const preview = description.length > 280 ? description.substring(0, 280) + '...' : description;
   
-  const deadline = bulletin.deadline ? formatDate(bulletin.deadline) : null;
+  const deadline = bulletin.end_at ? formatDate(bulletin.end_at) : null;
   const location = bulletin.location || null;
   
   let attachmentHtml = '';
-  if (bulletin.attachment_path) {
+  if (bulletin.cover_image_url) {
     attachmentHtml = `
       <div class="bulletin-attachment">
-        <a href="#" onclick="downloadAttachment('${bulletin.attachment_path}')">
-          <i class="fas fa-paperclip"></i>
-          Download Attachment
-        </a>
+        <img src="${bulletin.cover_image_url}" alt="Bulletin attachment" style="max-width: 100%; height: auto; border-radius: 8px; margin-top: 12px;">
       </div>
     `;
   }
@@ -109,6 +106,7 @@ function createBulletinCard(bulletin) {
         ${location ? `<span><i class="fas fa-map-marker-alt"></i> ${escapeHtml(location)}</span>` : ''}
         ${deadline ? `<span><i class="fas fa-calendar"></i> Deadline: ${deadline}</span>` : ''}
         <span><i class="fas fa-clock"></i> ${formatDate(bulletin.created_at)}</span>
+        ${bulletin.businesses ? `<span><i class="fas fa-building"></i> ${escapeHtml(bulletin.businesses.name)}</span>` : ''}
       </div>
       
       ${attachmentHtml}

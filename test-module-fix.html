@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module Fix Test - Chamber122</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f0f0f;
+      color: #e0e0e0;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .test-section {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .status {
+      padding: 10px;
+      border-radius: 6px;
+      margin: 10px 0;
+    }
+    .success { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); color: #22c55e; }
+    .error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; }
+    .info { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #3b82f6; }
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      background: #3b82f6;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      margin: 5px;
+      cursor: pointer;
+    }
+    .btn:hover { background: #2563eb; }
+    #test-results { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Module Fix Test</h1>
+    <p>Testing the conversion from ES modules to global scripts</p>
+
+    <div class="test-section">
+      <h2>1. Supabase Client Test</h2>
+      <div id="supabase-status" class="status info">Checking Supabase client...</div>
+      <button class="btn" onclick="testSupabase()">Test Supabase</button>
+    </div>
+
+    <div class="test-section">
+      <h2>2. Events System Test</h2>
+      <div id="events-status" class="status info">Testing events system...</div>
+      <button class="btn" onclick="testEvents()">Test Events</button>
+      <button class="btn" onclick="testEventForm()">Test Event Form</button>
+    </div>
+
+    <div class="test-section">
+      <h2>3. Bulletins System Test</h2>
+      <div id="bulletins-status" class="status info">Testing bulletins system...</div>
+      <button class="btn" onclick="testBulletins()">Test Bulletins</button>
+      <button class="btn" onclick="testBulletinForm()">Test Bulletin Form</button>
+    </div>
+
+    <div class="test-section">
+      <h2>4. Auth System Test</h2>
+      <div id="auth-status" class="status info">Testing auth system...</div>
+      <button class="btn" onclick="testAuth()">Test Auth</button>
+    </div>
+
+    <div class="test-section">
+      <h2>5. Quick Links</h2>
+      <a href="/events.html" class="btn">Events Page</a>
+      <a href="/bulletin.html" class="btn">Bulletins Page</a>
+      <a href="/dashboard.html" class="btn">Dashboard</a>
+      <a href="/test-auth-posting-demo.html" class="btn">Auth Demo</a>
+    </div>
+
+    <div id="test-results"></div>
+  </div>
+
+  <!-- Load scripts in correct order -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-client.global.js?v=1"></script>
+  <script src="/js/header-auth-slot.js?v=1"></script>
+  <script src="/js/events.js?v=1"></script>
+  <script src="/js/bulletin.js?v=1"></script>
+
+  <script>
+    function updateStatus(elementId, message, type = 'info') {
+      const el = document.getElementById(elementId);
+      el.textContent = message;
+      el.className = `status ${type}`;
+    }
+
+    function addResult(message, type = 'info') {
+      const results = document.getElementById('test-results');
+      const div = document.createElement('div');
+      div.className = `status ${type}`;
+      div.textContent = message;
+      results.appendChild(div);
+    }
+
+    async function testSupabase() {
+      try {
+        if (window.supabase) {
+          updateStatus('supabase-status', '✅ Supabase client loaded successfully', 'success');
+          addResult('Supabase client is available globally');
+          
+          // Test auth
+          const { data: { user } } = await window.supabase.auth.getUser();
+          if (user) {
+            addResult(`User authenticated: ${user.email}`, 'success');
+          } else {
+            addResult('No user authenticated', 'info');
+          }
+        } else {
+          updateStatus('supabase-status', '❌ Supabase client not found', 'error');
+          addResult('Supabase client not available', 'error');
+        }
+      } catch (error) {
+        updateStatus('supabase-status', '❌ Error: ' + error.message, 'error');
+        addResult('Supabase test failed: ' + error.message, 'error');
+      }
+    }
+
+    async function testEvents() {
+      try {
+        if (typeof window.loadEvents === 'function') {
+          updateStatus('events-status', '✅ Events functions loaded', 'success');
+          addResult('Events functions are available globally');
+          
+          // Test loading events
+          await window.loadEvents();
+          addResult('Events loaded successfully', 'success');
+        } else {
+          updateStatus('events-status', '❌ Events functions not found', 'error');
+          addResult('Events functions not available', 'error');
+        }
+      } catch (error) {
+        updateStatus('events-status', '❌ Error: ' + error.message, 'error');
+        addResult('Events test failed: ' + error.message, 'error');
+      }
+    }
+
+    function testEventForm() {
+      try {
+        if (typeof window.openEventForm === 'function') {
+          addResult('Event form function available', 'success');
+          // Don't actually open the form in test
+          addResult('Event form test passed', 'success');
+        } else {
+          addResult('Event form function not available', 'error');
+        }
+      } catch (error) {
+        addResult('Event form test failed: ' + error.message, 'error');
+      }
+    }
+
+    async function testBulletins() {
+      try {
+        if (typeof window.openBulletinForm === 'function') {
+          updateStatus('bulletins-status', '✅ Bulletins functions loaded', 'success');
+          addResult('Bulletins functions are available globally');
+        } else {
+          updateStatus('bulletins-status', '❌ Bulletins functions not found', 'error');
+          addResult('Bulletins functions not available', 'error');
+        }
+      } catch (error) {
+        updateStatus('bulletins-status', '❌ Error: ' + error.message, 'error');
+        addResult('Bulletins test failed: ' + error.message, 'error');
+      }
+    }
+
+    function testBulletinForm() {
+      try {
+        if (typeof window.openBulletinForm === 'function') {
+          addResult('Bulletin form function available', 'success');
+          addResult('Bulletin form test passed', 'success');
+        } else {
+          addResult('Bulletin form function not available', 'error');
+        }
+      } catch (error) {
+        addResult('Bulletin form test failed: ' + error.message, 'error');
+      }
+    }
+
+    async function testAuth() {
+      try {
+        if (window.supabase) {
+          const { data: { user } } = await window.supabase.auth.getUser();
+          if (user) {
+            updateStatus('auth-status', `✅ Authenticated as ${user.email}`, 'success');
+            addResult('User is authenticated', 'success');
+          } else {
+            updateStatus('auth-status', 'ℹ️ Not authenticated', 'info');
+            addResult('User is not authenticated', 'info');
+          }
+        } else {
+          updateStatus('auth-status', '❌ Supabase not available', 'error');
+          addResult('Supabase not available for auth test', 'error');
+        }
+      } catch (error) {
+        updateStatus('auth-status', '❌ Auth error: ' + error.message, 'error');
+        addResult('Auth test failed: ' + error.message, 'error');
+      }
+    }
+
+    // Auto-run tests on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        testSupabase();
+        testEvents();
+        testBulletins();
+        testAuth();
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+

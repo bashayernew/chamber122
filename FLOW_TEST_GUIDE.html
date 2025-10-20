@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en" class="dark bg-zinc-900 text-zinc-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chamber122 - Complete Flow Test</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .test-section {
+      background: #1a1d2e;
+      border: 2px solid #2a2f3a;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .test-pass { border-color: #10b981; }
+    .test-fail { border-color: #ef4444; }
+    .test-warning { border-color: #f59e0b; }
+    .step {
+      background: #0f1115;
+      padding: 15px;
+      margin: 10px 0;
+      border-left: 4px solid #3b82f6;
+      border-radius: 4px;
+    }
+    .issue {
+      background: #2d1818;
+      border-left: 4px solid #ef4444;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="p-8">
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-4xl font-bold mb-2">🧪 Chamber122 - Complete Flow Test</h1>
+    <p class="text-zinc-400 mb-8">Test all critical user journeys</p>
+
+    <!-- Quick Links -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <a href="http://localhost:8000/public/events.html" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-center font-semibold">
+        📅 Events
+      </a>
+      <a href="http://localhost:8000/public/bulletins.html" target="_blank" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg text-center font-semibold">
+        📢 Bulletins
+      </a>
+      <a href="http://localhost:8000/public/profile.html" target="_blank" class="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg text-center font-semibold">
+        👤 Profile
+      </a>
+      <a href="http://localhost:8000/public/dashboard-owner.html" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-lg text-center font-semibold">
+        📊 Dashboard
+      </a>
+      <a href="http://localhost:8000/auth.html" target="_blank" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-3 rounded-lg text-center font-semibold">
+        🔑 Auth
+      </a>
+      <a href="http://localhost:8000/owner.html" target="_blank" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-3 rounded-lg text-center font-semibold">
+        🏢 Owner
+      </a>
+      <a href="http://localhost:8000/" target="_blank" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg text-center font-semibold">
+        🏠 Home
+      </a>
+      <a href="http://localhost:8000/TEST_AUTH_GUARD.html" target="_blank" class="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg text-center font-semibold">
+        🔍 Debug
+      </a>
+    </div>
+
+    <!-- Test Flow 1: Signed Out User Journey -->
+    <div class="test-section">
+      <h2 class="text-2xl font-bold mb-4">🚶 Flow 1: New Visitor (Signed Out)</h2>
+      
+      <div class="step">
+        <h3 class="font-bold text-lg mb-2">Step 1: Browse Events</h3>
+        <p class="text-zinc-300 mb-2">Action: Open <a href="http://localhost:8000/public/events.html" target="_blank" class="text-blue-400 underline">Events Page</a></p>
+        <p class="text-sm text-zinc-400">✓ Should see events list</p>
+        <p class="text-sm text-zinc-400">✓ Should see "Create Event" button</p>
+        <p class="text-sm text-zinc-400">✓ Header shows "Login" button</p>
+      </div>
+
+      <div class="step">
+        <h3 class="font-bold text-lg mb-2">Step 2: Try to Create Event</h3>
+        <p class="text-zinc-300 mb-2">Action: Click green "Create Event" button</p>
+        <p class="text-sm text-zinc-400">✓ Dark modal should appear</p>
+        <p class="text-sm text-zinc-400">✓ Modal says "Login required"</p>
+        <p class="text-sm text-zinc-400">✓ Shows "Cancel" and "Log in" buttons</p>
+      </div>
+
+      <div class="step">
+        <h3 class="font-bold text-lg mb-2">Step 3: Navigate to Login</h3>
+        <p class="text-zinc-300 mb-2">Action: Click "Log in" button in modal</p>
+        <p class="text-sm text-zinc-400">✓ Should redirect to /auth.html?redirect=/public/events.html</p>
+        <p class="text-sm text-zinc-400">✓ Login form should be visible</p>
+        <p class="text-sm text-zinc-400">✓ Console shows: [auth-login] client available: true</p>
+      </div>
+
+      <div class="step">
+        <h3 class="font-bold text-lg mb-2">Step 4: Login</h3>
+        <p class="text-zinc-300 mb-2">Action: Enter credentials and submit</p>
+        <p class="text-sm text-zinc-400">✓ Button shows "Signing in…"</p>
+        <p class="text-sm text-zinc-400">✓ On success: redirects back to /public/events.html</p>
+        <p class="text-sm text-zinc-400">✓ Header now shows avatar/email</p>
+        <p class="text-sm text-zinc-400">✓ Session persists on refresh</p>
+      </div>
+
+      <div class="step">
+        <h3 class="font-bold text-lg mb-2">Step 5: Create Event (Now Authenticated)</h3>
+        <p class="text-zinc-300 mb-2">Action: Click "Create Event" again</p>
+        <p class="text-sm text-zinc-400">✓ No modal this time!</p>
+        <p class="text-sm text-zinc-400">✓ Toast appears or redirects to dashboard</p>
+      </div>
+
+      <div class="issue">
+        <strong>⚠️ Potential Issues to Check:</strong>
+        <ul class="list-disc ml-5 mt-2 text-sm">
+          <li>Modal doesn't appear?</li>
+          <li>Redirect parameter not working?</li>
+          <li>Login button not responding?</li>
+          <li>Header not updating after login?</li>
+          <li>Redirect goes to wrong page after login?</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Test Flow 2: Signed In User Journey -->
+    <div class="test-section">
+      <h2 class="text-2xl font-bold mb-4">👤 Flow 2: Authenticated User</h2>
+      
+      <div class="step">
+        <h3 class="font-bold text-lg mb-2">Step 1: Dashboard</h3>
+        <p class="text-zinc-300 mb-2">Action: Open <a href="http://localhost:8000/public/dashboard-owner.html" target="_blank" class="text-blue-400 underline">Dashboard</a></p>
+        <p class="text-sm text-zinc-400">✓ Loads without errors</p>
+        <p class="text-sm text-zinc-400">✓ Shows "Create Event" and "Create Bulletin" buttons</p>
+        <p class="text-sm text-zinc-400">✓ Tabs work (Published / Drafts)</p>
+      </div>
+
+      <div class="step">
+        <h3 class="font-bold text-lg mb-2">Step 2: Profile</h3>
+        <p class="text-zinc-300 mb-2">Action: Open <a href="http://localhost:8000/public/profile.html" target="_blank" class="text-blue-400 underline">Profile</a></p>
+        <p class="text-sm text-zinc-400">✓ Shows business info</p>
+        <p class="text-sm text-zinc-400">✓ Gallery section visible</p>
+        <p class="text-sm text-zinc-400">✓ Can upload images</p>
+      </div>
+
+      <div class="step">
+        <h3 class="font-bold text-lg mb-2">Step 3: Owner Activities</h3>
+        <p class="text-zinc-300 mb-2">Action: Open <a href="http://localhost:8000/owner.html" target="_blank" class="text-blue-400 underline">Owner Page</a></p>
+        <p class="text-sm text-zinc-400">✓ Activities list loads</p>
+        <p class="text-sm text-zinc-400">✓ Can manage events/bulletins</p>
+      </div>
+
+      <div class="issue">
+        <strong>⚠️ Potential Issues to Check:</strong>
+        <ul class="list-disc ml-5 mt-2 text-sm">
+          <li>Dashboard showing "supabase is not defined"?</li>
+          <li>Profile page not loading data?</li>
+          <li>Gallery upload not working?</li>
+          <li>Activities not displaying?</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Test Flow 3: Navigation -->
+    <div class="test-section">
+      <h2 class="text-2xl font-bold mb-4">🗺️ Flow 3: Navigation & Links</h2>
+      
+      <div class="step">
+        <h3 class="font-bold text-lg mb-2">Test All Links</h3>
+        <p class="text-sm text-zinc-400 mb-2">Click through all navigation:</p>
+        <ul class="list-disc ml-5 text-sm text-zinc-400">
+          <li>Header navigation links work</li>
+          <li>Login/Signup buttons go to /auth.html</li>
+          <li>Avatar dropdown shows (when logged in)</li>
+          <li>Dashboard link accessible</li>
+          <li>Profile link accessible</li>
+          <li>Events → Bulletins → Profile → Dashboard all work</li>
+        </ul>
+      </div>
+
+      <div class="issue">
+        <strong>⚠️ Potential Issues to Check:</strong>
+        <ul class="list-disc ml-5 mt-2 text-sm">
+          <li>Links going to wrong URLs?</li>
+          <li>404 errors on navigation?</li>
+          <li>Header not showing on some pages?</li>
+          <li>Auth state not consistent across pages?</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Test Flow 4: Console Checks -->
+    <div class="test-section">
+      <h2 class="text-2xl font-bold mb-4">🖥️ Flow 4: Console Checks (F12)</h2>
+      
+      <div class="step">
+        <h3 class="font-bold text-lg mb-2">Expected Console Output</h3>
+        <pre class="bg-black text-green-400 p-3 rounded text-xs overflow-x-auto">
+[supabase-client.global] initialized
+[boot] Initializing page: events
+[boot] Page initialization complete
+[auth-login] script loaded; client available: true</pre>
+      </div>
+
+      <div class="step">
+        <h3 class="font-bold text-lg mb-2">❌ Should NOT See These Errors</h3>
+        <pre class="bg-black text-red-400 p-3 rounded text-xs overflow-x-auto">
+❌ Cannot use import statement outside a module
+❌ Unexpected token 'export'
+❌ supabase is not defined
+❌ Identifier has already been declared
+❌ Failed to fetch (on navigation)</pre>
+      </div>
+
+      <div class="issue">
+        <strong>⚠️ Check Network Tab:</strong>
+        <ul class="list-disc ml-5 mt-2 text-sm">
+          <li>All JS files loading (200 status)?</li>
+          <li>No 404 errors for critical files?</li>
+          <li>Supabase API calls working?</li>
+          <li>Files loading from correct paths (/public/js/ vs /js/)?</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Common Issues -->
+    <div class="test-section test-warning">
+      <h2 class="text-2xl font-bold mb-4">⚠️ Common Issues & Fixes</h2>
+      
+      <div class="bg-zinc-800 p-4 rounded mb-3">
+        <h3 class="font-bold mb-2">Issue: Modal doesn't appear on "Create Event"</h3>
+        <p class="text-sm text-zinc-400">Fix: Check console for auth-guard.js errors, ensure modal HTML loaded</p>
+      </div>
+
+      <div class="bg-zinc-800 p-4 rounded mb-3">
+        <h3 class="font-bold mb-2">Issue: Login button doesn't work</h3>
+        <p class="text-sm text-zinc-400">Fix: Check if auth-login.js loaded, verify form IDs match (login-form, email, password)</p>
+      </div>
+
+      <div class="bg-zinc-800 p-4 rounded mb-3">
+        <h3 class="font-bold mb-2">Issue: Redirect doesn't return to original page</h3>
+        <p class="text-sm text-zinc-400">Fix: Check URL has ?redirect= parameter, verify auth-login.js reads it</p>
+      </div>
+
+      <div class="bg-zinc-800 p-4 rounded mb-3">
+        <h3 class="font-bold mb-2">Issue: Header doesn't update after login</h3>
+        <p class="text-sm text-zinc-400">Fix: Check header-auth-slot.js loads on page, verify onAuthStateChange fires</p>
+      </div>
+
+      <div class="bg-zinc-800 p-4 rounded mb-3">
+        <h3 class="font-bold mb-2">Issue: Dashboard/Profile shows errors</h3>
+        <p class="text-sm text-zinc-400">Fix: Verify boot.js loads, check case statement has correct page route</p>
+      </div>
+    </div>
+
+    <!-- Testing Checklist -->
+    <div class="test-section">
+      <h2 class="text-2xl font-bold mb-4">✅ Quick Testing Checklist</h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-zinc-800 p-4 rounded">
+          <h3 class="font-bold mb-3">Basic Functionality</h3>
+          <label class="flex items-center space-x-2 mb-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">All pages load without errors</span>
+          </label>
+          <label class="flex items-center space-x-2 mb-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Navigation links work</span>
+          </label>
+          <label class="flex items-center space-x-2 mb-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Login/Logout functional</span>
+          </label>
+          <label class="flex items-center space-x-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Session persists on refresh</span>
+          </label>
+        </div>
+
+        <div class="bg-zinc-800 p-4 rounded">
+          <h3 class="font-bold mb-3">Auth Guard</h3>
+          <label class="flex items-center space-x-2 mb-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Modal appears when logged out</span>
+          </label>
+          <label class="flex items-center space-x-2 mb-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Redirect to login works</span>
+          </label>
+          <label class="flex items-center space-x-2 mb-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Returns to original page</span>
+          </label>
+          <label class="flex items-center space-x-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">No modal when logged in</span>
+          </label>
+        </div>
+
+        <div class="bg-zinc-800 p-4 rounded">
+          <h3 class="font-bold mb-3">Data Loading</h3>
+          <label class="flex items-center space-x-2 mb-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Events load on events page</span>
+          </label>
+          <label class="flex items-center space-x-2 mb-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Bulletins load on bulletins page</span>
+          </label>
+          <label class="flex items-center space-x-2 mb-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Dashboard shows activities</span>
+          </label>
+          <label class="flex items-center space-x-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Profile loads user data</span>
+          </label>
+        </div>
+
+        <div class="bg-zinc-800 p-4 rounded">
+          <h3 class="font-bold mb-3">UI/UX</h3>
+          <label class="flex items-center space-x-2 mb-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Header updates on login</span>
+          </label>
+          <label class="flex items-center space-x-2 mb-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Buttons are clickable</span>
+          </label>
+          <label class="flex items-center space-x-2 mb-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Forms submit correctly</span>
+          </label>
+          <label class="flex items-center space-x-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Modals open/close properly</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Report Button -->
+    <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-lg text-center">
+      <h3 class="text-xl font-bold mb-2">Found Issues?</h3>
+      <p class="mb-4">Open browser console (F12) and check for errors</p>
+      <button onclick="window.open('http://localhost:8000/TEST_AUTH_GUARD.html', '_blank')" class="bg-white text-blue-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100">
+        Open Debug Test Page
+      </button>
+    </div>
+  </div>
+</body>
+</html>
+

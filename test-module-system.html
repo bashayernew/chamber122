@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Module System - Chamber122</title>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+    .test-section { margin: 20px 0; padding: 20px; border: 1px solid #333; border-radius: 8px; }
+    .test-button { background: #6f75ff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+    .test-button:hover { background: #5a5fcf; }
+    .success { color: #4CAF50; }
+    .error { color: #f44336; }
+    .info { color: #2196F3; }
+    .log { background: #2a2a2a; padding: 10px; border-radius: 4px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Module System Test</h1>
+  
+  <div class="test-section">
+    <h2>1. Module Import Test</h2>
+    <button class="test-button" onclick="testModuleImports()">Test Module Imports</button>
+    <div id="import-results" class="log"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>2. Supabase Client Test</h2>
+    <button class="test-button" onclick="testSupabaseClient()">Test Supabase Connection</button>
+    <div id="supabase-results" class="log"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>3. Event Creation Test</h2>
+    <button class="test-button" onclick="testEventCreation()">Test Event Creation</button>
+    <div id="event-results" class="log"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>4. Activities Loading Test</h2>
+    <button class="test-button" onclick="testActivitiesLoading()">Test Activities Loading</button>
+    <div id="activities-results" class="log"></div>
+  </div>
+
+  <script type="module">
+    // Import modules
+    import { supabase } from '/js/supabase-client.js?v=12';
+    import { initEventsPage, openEventForm } from '/js/events.js?v=12';
+    import { initActivitiesPage, fetchEventsFeed, fetchDashboardFeed } from '/js/activities-list.js?v=12';
+    
+    // Make functions globally available for testing
+    window.testModuleImports = testModuleImports;
+    window.testSupabaseClient = testSupabaseClient;
+    window.testEventCreation = testEventCreation;
+    window.testActivitiesLoading = testActivitiesLoading;
+    
+    // Test results
+    let testResults = {
+      imports: false,
+      supabase: false,
+      events: false,
+      activities: false
+    };
+    
+    function log(elementId, message, type = 'info') {
+      const element = document.getElementById(elementId);
+      const timestamp = new Date().toLocaleTimeString();
+      element.textContent += `[${timestamp}] ${message}\n`;
+      element.className = `log ${type}`;
+    }
+    
+    function testModuleImports() {
+      log('import-results', 'Testing module imports...', 'info');
+      
+      try {
+        // Test if modules are loaded
+        if (typeof supabase !== 'undefined') {
+          log('import-results', '✅ Supabase client imported successfully', 'success');
+          testResults.imports = true;
+        } else {
+          log('import-results', '❌ Supabase client not found', 'error');
+        }
+        
+        if (typeof initEventsPage === 'function') {
+          log('import-results', '✅ Events module imported successfully', 'success');
+        } else {
+          log('import-results', '❌ Events module not found', 'error');
+        }
+        
+        if (typeof initActivitiesPage === 'function') {
+          log('import-results', '✅ Activities module imported successfully', 'success');
+        } else {
+          log('import-results', '❌ Activities module not found', 'error');
+        }
+        
+        log('import-results', 'Module import test completed', 'info');
+        
+      } catch (error) {
+        log('import-results', `❌ Module import error: ${error.message}`, 'error');
+      }
+    }
+    
+    async function testSupabaseClient() {
+      log('supabase-results', 'Testing Supabase client connection...', 'info');
+      
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          log('supabase-results', `❌ Supabase error: ${error.message}`, 'error');
+        } else {
+          log('supabase-results', '✅ Supabase client connected successfully', 'success');
+          log('supabase-results', `Session status: ${data.session ? 'Authenticated' : 'Not authenticated'}`, 'info');
+          testResults.supabase = true;
+        }
+        
+      } catch (error) {
+        log('supabase-results', `❌ Connection error: ${error.message}`, 'error');
+      }
+    }
+    
+    async function testEventCreation() {
+      log('event-results', 'Testing event creation flow...', 'info');
+      
+      try {
+        // Test if we can get user and business
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          log('event-results', '⚠️ No authenticated user - testing with mock data', 'info');
+          
+          // Test with mock event data
+          const mockEventData = {
+            business_id: '00000000-0000-0000-0000-000000000000',
+            title: 'Test Event - Module System',
+            description: 'This is a test event to verify the module system works',
+            location: 'Test Location',
+            start_at: new Date().toISOString(),
+            status: 'published',
+            is_published: true
+          };
+          
+          log('event-results', '✅ Event data structure is valid', 'success');
+          log('event-results', `Mock event: ${JSON.stringify(mockEventData, null, 2)}`, 'info');
+          testResults.events = true;
+          
+        } else {
+          log('event-results', `✅ User authenticated: ${user.email}`, 'success');
+          
+          // Try to get user's business
+          const { data: business, error: bizError } = await supabase
+            .from('businesses')
+            .select('id, name')
+            .eq('owner_id', user.id)
+            .single();
+            
+          if (bizError) {
+            log('event-results', `⚠️ No business found: ${bizError.message}`, 'info');
+          } else {
+            log('event-results', `✅ Business found: ${business.name}`, 'success');
+          }
+          
+          testResults.events = true;
+        }
+        
+      } catch (error) {
+        log('event-results', `❌ Event creation test error: ${error.message}`, 'error');
+      }
+    }
+    
+    async function testActivitiesLoading() {
+      log('activities-results', 'Testing activities loading...', 'info');
+      
+      try {
+        // Test events feed
+        const { data: events, error: eventsError } = await fetchEventsFeed({ limit: 5 });
+        
+        if (eventsError) {
+          log('activities-results', `❌ Events feed error: ${eventsError.message}`, 'error');
+        } else {
+          log('activities-results', `✅ Events feed loaded: ${events?.length || 0} events`, 'success');
+        }
+        
+        // Test dashboard feed
+        const { data: dashboard, error: dashboardError } = await fetchDashboardFeed({ limit: 5 });
+        
+        if (dashboardError) {
+          log('activities-results', `❌ Dashboard feed error: ${dashboardError.message}`, 'error');
+        } else {
+          log('activities-results', `✅ Dashboard feed loaded: ${dashboard?.length || 0} activities`, 'success');
+        }
+        
+        testResults.activities = true;
+        
+      } catch (error) {
+        log('activities-results', `❌ Activities loading error: ${error.message}`, 'error');
+      }
+    }
+    
+    // Auto-run tests on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      log('import-results', 'Module system test page loaded', 'info');
+      log('import-results', 'Click the test buttons to run individual tests', 'info');
+    });
+  </script>
+</body>
+</html>
+

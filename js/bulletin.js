@@ -1,5 +1,4 @@
 // Bulletin page functionality
-import { supabase } from '/js/supabase-client.js';
 
 // Real bulletin data from Supabase
 let bulletinData = [];
@@ -15,35 +14,43 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 // Load bulletins from Supabase
 async function loadBulletinsFromSupabase() {
+  console.log('[bulletins] using kind filter + created_at order');
+  
+  const supa = window.supabase;
+  if (!supa) {
+    console.error('[bulletins] Supabase client not available');
+    return;
+  }
+  
   try {
-    const { data, error } = await supabase
-      .from('bulletins')
+    const { data, error } = await supa
+      .from('activities')               // VIEW (RLS-friendly)
       .select(`
         *,
-        businesses:owner_business_id (
-          business_name,
+        businesses:business_id (
+          name,
           logo_url
-        ),
-        profiles:owner_user_id (
-          full_name
         )
       `)
+      .eq('kind', 'bulletin')           // Use 'kind' from VIEW
       .eq('status', 'published')
-      .order('published_at', { ascending: false });
+      .eq('is_published', true)
+      .order('created_at', { ascending: false }); // Valid column
 
     if (error) throw error;
+    console.log('[bulletins] loaded', data?.length || 0, 'bulletins');
     
     // Transform Supabase data to match expected format
     bulletinData = (data || []).map(bulletin => ({
       id: bulletin.id,
-      category: bulletin.type,
+      category: bulletin.type ?? bulletin.kind,
       title: bulletin.title,
       description: bulletin.description,
-      company: bulletin.businesses?.business_name || bulletin.profiles?.full_name || 'Anonymous',
-      contact: bulletin.location || 'Contact via Chamber122',
-      date: bulletin.published_at || bulletin.created_at,
-      deadline: bulletin.deadline_date,
-      link: bulletin.attachment_url,
+      company: bulletin.businesses?.name || 'Anonymous',
+      contact: bulletin.contact_email || bulletin.location || 'Contact via Chamber122',
+      date: bulletin.start_at || bulletin.created_at,
+      deadline: bulletin.end_at,
+      link: bulletin.link,
       attachment_name: bulletin.attachment_name,
       location: bulletin.location
     }));
@@ -200,10 +207,16 @@ function loadMoreBulletins() {
 
 // Open bulletin form modal - redirect to bulletin management for providers
 async function openBulletinForm() {
+  const supa = window.supabase;
+  if (!supa) {
+    console.error('[bulletins] Supabase client not available');
+    window.location.href = '/auth.html#login';
+    return;
+  }
+  
   try {
-    // Check if user is a provider
-    const { supabase } = await import('/js/supabase-client.js');
-    const { data: { user } } = await supabase.auth.getUser();
+    // Check if user is logged in
+    const { data: { user } } = await supa.auth.getUser();
     
     if (!user) {
       // Not logged in - show login prompt
@@ -212,7 +225,7 @@ async function openBulletinForm() {
     }
     
     // Check user role
-    const { data: profile } = await supabase
+    const { data: profile } = await supa
       .from('profiles')
       .select('role')
       .eq('user_id', user.id)

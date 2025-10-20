@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" class="dark bg-zinc-900 text-zinc-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Fixes Demo - Chamber122</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#10b981',
+            secondary: '#3b82f6'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="dark bg-zinc-900 text-zinc-100 min-h-screen p-8">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Upload Fixes Implementation Complete ✅</h1>
+    
+    <div class="bg-green-800 rounded-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">✅ Fixes Applied</h2>
+      <div class="space-y-3 text-sm">
+        <div class="flex items-center">
+          <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+          <span><strong>Key Format Fixed:</strong> Now uses <code class="bg-zinc-700 px-2 py-1 rounded">${businessId}/events/${uuid}.${ext}</code> format</span>
+        </div>
+        <div class="flex items-center">
+          <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+          <span><strong>Content-Type Added:</strong> Proper MIME type detection and passing</span>
+        </div>
+        <div class="flex items-center">
+          <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+          <span><strong>Business Selection:</strong> Added dropdown to select business before upload</span>
+        </div>
+        <div class="flex items-center">
+          <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+          <span><strong>Enhanced Logging:</strong> Detailed logs for businessId, key, file type, and size</span>
+        </div>
+        <div class="flex items-center">
+          <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+          <span><strong>Error Handling:</strong> Clear error messages with specific failure reasons</span>
+        </div>
+        <div class="flex items-center">
+          <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+          <span><strong>Fallback Support:</strong> Data URL fallback for development/testing</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-zinc-800 rounded-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">🧪 Testing Instructions</h2>
+      <div class="space-y-4">
+        <div>
+          <h3 class="font-semibold text-primary mb-2">1. Test Storage Self-Test (Fixed)</h3>
+          <p class="text-sm text-zinc-300 mb-2">Go to: <code class="bg-zinc-700 px-2 py-1 rounded">http://localhost:8000/events.html?dev=1</code></p>
+          <ul class="text-sm text-zinc-400 ml-4 space-y-1">
+            <li>• Sign in to your account</li>
+            <li>• Click "Storage Test" button</li>
+            <li>• <strong>Expected console logs:</strong></li>
+            <li class="ml-4 bg-zinc-900 p-2 rounded text-xs">
+              <div>[selftest] businessId: <span class="text-green-400">your-business-id</span></div>
+              <div>[selftest] key: <span class="text-green-400">your-business-id/events/selftest-uuid.png</span> type: image/png size: 68</div>
+              <div>[selftest] upload success. public URL: <span class="text-green-400">https://.../business-media/your-business-id/events/selftest-uuid.png</span></div>
+            </li>
+          </ul>
+        </div>
+        
+        <div>
+          <h3 class="font-semibold text-primary mb-2">2. Test Event Creation with Cover Image (Fixed)</h3>
+          <p class="text-sm text-zinc-300 mb-2">On the same page:</p>
+          <ul class="text-sm text-zinc-400 ml-4 space-y-1">
+            <li>• Click "Create Event" button</li>
+            <li>• <strong>NEW:</strong> Select your business from the dropdown</li>
+            <li>• Fill out title, description, dates</li>
+            <li>• Upload a cover image file</li>
+            <li>• Submit the form</li>
+            <li>• <strong>Expected console logs:</strong></li>
+            <li class="ml-4 bg-zinc-900 p-2 rounded text-xs">
+              <div>[events] starting cover image upload for businessId: <span class="text-green-400">your-business-id</span></div>
+              <div>[upload] businessId: <span class="text-green-400">your-business-id</span></div>
+              <div>[upload] key: <span class="text-green-400">your-business-id/events/uuid.jpg</span> type: image/jpeg size: 12345</div>
+              <div>[upload] public URL: <span class="text-green-400">https://.../business-media/your-business-id/events/uuid.jpg</span></div>
+              <div>[events] cover image uploaded successfully: <span class="text-green-400">https://.../business-media/your-business-id/events/uuid.jpg</span></div>
+              <div>[events] create success with row id: <span class="text-green-400">event-id</span> and cover_image_url: <span class="text-green-400">https://...</span></div>
+            </li>
+          </ul>
+        </div>
+        
+        <div>
+          <h3 class="font-semibold text-primary mb-2">3. Error Case Testing</h3>
+          <ul class="text-sm text-zinc-400 ml-4 space-y-1">
+            <li>• Try uploading without selecting a business → Should show "Please select a business first"</li>
+            <li>• Check Supabase Storage policies → Files should appear under correct business_id folder</li>
+            <li>• If still getting 400 errors, check the detailed error logs for specific failure reasons</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-zinc-800 rounded-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">🔧 Technical Improvements</h2>
+      <div class="space-y-3">
+        <div class="bg-zinc-900 rounded p-3">
+          <h4 class="font-semibold text-blue-400 mb-2">New uploadEventCover Function:</h4>
+          <ul class="text-xs text-zinc-300 space-y-1">
+            <li>• Ensures key starts with businessId (required by policies)</li>
+            <li>• Auto-detects file extension from MIME type</li>
+            <li>• Passes explicit contentType to avoid 400 errors</li>
+            <li>• Detailed logging for debugging</li>
+            <li>• Graceful fallback to data URL for development</li>
+          </ul>
+        </div>
+        
+        <div class="bg-zinc-900 rounded p-3">
+          <h4 class="font-semibold text-purple-400 mb-2">Business Selection:</h4>
+          <ul class="text-xs text-zinc-300 space-y-1">
+            <li>• Added business dropdown to event form</li>
+            <li>• Loads user's businesses when form opens</li>
+            <li>• Validates business selection before upload</li>
+            <li>• Ensures correct businessId is used in storage key</li>
+          </ul>
+        </div>
+        
+        <div class="bg-zinc-900 rounded p-3">
+          <h4 class="font-semibold text-yellow-400 mb-2">Enhanced Error Handling:</h4>
+          <ul class="text-xs text-zinc-300 space-y-1">
+            <li>• Clear error messages with specific failure reasons</li>
+            <li>• Logs businessId, key format, file type, and size</li>
+            <li>• Provides hints for policy troubleshooting</li>
+            <li>• Graceful degradation with data URL fallback</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-zinc-800 rounded-lg p-6">
+      <h2 class="text-xl font-semibold mb-4">🎯 Expected Results</h2>
+      <div class="space-y-3">
+        <div class="flex items-start">
+          <span class="w-6 h-6 bg-green-500 rounded-full mr-3 mt-1 flex-shrink-0 flex items-center justify-center text-xs">✓</span>
+          <div>
+            <h4 class="font-semibold text-green-400">Storage Upload Success</h4>
+            <p class="text-sm text-zinc-300">Files uploaded to business-media bucket with correct key format and accessible public URLs</p>
+          </div>
+        </div>
+        
+        <div class="flex items-start">
+          <span class="w-6 h-6 bg-green-500 rounded-full mr-3 mt-1 flex-shrink-0 flex items-center justify-center text-xs">✓</span>
+          <div>
+            <h4 class="font-semibold text-green-400">Event Creation Success</h4>
+            <p class="text-sm text-zinc-300">Events created with proper cover_image_url pointing to storage bucket</p>
+          </div>
+        </div>
+        
+        <div class="flex items-start">
+          <span class="w-6 h-6 bg-green-500 rounded-full mr-3 mt-1 flex-shrink-0 flex items-center justify-center text-xs">✓</span>
+          <div>
+            <h4 class="font-semibold text-green-400">Clear Debugging</h4>
+            <p class="text-sm text-zinc-300">Detailed console logs make it easy to identify any remaining issues</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

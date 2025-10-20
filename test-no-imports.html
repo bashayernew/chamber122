@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test No Import Errors - Chamber122</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+    .test-section { margin: 20px 0; padding: 20px; border: 1px solid #333; border-radius: 8px; }
+    .test-button { background: #6f75ff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+    .test-button:hover { background: #5a5fcf; }
+    .success { color: #4CAF50; }
+    .error { color: #f44336; }
+    .info { color: #2196F3; }
+    .log { background: #2a2a2a; padding: 10px; border-radius: 4px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>🧪 No Import Errors Test</h1>
+  
+  <div class="test-section">
+    <h2>1. Clear Browser Cache</h2>
+    <p>Before testing, please:</p>
+    <ol>
+      <li>Press <strong>Ctrl+Shift+R</strong> (or Cmd+Shift+R on Mac) to hard refresh</li>
+      <li>Or press <strong>F12</strong> → Right-click refresh button → "Empty Cache and Hard Reload"</li>
+    </ol>
+  </div>
+
+  <div class="test-section">
+    <h2>2. Script Loading Test</h2>
+    <button class="test-button" onclick="testScripts()">Test Script Loading</button>
+    <div id="script-results" class="log"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>3. Console Error Check</h2>
+    <button class="test-button" onclick="checkConsoleErrors()">Check for Import Errors</button>
+    <div id="console-results" class="log"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>4. Event Form Test</h2>
+    <button class="test-button" onclick="testEventForm()">Test Event Form</button>
+    <div id="form-results" class="log"></div>
+  </div>
+
+  <!-- Include the classic scripts in correct order -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-client.global.js?v=1"></script>
+  <script src="/js/i18n.js?v=1"></script>
+  <script src="/js/language-switcher.js?v=1"></script>
+  <script src="/js/header-auth-slot.js?v=1"></script>
+  <script src="/js/activities-list.js?v=1"></script>
+  <script src="/js/event.js?v=1"></script>
+
+  <script>
+    function log(elementId, message, type = 'info') {
+      const element = document.getElementById(elementId);
+      const timestamp = new Date().toLocaleTimeString();
+      element.textContent += `[${timestamp}] ${message}\n`;
+      element.className = `log ${type}`;
+    }
+    
+    function testScripts() {
+      log('script-results', 'Testing script loading...', 'info');
+      
+      const scripts = [
+        { name: 'Supabase CDN', check: () => typeof window.supabase !== 'undefined' },
+        { name: 'Supabase Client Global', check: () => typeof window.sb !== 'undefined' },
+        { name: 'I18N', check: () => typeof window.I18N !== 'undefined' },
+        { name: 'Language Switcher', check: () => typeof window.initLanguageSwitcher === 'function' },
+        { name: 'Header Auth', check: () => typeof window.initHeaderAuth === 'function' },
+        { name: 'Activities List', check: () => typeof window.initActivitiesPage === 'function' },
+        { name: 'Event Functions', check: () => typeof window.openEventForm === 'function' }
+      ];
+      
+      let allLoaded = true;
+      scripts.forEach(script => {
+        if (script.check()) {
+          log('script-results', `✅ ${script.name} loaded successfully`, 'success');
+        } else {
+          log('script-results', `❌ ${script.name} not loaded`, 'error');
+          allLoaded = false;
+        }
+      });
+      
+      if (allLoaded) {
+        log('script-results', '🎉 All scripts loaded successfully!', 'success');
+      } else {
+        log('script-results', '⚠️ Some scripts failed to load', 'error');
+      }
+    }
+    
+    function checkConsoleErrors() {
+      log('console-results', 'Checking for import errors...', 'info');
+      
+      // Check if there are any import statements in the loaded scripts
+      const scripts = document.querySelectorAll('script[src]');
+      let hasImports = false;
+      
+      scripts.forEach(script => {
+        if (script.src.includes('events.js?v=6') || 
+            script.src.includes('supabase-client.js?v=12') ||
+            script.src.includes('supabase.js')) {
+          hasImports = true;
+          log('console-results', `❌ Found old script: ${script.src}`, 'error');
+        }
+      });
+      
+      if (!hasImports) {
+        log('console-results', '✅ No old import scripts found', 'success');
+      }
+      
+      // Check for common error patterns
+      const errorPatterns = [
+        'Cannot use import statement outside a module',
+        'Unexpected token export',
+        'supabase is not defined',
+        'Multiple GoTrueClient instances'
+      ];
+      
+      log('console-results', 'Check browser console for these errors:', 'info');
+      errorPatterns.forEach(pattern => {
+        log('console-results', `- ${pattern}`, 'info');
+      });
+    }
+    
+    function testEventForm() {
+      log('form-results', 'Testing event form functionality...', 'info');
+      
+      if (typeof window.openEventForm === 'function') {
+        log('form-results', '✅ openEventForm function available', 'success');
+        
+        // Test if we can call it
+        try {
+          window.openEventForm();
+          log('form-results', '✅ openEventForm called successfully', 'success');
+        } catch (error) {
+          log('form-results', `❌ Error calling openEventForm: ${error.message}`, 'error');
+        }
+      } else {
+        log('form-results', '❌ openEventForm function not available', 'error');
+      }
+    }
+    
+    // Auto-run tests on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      log('script-results', 'No import errors test page loaded', 'info');
+      log('script-results', 'Please clear browser cache first, then run tests', 'info');
+      
+      // Auto-run script test after a delay
+      setTimeout(() => {
+        testScripts();
+      }, 1000);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auth & Posting Flow Demo - Chamber122</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f0f;
+      color: #e0e0e0;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 30px;
+      background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+      border: 1px solid #333;
+      border-radius: 16px;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: #a0a0a0;
+      font-size: 1.1rem;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      margin: 20px 0;
+    }
+
+    .status-badge.logged-out {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+    }
+
+    .status-badge.logged-in {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #22c55e;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 24px;
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      border-color: #3a3a3a;
+      transform: translateY(-2px);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .card-icon.events {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .card-icon.bulletins {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+
+    .card-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .card-content {
+      color: #a0a0a0;
+      margin-bottom: 20px;
+    }
+
+    .feature-list {
+      list-style: none;
+      margin: 16px 0;
+    }
+
+    .feature-list li {
+      padding: 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #c0c0c0;
+    }
+
+    .feature-list li i {
+      color: #10b981;
+      width: 20px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      font-size: 1rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-secondary {
+      background: #2a2a2a;
+      color: #e0e0e0;
+      border: 1px solid #3a3a3a;
+    }
+
+    .btn-secondary:hover {
+      background: #3a3a3a;
+      transform: translateY(-2px);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .flow-diagram {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 30px;
+      margin: 40px 0;
+    }
+
+    .flow-step {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin: 20px 0;
+      padding: 20px;
+      background: #0f0f0f;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+    }
+
+    .step-number {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #10b981, #059669);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step-title {
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 4px;
+      color: #fff;
+    }
+
+    .step-desc {
+      color: #a0a0a0;
+    }
+
+    .info-box {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .info-box i {
+      color: #3b82f6;
+      margin-right: 12px;
+    }
+
+    .quick-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .user-info {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .user-info h3 {
+      color: #fff;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .user-detail {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    .user-detail:last-child {
+      border-bottom: none;
+    }
+
+    .user-detail span:first-child {
+      color: #a0a0a0;
+    }
+
+    .user-detail span:last-child {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 1.8rem;
+      }
+      
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1><i class="fas fa-shield-check"></i> Auth & Posting Flow Demo</h1>
+      <p>Testing Event & Bulletin Posting with Authentication</p>
+      <div class="status-badge" id="authStatus">
+        <i class="fas fa-spinner fa-spin"></i> Checking authentication...
+      </div>
+      <div id="userInfo" style="display: none;"></div>
+    </div>
+
+    <!-- Info Box -->
+    <div class="info-box">
+      <i class="fas fa-info-circle"></i>
+      <strong>How it works:</strong> When you're logged in, you can post events and bulletins. 
+      These will automatically appear on their respective pages (Events, Bulletins) as well as your Profile and Dashboard.
+    </div>
+
+    <!-- Flow Diagram -->
+    <div class="flow-diagram">
+      <h2 style="color: #fff; margin-bottom: 24px; font-size: 1.8rem;">
+        <i class="fas fa-sitemap"></i> Complete Flow
+      </h2>
+      
+      <div class="flow-step">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <div class="step-title">Login to Your Account</div>
+          <div class="step-desc">Authenticate using your Chamber122 credentials</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <div class="step-title">Create Content</div>
+          <div class="step-desc">Post events or bulletins through the respective forms</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <div class="step-title">Content Appears Everywhere</div>
+          <div class="step-desc">Your posts automatically show on: Events/Bulletin page, Profile, and Dashboard</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature Cards -->
+    <div class="grid">
+      <!-- Events Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon events">
+            <i class="fas fa-calendar-alt"></i>
+          </div>
+          <div class="card-title">Events</div>
+        </div>
+        <div class="card-content">
+          <p>When logged in, you can create and manage events that appear on:</p>
+          <ul class="feature-list">
+            <li><i class="fas fa-check-circle"></i> Events Page (Public)</li>
+            <li><i class="fas fa-check-circle"></i> Your Profile</li>
+            <li><i class="fas fa-check-circle"></i> Your Dashboard</li>
+            <li><i class="fas fa-check-circle"></i> Business Activities</li>
+          </ul>
+        </div>
+        <div class="quick-links">
+          <button class="btn btn-primary" id="createEventBtn" disabled>
+            <i class="fas fa-plus"></i> Create Event
+          </button>
+          <a href="/events.html" class="btn btn-secondary">
+            <i class="fas fa-eye"></i> View Events
+          </a>
+        </div>
+      </div>
+
+      <!-- Bulletins Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon bulletins">
+            <i class="fas fa-bullhorn"></i>
+          </div>
+          <div class="card-title">Bulletins</div>
+        </div>
+        <div class="card-content">
+          <p>When logged in, you can post bulletins that appear on:</p>
+          <ul class="feature-list">
+            <li><i class="fas fa-check-circle"></i> Bulletin Page (Public)</li>
+            <li><i class="fas fa-check-circle"></i> Your Profile</li>
+            <li><i class="fas fa-check-circle"></i> Your Dashboard</li>
+            <li><i class="fas fa-check-circle"></i> Business Activities</li>
+          </ul>
+        </div>
+        <div class="quick-links">
+          <button class="btn btn-primary" id="createBulletinBtn" disabled>
+            <i class="fas fa-plus"></i> Create Bulletin
+          </button>
+          <a href="/bulletin.html" class="btn btn-secondary">
+            <i class="fas fa-eye"></i> View Bulletins
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Authentication Actions -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">
+          <i class="fas fa-key"></i>
+        </div>
+        <div class="card-title">Authentication</div>
+      </div>
+      <div class="card-content">
+        <p id="authMessage">Please log in to create events and bulletins.</p>
+      </div>
+      <div class="quick-links">
+        <a href="/auth.html#login" class="btn btn-primary" id="loginBtn">
+          <i class="fas fa-sign-in-alt"></i> Login
+        </a>
+        <a href="/auth.html#signup" class="btn btn-secondary" id="signupBtn">
+          <i class="fas fa-user-plus"></i> Sign Up
+        </a>
+        <a href="/dashboard.html" class="btn btn-secondary" id="dashboardBtn" style="display: none;">
+          <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+        </a>
+        <a href="/public/profile.html" class="btn btn-secondary" id="profileBtn" style="display: none;">
+          <i class="fas fa-user"></i> View Profile
+        </a>
+        <button class="btn btn-secondary" id="logoutBtn" style="display: none;">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </div>
+
+    <!-- Test Results -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+          <i class="fas fa-clipboard-check"></i>
+        </div>
+        <div class="card-title">Quick Tests</div>
+      </div>
+      <div class="card-content">
+        <p>Verify the complete flow:</p>
+      </div>
+      <div class="quick-links">
+        <button class="btn btn-primary" id="testEventsBtn">
+          <i class="fas fa-vial"></i> Test Event Flow
+        </button>
+        <button class="btn btn-primary" id="testBulletinsBtn">
+          <i class="fas fa-vial"></i> Test Bulletin Flow
+        </button>
+      </div>
+      <div id="testResults" style="margin-top: 20px; color: #a0a0a0;"></div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-client.global.js?v=1"></script>
+  <script>
+    let currentUser = null;
+
+    // Check authentication status
+    async function checkAuth() {
+      const statusEl = document.getElementById('authStatus');
+      const authMessageEl = document.getElementById('authMessage');
+      const createEventBtn = document.getElementById('createEventBtn');
+      const createBulletinBtn = document.getElementById('createBulletinBtn');
+      const loginBtn = document.getElementById('loginBtn');
+      const signupBtn = document.getElementById('signupBtn');
+      const dashboardBtn = document.getElementById('dashboardBtn');
+      const profileBtn = document.getElementById('profileBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const userInfoEl = document.getElementById('userInfo');
+
+      try {
+        const { data: { user }, error } = await window.sb.auth.getUser();
+        
+        if (error || !user) {
+          // Not logged in
+          statusEl.className = 'status-badge logged-out';
+          statusEl.innerHTML = '<i class="fas fa-times-circle"></i> Not Logged In';
+          authMessageEl.textContent = 'Please log in to create events and bulletins.';
+          createEventBtn.disabled = true;
+          createBulletinBtn.disabled = true;
+          loginBtn.style.display = 'inline-flex';
+          signupBtn.style.display = 'inline-flex';
+          dashboardBtn.style.display = 'none';
+          profileBtn.style.display = 'none';
+          logoutBtn.style.display = 'none';
+          userInfoEl.style.display = 'none';
+          currentUser = null;
+        } else {
+          // Logged in
+          currentUser = user;
+          statusEl.className = 'status-badge logged-in';
+          statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Logged In';
+          authMessageEl.innerHTML = `<strong>Welcome!</strong> You can now create events and bulletins.`;
+          createEventBtn.disabled = false;
+          createBulletinBtn.disabled = false;
+          loginBtn.style.display = 'none';
+          signupBtn.style.display = 'none';
+          dashboardBtn.style.display = 'inline-flex';
+          profileBtn.style.display = 'inline-flex';
+          logoutBtn.style.display = 'inline-flex';
+
+          // Show user info
+          userInfoEl.style.display = 'block';
+          userInfoEl.innerHTML = `
+            <div class="user-info">
+              <h3><i class="fas fa-user"></i> User Information</h3>
+              <div class="user-detail">
+                <span>Email:</span>
+                <span>${user.email}</span>
+              </div>
+              <div class="user-detail">
+                <span>User ID:</span>
+                <span>${user.id.substring(0, 8)}...</span>
+              </div>
+              <div class="user-detail">
+                <span>Status:</span>
+                <span style="color: #22c55e;">Active</span>
+              </div>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('Error checking auth:', error);
+        statusEl.className = 'status-badge logged-out';
+        statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error';
+        authMessageEl.textContent = 'Error checking authentication status.';
+      }
+    }
+
+    // Create Event
+    document.getElementById('createEventBtn').addEventListener('click', () => {
+      if (currentUser) {
+        window.location.href = '/events.html';
+      } else {
+        alert('Please log in first!');
+        window.location.href = '/auth.html#login';
+      }
+    });
+
+    // Create Bulletin
+    document.getElementById('createBulletinBtn').addEventListener('click', () => {
+      if (currentUser) {
+        window.location.href = '/bulletin.html';
+      } else {
+        alert('Please log in first!');
+        window.location.href = '/auth.html#login';
+      }
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        await window.sb.auth.signOut();
+        alert('Logged out successfully!');
+        location.reload();
+      } catch (error) {
+        console.error('Logout error:', error);
+        alert('Error logging out. Please try again.');
+      }
+    });
+
+    // Test Events Flow
+    document.getElementById('testEventsBtn').addEventListener('click', async () => {
+      const resultsEl = document.getElementById('testResults');
+      resultsEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing event flow...';
+
+      try {
+        // Check if user is logged in
+        const { data: { user } } = await window.sb.auth.getUser();
+        if (!user) {
+          resultsEl.innerHTML = '<div style="color: #ef4444;"><i class="fas fa-times"></i> Not logged in. Please login first.</div>';
+          return;
+        }
+
+        // Check if events exist
+        const { data: events, error } = await window.sb
+          .from('activities')
+          .select('*')
+          .eq('kind', 'event')
+          .limit(5);
+
+        if (error) throw error;
+
+        resultsEl.innerHTML = `
+          <div style="color: #22c55e;">
+            <i class="fas fa-check"></i> Event system is working!
+            <ul style="margin-top: 10px; list-style: none;">
+              <li>✓ Authentication: <strong>Active</strong></li>
+              <li>✓ Database: <strong>Connected</strong></li>
+              <li>✓ Events found: <strong>${events.length}</strong></li>
+            </ul>
+            <p style="margin-top: 12px;">
+              <a href="/events.html" style="color: #3b82f6;">Go to Events Page →</a>
+            </p>
+          </div>
+        `;
+      } catch (error) {
+        console.error('Test error:', error);
+        resultsEl.innerHTML = `<div style="color: #ef4444;"><i class="fas fa-times"></i> Error: ${error.message}</div>`;
+      }
+    });
+
+    // Test Bulletins Flow
+    document.getElementById('testBulletinsBtn').addEventListener('click', async () => {
+      const resultsEl = document.getElementById('testResults');
+      resultsEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing bulletin flow...';
+
+      try {
+        // Check if user is logged in
+        const { data: { user } } = await window.sb.auth.getUser();
+        if (!user) {
+          resultsEl.innerHTML = '<div style="color: #ef4444;"><i class="fas fa-times"></i> Not logged in. Please login first.</div>';
+          return;
+        }
+
+        // Check if bulletins exist
+        const { data: bulletins, error } = await window.sb
+          .from('activities')
+          .select('*')
+          .eq('kind', 'bulletin')
+          .limit(5);
+
+        if (error) throw error;
+
+        resultsEl.innerHTML = `
+          <div style="color: #22c55e;">
+            <i class="fas fa-check"></i> Bulletin system is working!
+            <ul style="margin-top: 10px; list-style: none;">
+              <li>✓ Authentication: <strong>Active</strong></li>
+              <li>✓ Database: <strong>Connected</strong></li>
+              <li>✓ Bulletins found: <strong>${bulletins.length}</strong></li>
+            </ul>
+            <p style="margin-top: 12px;">
+              <a href="/bulletin.html" style="color: #3b82f6;">Go to Bulletins Page →</a>
+            </p>
+          </div>
+        `;
+      } catch (error) {
+        console.error('Test error:', error);
+        resultsEl.innerHTML = `<div style="color: #ef4444;"><i class="fas fa-times"></i> Error: ${error.message}</div>`;
+      }
+    });
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      // Wait for Supabase client to be ready
+      if (window.sb) {
+        checkAuth();
+      } else {
+        setTimeout(() => {
+          if (window.sb) {
+            checkAuth();
+          } else {
+            document.getElementById('authStatus').innerHTML = '<i class="fas fa-exclamation-triangle"></i> Supabase not loaded';
+          }
+        }, 1000);
+      }
+    });
+  </script>
+</body>
+</html>
+

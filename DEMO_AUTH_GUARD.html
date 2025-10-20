@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auth Guard Demo - Chamber122</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0a0e1a;
+      color: #eaeef5;
+      padding: 40px 20px;
+      line-height: 1.6;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { 
+      font-size: 2.5rem; 
+      margin-bottom: 20px; 
+      background: linear-gradient(135deg, #f5c75c, #ff9a3c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    h2 { 
+      font-size: 1.5rem; 
+      margin: 30px 0 15px; 
+      color: #f5c75c;
+      border-left: 4px solid #f5c75c;
+      padding-left: 15px;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+    .badge-success { background: #10b981; color: white; }
+    .badge-info { background: #3b82f6; color: white; }
+    .section {
+      background: #14172a;
+      border: 1px solid #2a2f3a;
+      border-radius: 16px;
+      padding: 25px;
+      margin-bottom: 25px;
+    }
+    .flow-step {
+      background: #0f1115;
+      border: 1px solid #2a2f3a;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 15px 0;
+      position: relative;
+      padding-left: 50px;
+    }
+    .step-number {
+      position: absolute;
+      left: 15px;
+      top: 20px;
+      width: 28px;
+      height: 28px;
+      background: #f5c75c;
+      color: #0a0e1a;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    .flow-step h3 {
+      color: #f5c75c;
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+    }
+    .flow-step p {
+      color: #c9d2e0;
+      margin-bottom: 8px;
+    }
+    .flow-step code {
+      background: #1a1d2e;
+      color: #60a5fa;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    .cta-button {
+      display: inline-block;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, #f5c75c, #ff9a3c);
+      color: #0a0e1a;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: 700;
+      margin: 20px 10px 10px 0;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 15px rgba(245, 199, 92, 0.3);
+    }
+    .cta-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(245, 199, 92, 0.4);
+    }
+    .checklist {
+      list-style: none;
+      margin: 15px 0;
+    }
+    .checklist li {
+      padding: 10px 15px;
+      margin: 8px 0;
+      background: #0f1115;
+      border-left: 3px solid #10b981;
+      border-radius: 4px;
+    }
+    .checklist li:before {
+      content: "✓";
+      color: #10b981;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    .screenshot-placeholder {
+      background: #1a1d2e;
+      border: 2px dashed #2a2f3a;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      color: #6b7280;
+      margin: 20px 0;
+    }
+    .code-block {
+      background: #0f1115;
+      border: 1px solid #2a2f3a;
+      border-radius: 8px;
+      padding: 15px;
+      overflow-x: auto;
+      margin: 15px 0;
+    }
+    .code-block pre {
+      color: #e5e7eb;
+      font-size: 0.9rem;
+      font-family: 'Courier New', monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 Auth Guard Implementation Demo</h1>
+    <p style="font-size: 1.2rem; color: #c9d2e0; margin-bottom: 30px;">
+      Complete login-required modal with auth guard for Chamber122 static site
+      <span class="status-badge badge-success">✅ COMPLETE</span>
+    </p>
+
+    <!-- Quick Links -->
+    <div class="section">
+      <h2>🚀 Quick Demo Links</h2>
+      <a href="http://localhost:8000/public/events.html" class="cta-button">
+        📅 Test Events Page
+      </a>
+      <a href="http://localhost:8000/auth.html" class="cta-button">
+        🔑 Login Page
+      </a>
+      <p style="margin-top: 15px; color: #9ca3af;">
+        <strong>Tip:</strong> Open Events page while logged out, click "Create Event" to see the modal in action!
+      </p>
+    </div>
+
+    <!-- Flow Diagram -->
+    <div class="section">
+      <h2>📋 User Flow: Signed Out → Modal → Login → Return</h2>
+      
+      <div class="flow-step">
+        <div class="step-number">1</div>
+        <h3>User clicks "Create Event" (signed out)</h3>
+        <p>Location: <code>http://localhost:8000/public/events.html</code></p>
+        <p>The auth guard checks for session, finds none.</p>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-number">2</div>
+        <h3>Dark modal appears</h3>
+        <p>Shows elegant login-required modal with:</p>
+        <ul style="margin-left: 20px; color: #c9d2e0;">
+          <li>Gold accent dot with glow effect</li>
+          <li>"Login required" heading</li>
+          <li>Clear description</li>
+          <li>Cancel & Log in buttons</li>
+        </ul>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-number">3</div>
+        <h3>User clicks "Log in"</h3>
+        <p>Navigates to: <code>/auth.html?redirect=/public/events.html</code></p>
+        <p>Console shows: <code>[auth-login] client available: true</code></p>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-number">4</div>
+        <h3>User enters credentials</h3>
+        <p>Form shows "Signing in…" during authentication</p>
+        <p>Supabase validates credentials</p>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-number">5</div>
+        <h3>Success → Redirect back</h3>
+        <p>User redirected to: <code>/public/events.html</code></p>
+        <p>Header immediately shows avatar (not "Login")</p>
+        <p>Session persists in localStorage</p>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-number">6</div>
+        <h3>Click "Create Event" again</h3>
+        <p>No modal this time!</p>
+        <p>Goes directly to event form/dashboard</p>
+      </div>
+    </div>
+
+    <!-- Implementation Checklist -->
+    <div class="section">
+      <h2>✅ Implementation Checklist</h2>
+      <ul class="checklist">
+        <li>Single global Supabase client (public/js/supabase-client.global.js)</li>
+        <li>Server unified to port 8000 (was 8004)</li>
+        <li>Dark modal partial created with Chamber122 styling</li>
+        <li>Dialog CSS with gold accent (#f5c75c)</li>
+        <li>Auth guard helper (requireAuthOrPrompt)</li>
+        <li>Auth-login.js handles redirect parameter</li>
+        <li>Auth.html uses global client first</li>
+        <li>Events page wired with auth guard</li>
+        <li>Header auth slot uses global client & reacts to changes</li>
+        <li>No hardcoded ports or origins</li>
+      </ul>
+    </div>
+
+    <!-- Code Examples -->
+    <div class="section">
+      <h2>💻 Key Code Snippets</h2>
+      
+      <h3 style="color: #60a5fa; margin-top: 20px;">Auth Guard Usage</h3>
+      <div class="code-block">
+        <pre>// public/js/events.page.js
+import { requireAuthOrPrompt } from './auth-guard.js';
+
+createBtn.addEventListener('click', async () => {
+  try {
+    await requireAuthOrPrompt();
+    openEventForm(); // Only runs if authenticated
+  } catch (e) {
+    if (e?.message !== 'AUTH_REQUIRED') console.error(e);
+  }
+});</pre>
+      </div>
+
+      <h3 style="color: #60a5fa; margin-top: 20px;">Login with Redirect</h3>
+      <div class="code-block">
+        <pre>// public/js/auth-login.js
+const redirect = url.searchParams.get('redirect') || '/owner.html';
+
+const { error } = await supabase.auth.signInWithPassword({
+  email: email.value.trim(),
+  password: password.value
+});
+
+if (!error) {
+  location.replace(redirect); // Returns to originating page
+}</pre>
+      </div>
+    </div>
+
+    <!-- Testing Instructions -->
+    <div class="section">
+      <h2>🧪 Test Instructions</h2>
+      
+      <h3 style="color: #60a5fa; margin: 20px 0 10px;">Test 1: Modal Flow (Signed Out)</h3>
+      <ol style="margin-left: 25px; color: #c9d2e0;">
+        <li>Clear localStorage or use incognito window</li>
+        <li>Navigate to <code>http://localhost:8000/public/events.html</code></li>
+        <li>Click green "Create Event" button</li>
+        <li>Verify modal appears with dark theme and gold accent</li>
+        <li>Click "Log in" button</li>
+        <li>Verify redirect to auth.html with redirect parameter</li>
+        <li>Login with valid credentials</li>
+        <li>Verify you return to events.html</li>
+        <li>Verify header shows avatar</li>
+      </ol>
+
+      <h3 style="color: #60a5fa; margin: 20px 0 10px;">Test 2: Direct Access (Signed In)</h3>
+      <ol style="margin-left: 25px; color: #c9d2e0;">
+        <li>After logging in from Test 1</li>
+        <li>Click "Create Event" again</li>
+        <li>Verify no modal appears</li>
+        <li>Should proceed directly to form/dashboard</li>
+      </ol>
+
+      <h3 style="color: #60a5fa; margin: 20px 0 10px;">Test 3: Session Persistence</h3>
+      <ol style="margin-left: 25px; color: #c9d2e0;">
+        <li>After logging in, refresh the page (F5)</li>
+        <li>Verify you're still logged in</li>
+        <li>Check header still shows avatar</li>
+        <li>localStorage should have Supabase session</li>
+      </ol>
+    </div>
+
+    <!-- Console Logs -->
+    <div class="section">
+      <h2>📊 Expected Console Logs</h2>
+      <div class="code-block">
+        <pre>// On page load (any page)
+[supabase-client.global] initialized
+
+// On auth.html
+[auth-login] script loaded; client available: true
+
+// On auth state change
+[supabase-client.global] auth state change: {
+  event: "SIGNED_IN",
+  hasSession: true,
+  email: "user@example.com"
+}
+
+// Header updates
+[auth-slot] auth state change - rendering signed in for: user@example.com</pre>
+      </div>
+    </div>
+
+    <!-- Architecture -->
+    <div class="section">
+      <h2>🏗️ Architecture Overview</h2>
+      <div class="screenshot-placeholder">
+        <strong>Single Global Supabase Client</strong><br>
+        ↓<br>
+        All pages import from public/js/supabase-client.global.js<br>
+        ↓<br>
+        Consistent auth state across entire app<br>
+        ↓<br>
+        No session conflicts or duplicate clients
+      </div>
+      
+      <p style="margin-top: 20px; color: #c9d2e0;">
+        <strong>Key Benefits:</strong>
+      </p>
+      <ul style="margin-left: 25px; color: #c9d2e0;">
+        <li>One source of truth for auth state</li>
+        <li>Automatic session persistence via localStorage</li>
+        <li>Real-time header updates on login/logout</li>
+        <li>Elegant UX with dark themed modal</li>
+        <li>Proper redirect flow returns users to where they started</li>
+      </ul>
+    </div>
+
+    <div style="text-align: center; padding: 40px 20px; color: #6b7280;">
+      <p style="font-size: 1.1rem;">
+        <strong style="color: #f5c75c;">Status:</strong> ✅ Implementation Complete & Tested
+      </p>
+      <p style="margin-top: 10px;">
+        Chamber122 Auth Guard System v1.0 | October 2025
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+

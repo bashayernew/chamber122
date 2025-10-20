@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Events Test - Chamber122</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: #fff; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 8px; }
+        .success { border-color: #4CAF50; background: #1e3a1e; }
+        .error { border-color: #f44336; background: #3a1e1e; }
+        button { padding: 10px 20px; margin: 5px; background: #ffd166; color: #111; border: none; border-radius: 5px; cursor: pointer; }
+        pre { background: #222; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        .event-item { margin: 10px 0; padding: 10px; border: 1px solid #444; border-radius: 5px; }
+        .event-item a { color: #ffd166; text-decoration: none; }
+        .event-item a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>Events Test</h1>
+    
+    <div id="status" class="test-section">
+        <h3>Status</h3>
+        <p id="status-text">Initializing...</p>
+    </div>
+
+    <div class="test-section">
+        <h3>Tests</h3>
+        <button onclick="testEvents()">Load All Events</button>
+        <button onclick="testSpecificEvent()">Test Specific Event</button>
+        <button onclick="clearLog()">Clear Output</button>
+    </div>
+
+    <div id="results" class="test-section">
+        <h3>Results</h3>
+        <pre id="output">Click a test button to see results...</pre>
+    </div>
+
+    <div id="events-list" class="test-section">
+        <h3>Events Found</h3>
+        <div id="events-container">No events loaded yet...</div>
+    </div>
+
+    <script type="module" src="/public/js/supabase-client.global.js?v=3"></script>
+    <script type="module">
+        import { supabase } from '/public/js/supabase-client.global.js?v=3';
+        
+        function updateStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            const textEl = document.getElementById('status-text');
+            textEl.textContent = message;
+            statusEl.className = `test-section ${type}`;
+        }
+
+        function log(message) {
+            const output = document.getElementById('output');
+            output.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+        }
+
+        function clearLog() {
+            const output = document.getElementById('output');
+            output.textContent = 'Test output cleared...\n';
+        }
+
+        async function testEvents() {
+            log('Loading all events from activities_base...');
+            
+            try {
+                const { data: events, error } = await supabase
+                    .from('activities_base')
+                    .select('*')
+                    .eq('type', 'event')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    log('ERROR: ' + JSON.stringify(error, null, 2));
+                    updateStatus('Error loading events', 'error');
+                } else {
+                    log('✅ Found ' + events.length + ' events');
+                    log('Events: ' + JSON.stringify(events, null, 2));
+                    updateStatus('Events loaded successfully', 'success');
+                    displayEvents(events);
+                }
+            } catch (err) {
+                log('EXCEPTION: ' + err.message);
+                updateStatus('Exception occurred', 'error');
+            }
+        }
+
+        async function testSpecificEvent() {
+            log('Testing specific event ID: 75ffee97-c7c4-447e-bf37-05f15a541764');
+            
+            try {
+                const { data, error } = await supabase
+                    .from('activities_base')
+                    .select('*, businesses:business_id (name, logo_url)')
+                    .eq('id', '75ffee97-c7c4-447e-bf37-05f15a541764')
+                    .single();
+                
+                if (error) {
+                    log('ERROR: ' + JSON.stringify(error, null, 2));
+                } else {
+                    log('✅ Event found: ' + JSON.stringify(data, null, 2));
+                }
+            } catch (err) {
+                log('EXCEPTION: ' + err.message);
+            }
+        }
+
+        function displayEvents(events) {
+            const container = document.getElementById('events-container');
+            if (events.length === 0) {
+                container.innerHTML = '<p>No events found.</p>';
+                return;
+            }
+
+            container.innerHTML = events.map(event => `
+                <div class="event-item">
+                    <h4>${event.title || 'Untitled Event'}</h4>
+                    <p><strong>ID:</strong> ${event.id}</p>
+                    <p><strong>Type:</strong> ${event.type}</p>
+                    <p><strong>Status:</strong> ${event.status}</p>
+                    <p><strong>Published:</strong> ${event.is_published ? 'Yes' : 'No'}</p>
+                    <p><strong>Start:</strong> ${event.start_at ? new Date(event.start_at).toLocaleString() : 'TBA'}</p>
+                    <p><strong>Cover Image:</strong> ${event.cover_image_url || 'None'}</p>
+                    <p><a href="/event.html?id=${event.id}" target="_blank">View Details</a></p>
+                </div>
+            `).join('');
+        }
+
+        // Make functions global
+        window.testEvents = testEvents;
+        window.testSpecificEvent = testSpecificEvent;
+        window.clearLog = clearLog;
+
+        // Initialize
+        updateStatus('Ready to test events', 'success');
+    </script>
+</body>
+</html>
+
+
+
+

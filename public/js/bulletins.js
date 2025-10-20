@@ -143,23 +143,48 @@ async function onSubmit(e) {
     return; 
   }
 
-  // ensure auth
+  // ensure auth and check business ownership
   const { data: s } = await supabase.auth.getSession();
   if (!s?.session?.user) { location.href = '/auth.html'; return; }
   const userId = s.session.user.id;
+
+  // Check if user owns a business
+  const { data: business, error: bizError } = await supabase
+    .from('businesses')
+    .select('id')
+    .eq('owner_id', userId)
+    .single();
+  
+  if (bizError || !business) {
+    alert('You need to own a business to post bulletins. Please upgrade your account.');
+    return;
+  }
+  
+  const businessId = business.id;
 
   // generate UUID client-side so we can upload image at a predictable path even before refresh
   const id = (crypto?.randomUUID && crypto.randomUUID()) || (Math.random().toString(36).slice(2) + Date.now());
 
   saveBtn.disabled = true; saveBtn.textContent = is_published ? 'Publishing…' : 'Saving…';
   try {
-    // 1) insert bulletin row (without image_url first)
+    // 1) insert bulletin row (without cover_image_url first)
     const insert = {
-      id, owner_user_id: userId, title, body,
-      category, link_url, start_at, end_at,
-      is_public, pinned, is_published, status
+      type: 'bulletin',
+      title, 
+      description: body,
+      location: null,
+      start_at: start_at, 
+      end_at: end_at,
+      contact_name: null,
+      contact_email: null,
+      contact_phone: null,
+      link: link_url,
+      status, 
+      is_published: status === 'published',
+      cover_image_url: null,
+      business_id: businessId
     };
-    const { data: row, error: insErr } = await supabase.from('bulletins').insert(insert).select().single();
+    const { data: row, error: insErr } = await supabase.from('activities_base').insert(insert).select().single();
     if (insErr) { 
       console.warn('[bulletins] insert error', insErr); 
       alert(insErr.message || 'Insert failed'); 
@@ -170,16 +195,21 @@ async function onSubmit(e) {
     const file = imgEl?.files?.[0] || null;
     if (file) {
       const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-      const path = `${userId}/${id}.${ext}`;
-      const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true });
+      const slug = (filename) => filename.toLowerCase().replace(/[^a-z0-9.-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+      const path = `${businessId}/${Date.now()}-${slug(file.name.replace(/\.[^/.]+$/, ""))}.${ext}`;
+      const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, file, { 
+        contentType: file.type,
+        upsert: false,
+        cacheControl: '3600'
+      });
       if (upErr) throw upErr;
 
       const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
-      const image_url = pub?.publicUrl || null;
+      const cover_image_url = pub?.publicUrl || null;
 
-      if (image_url) {
-        const { error: updErr } = await supabase.from('bulletins').update({ image_url }).eq('id', id);
-        if (updErr) console.warn('[bulletins] image URL update error', updErr);
+      if (cover_image_url) {
+        const { error: updErr } = await supabase.from('activities_base').update({ cover_image_url }).eq('id', row.id);
+        if (updErr) console.warn('[bulletins] cover URL update error', updErr);
       }
     }
 
@@ -211,8 +241,8 @@ window.refreshBulletinsList ??= function appendRow(row) {
   const when = new Date(row.created_at || Date.now()).toLocaleString();
   const badge = row.pinned ? '📌 ' : '';
   const cat = row.category ? `<span class="muted"> • ${row.category}</span>` : '';
-  const img = row.image_url ? `<div style="margin:.5rem 0"><img src="${row.image_url}" alt="" style="max-width:100%;border-radius:12px;border:1px solid #232744"></div>` : '';
-  const link = row.link_url ? `<div><a href="${row.link_url}" target="_blank" rel="noopener">Link</a></div>` : '';
+  const img = row.cover_url ? `<div style="margin:.5rem 0"><img src="${row.cover_url}" alt="" style="max-width:100%;border-radius:12px;border:1px solid #232744"></div>` : '';
+  const link = row.registration_url ? `<div><a href="${row.registration_url}" target="_blank" rel="noopener">Link</a></div>` : '';
   item.innerHTML = `<strong>${badge}${row.title}</strong>${cat}<div class="muted">${when}</div>${img}<p>${row.body}</p>${link}`;
   container.prepend(item);
 };

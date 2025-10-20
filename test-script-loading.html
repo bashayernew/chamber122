@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Script Loading Test</title>
+</head>
+<body data-page="profile">
+  <h1>Script Loading Test</h1>
+  <div id="output"></div>
+  
+  <script>
+    console.log('Basic script is working');
+    document.getElementById('output').innerHTML = '<p>Basic script loaded</p>';
+  </script>
+  
+  <script type="module">
+    console.log('Module script is working');
+    document.getElementById('output').innerHTML += '<p>Module script loaded</p>';
+    
+    try {
+      const { supabase } = await import('/public/js/supabase-client.global.js?v=3');
+      console.log('Supabase import successful');
+      document.getElementById('output').innerHTML += '<p>Supabase import successful</p>';
+    } catch (error) {
+      console.error('Supabase import error:', error);
+      document.getElementById('output').innerHTML += `<p>Supabase import error: ${error.message}</p>`;
+    }
+    
+    try {
+      const { getOwnerBusinessId } = await import('/public/js/api.js');
+      console.log('API import successful');
+      document.getElementById('output').innerHTML += '<p>API import successful</p>';
+    } catch (error) {
+      console.error('API import error:', error);
+      document.getElementById('output').innerHTML += `<p>API import error: ${error.message}</p>`;
+    }
+    
+    try {
+      await import('/public/js/profile.page.js');
+      console.log('Profile page import successful');
+      document.getElementById('output').innerHTML += '<p>Profile page import successful</p>';
+    } catch (error) {
+      console.error('Profile page import error:', error);
+      document.getElementById('output').innerHTML += `<p>Profile page import error: ${error.message}</p>`;
+    }
+  </script>
+  
+  <script type="module" src="/public/js/boot.js?v=1"></script>
+</body>
+</html>

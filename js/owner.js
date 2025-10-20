@@ -1,149 +1,260 @@
-import { supabase } from './supabase-client.js'
+// js/owner.js - Load and display business data
+import { supabase } from '../public/js/supabase-client.global.js';
 
-const $ = (id) => document.getElementById(id)
-const stateEl = $('owner-state')
-const contentEl = $('owner-content')
-const ctaEl = $('owner-cta')
+console.log('[owner] Loading business display script');
 
-function showState(text) { stateEl.textContent = text }
-function showCTA() { ctaEl.classList.remove('hidden') }
-function showContent(html) {
-  contentEl.innerHTML = html
-  contentEl.classList.remove('hidden')
-}
-
-async function getUser() {
-  const { data, error } = await supabase.auth.getSession()
-  if (error) throw error
-  return data.session?.user ?? null
-}
-
-async function getBusiness(uid) {
-  const { data, error } = await supabase
+async function loadAndDisplayBusiness() {
+  console.log('[owner] Loading business data...');
+  
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.log('[owner] No user, redirecting to auth');
+      location.href = '/auth.html';
+      return;
+    }
+    
+    console.log('[owner] User ID:', user.id);
+    
+    const { data: biz, error } = await supabase
     .from('businesses')
     .select('*')
-    .eq('owner_id', uid)
-    .maybeSingle()
-  if (error && error.code !== 'PGRST116') throw error
-  return data ?? null
-}
-
-function renderBusinessCard(b) {
-  const loc = [b.country, b.city, b.area, b.address_line].filter(Boolean).join(', ') || '—'
-  const updated = b.updated_at ? new Date(b.updated_at).toLocaleString() : '—'
-  const badge = b.is_published
-    ? '<span class="badge badge--ok">Published</span>'
-    : `<span class="badge badge--pending">${(b.status || 'pending')}</span>`
-
-  return `
-    <div class="owner-grid">
-      <div class="owner-logo">
-        ${b.logo_url
-          ? `<img src="${b.logo_url}" alt="${b.name || 'Logo'}" style="width:100%;height:100%;object-fit:cover">`
-          : `No logo`}
-      </div>
-
-      <div>
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-          <h2 class="owner-title" style="font-size:28px">${b.name || 'Untitled Business'}</h2>
-          ${badge}
-        </div>
-        <div class="owner-sub" style="margin-top:4px">${b.industry || '—'}</div>
-
-        <div class="owner-rows">
-          <dl class="row">
-            <dt>Phone</dt><dd>${b.phone || '—'}</dd>
-          </dl>
-          <dl class="row">
-            <dt>WhatsApp</dt><dd>${b.whatsapp || '—'}</dd>
-          </dl>
-          <dl class="row">
-            <dt>Website</dt>
-            <dd>${b.website ? `<a href="${b.website}" target="_blank" rel="noopener" style="text-decoration:underline">${b.website}</a>` : '—'}</dd>
-          </dl>
-          <dl class="row">
-            <dt>Instagram</dt><dd>${b.instagram || '—'}</dd>
-          </dl>
-          <dl class="row">
-            <dt>Location</dt><dd>${loc}</dd>
-          </dl>
-          <dl class="row">
-            <dt>Updated</dt><dd class="owner-sub">${updated}</dd>
-          </dl>
-        </div>
-
-        <a href="/owner-form.html" class="edit-btn">Edit Profile</a>
-      </div>
-    </div>
-  `
-}
-
-async function main() {
-  showState('Checking session…')
-  const user = await getUser()
-  if (!user) { showState('Signed out'); showCTA(); return }
-
-  showState('Loading business…')
-  const biz = await getBusiness(user.id)
-  if (!biz) { showState('No business yet'); showCTA(); return }
-
-  showState('')
-  showContent(renderBusinessCard(biz))
-  await loadActivity(biz.id)
-}
-
-const el = (id) => document.getElementById(id)
-function liItem(title, sub) {
-  return `
-    <li style="padding:10px 12px;border:1px solid #2f3036;border-radius:12px;margin-bottom:8px;background:#141518">
-      <div style="display:flex;justify-content:space-between;gap:12px;align-items:baseline">
-        <div style="font-weight:600;color:#e5e7eb">${title}</div>
-        ${sub ? `<div class="owner-sub" style="white-space:nowrap">${sub}</div>` : ''}
-      </div>
-    </li>
-  `
-}
-async function loadActivity(businessId) {
-  try {
-    // EVENTS
-    const { data: events, error: evErr } = await supabase
-      .from('events')
-      .select('id,title,start_at,end_at,is_published,status')
-      .eq('business_id', businessId)
-      .order('start_at', { ascending: false })
-    if (evErr) throw evErr
-
-    const now = new Date(), running=[], previous=[]
-    for (const e of (events || [])) {
-      const s = e.start_at ? new Date(e.start_at) : null
-      const d = e.end_at ? new Date(e.end_at) : null
-      const isRunning = (s && s <= now && (!d || d >= now)) || (s && s > now)
-      const label = [e.is_published ? 'Published' : (e.status || 'draft'), s ? s.toLocaleString() : null].filter(Boolean).join(' · ')
-      ;(isRunning ? running : previous).push(liItem(e.title, label))
+      .eq('owner_id', user.id)
+      .single();
+    
+    if (error) {
+      console.error('[owner] Error fetching business:', error);
+      return;
     }
-    el('events-running').innerHTML = running.join('') || `<li class="owner-sub">None</li>`
-    el('events-previous').innerHTML = previous.join('') || `<li class="owner-sub">None</li>`
-
-    // BULLETINS
-    const { data: bulletins, error: buErr } = await supabase
-      .from('bulletins')
-      .select('id,title,is_published,status,created_at')
-      .eq('business_id', businessId)
-      .order('created_at', { ascending: false })
-    if (buErr) throw buErr
-
-    const pubs=[], drafts=[]
-    for (const b of (bulletins || [])) {
-      const label = [b.is_published ? 'Published' : (b.status || 'draft'), b.created_at ? new Date(b.created_at).toLocaleString() : null].filter(Boolean).join(' · ')
-      ;(b.is_published ? pubs : drafts).push(liItem(b.title, label))
+    
+    if (!biz) {
+      console.log('[owner] No business found');
+      return;
     }
-    el('bulletins-published').innerHTML = pubs.join('') || `<li class="owner-sub">None</li>`
-    el('bulletins-draft').innerHTML = drafts.join('') || `<li class="owner-sub">None</li>`
-
-    el('owner-activity')?.classList.remove('hidden')
-  } catch (e) {
-    console.error('[owner activity] error', e)
+    
+    console.log('[owner] Business loaded:', biz.name);
+    
+    // Populate all fields (use correct IDs from HTML)
+    const $ = (id) => document.getElementById(id);
+    
+    // Business name and info
+    if ($('biz-name')) $('biz-name').textContent = biz.name || 'Your Business';
+    if ($('description')) $('description').textContent = biz.description || 'No description yet';
+    if ($('story')) $('story').textContent = biz.story || 'No story yet';
+    
+    // Contact fields
+    if ($('phone')) {
+      $('phone').textContent = biz.phone || 'Not provided';
+      $('phone').href = biz.phone ? `tel:${biz.phone}` : '#';
+    }
+    if ($('whatsapp')) {
+      $('whatsapp').textContent = biz.whatsapp || 'Not provided';
+      $('whatsapp').href = biz.whatsapp ? `https://wa.me/${biz.whatsapp.replace(/[^0-9]/g, '')}` : '#';
+    }
+    if ($('website')) {
+      $('website').textContent = biz.website || 'Not provided';
+      $('website').href = biz.website || '#';
+    }
+    if ($('instagram')) {
+      $('instagram').textContent = biz.instagram || 'Not provided';
+      $('instagram').href = biz.instagram ? `https://instagram.com/${biz.instagram}` : '#';
+    }
+    
+    // Location fields
+    if ($('country')) $('country').textContent = biz.country || '';
+    if ($('city')) $('city').textContent = biz.city || '';
+    if ($('area')) $('area').textContent = biz.area || '';
+    if ($('block')) $('block').textContent = biz.block || '';
+    if ($('street')) $('street').textContent = biz.street || '';
+    if ($('floor')) $('floor').textContent = biz.floor || '';
+    if ($('office_no')) $('office_no').textContent = biz.office_no || '';
+    if ($('industry')) $('industry').textContent = biz.industry || '';
+    
+    // Logo - CORRECT ID is "biz-logo"
+    if (biz.logo_url) {
+      const logoImg = $('biz-logo');
+      if (logoImg) {
+        console.log('[owner] Setting logo URL:', biz.logo_url);
+        logoImg.src = biz.logo_url;
+        logoImg.style.display = 'block';
+        console.log('[owner] Logo element updated');
+      } else {
+        console.error('[owner] Logo element #biz-logo not found!');
+      }
+    } else {
+      console.log('[owner] No logo_url in business data');
+    }
+    
+    // Load gallery images
+    await loadGalleryImages(biz.id);
+    
+    console.log('[owner] Business data displayed successfully');
+    
+  } catch (error) {
+    console.error('[owner] Error loading business:', error);
   }
 }
 
-main()
+// Load gallery images
+async function loadGalleryImages(businessId) {
+  console.log('[owner] Loading gallery for business:', businessId);
+  
+  try {
+    const { data, error } = await supabase
+      .from('business_media')
+      .select('id, url')
+      .eq('business_id', businessId)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('[owner] Error loading gallery:', error);
+      return;
+    }
+    
+    console.log('[owner] Gallery items found:', data?.length || 0);
+    
+    const galleryDiv = document.getElementById('gallery');
+    if (!galleryDiv) {
+      console.log('[owner] Gallery container not found');
+      return;
+    }
+    
+    if (!data || data.length === 0) {
+      galleryDiv.innerHTML = '<p style="color:#94a3b8;text-align:center;">No images yet. Edit your profile to add gallery images.</p>';
+      return;
+    }
+    
+    // Clear and render gallery
+    galleryDiv.innerHTML = '';
+    
+    data.forEach((item, index) => {
+      console.log('[owner] Rendering gallery image', index + 1, ':', item.url);
+      
+      const imgWrapper = document.createElement('div');
+      imgWrapper.className = 'gallery-item';
+      imgWrapper.style.cssText = 'position:relative;overflow:hidden;border-radius:8px;';
+      
+      const img = document.createElement('img');
+      img.src = item.url;
+      img.alt = `Gallery image ${index + 1}`;
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+      img.onload = () => console.log('[owner] Gallery image loaded:', item.url);
+      img.onerror = () => console.error('[owner] Gallery image failed to load:', item.url);
+      
+      imgWrapper.appendChild(img);
+      galleryDiv.appendChild(imgWrapper);
+    });
+    
+    console.log('[owner] Gallery rendered with', data.length, 'images');
+    
+  } catch (error) {
+    console.error('[owner] Error in loadGalleryImages:', error);
+  }
+}
+
+// Events loading functions
+function fmt(dt) {
+  return new Date(dt).toLocaleString();
+}
+
+// tiny renderer
+function renderCards(targetId, rows) {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  if (!rows?.length) { 
+    target.innerHTML = '<p class="muted">No items yet.</p>'; 
+    return; 
+  }
+  target.innerHTML = rows.map(r => `
+    <article class="card" style="padding:12px;margin:8px 0;display:flex;gap:12px;align-items:center;">
+      ${r.cover_image_url ? `<img src="${r.cover_image_url}" alt="" style="width:68px;height:48px;object-fit:cover;border-radius:8px;">` : ''}
+      <div style="flex:1">
+        <div style="font-weight:600">${r.title || 'Untitled event'}</div>
+        <div class="muted" style="font-size:.9rem">${fmt(r.start_at)}${r.end_at ? ' – ' + fmt(r.end_at) : ''}</div>
+      </div>
+      <a href="/events.html?id=${r.id}" class="btn btn-sm">View</a>
+    </article>
+  `).join('');
+}
+
+async function getOwnerBusinessIds(userId) {
+  const { data, error } = await supabase
+    .from('businesses')
+    .select('id')
+    .eq('owner_id', userId);
+  if (error) { 
+    console.error('[owner-events] businesses error', error); 
+    return []; 
+  }
+  return (data || []).map(x => x.id);
+}
+
+export async function loadOwnerEvents() {
+  console.log('[owner-events] Loading owner events...');
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.id) { 
+    console.warn('[owner-events] not signed in'); 
+    return; 
+  }
+
+  const bizIds = await getOwnerBusinessIds(user.id);
+  if (!bizIds.length) { 
+    renderCards('ongoing-list', []); 
+    renderCards('past-list', []); 
+    return; 
+  }
+
+  const nowIso = new Date().toISOString();
+
+  // Ongoing = started and not finished yet (or no end)
+  const { data: ongoing, error: ongoingErr } = await supabase
+    .from('events')
+    .select('id,title,start_at,end_at,cover_image_url,status,is_published,deleted_at,business_id,businesses:business_id(name,logo_url)')
+    .in('business_id', bizIds)
+    .eq('is_published', true)
+    .is('deleted_at', null)
+    .or(
+      // (start <= now AND end >= now) OR (start <= now AND end IS NULL)
+      `and(start_at.lte.${nowIso},end_at.gte.${nowIso}),and(start_at.lte.${nowIso},end_at.is.null)`
+    )
+    .order('start_at', { ascending: true });
+
+  if (ongoingErr) console.error('[owner-events] ongoing error', ongoingErr);
+  renderCards('ongoing-list', ongoing || []);
+
+  // Past = ended before now OR (no end and start < now)
+  const { data: past, error: pastErr } = await supabase
+    .from('events')
+    .select('id,title,start_at,end_at,cover_image_url,status,is_published,deleted_at,business_id,businesses:business_id(name,logo_url)')
+    .in('business_id', bizIds)
+    .eq('is_published', true)
+    .is('deleted_at', null)
+    .or(
+      `end_at.lt.${nowIso},and(end_at.is.null,start_at.lt.${nowIso})`
+    )
+    .order('end_at', { ascending: false, nullsFirst: false })
+    .limit(20);
+
+  if (pastErr) console.error('[owner-events] past error', pastErr);
+  renderCards('past-list', past || []);
+}
+
+// Listen for refresh notifications from events page
+window.addEventListener('storage', (e) => {
+  if (e.key === 'owner-events-refresh') {
+    console.log('[owner-events] Refresh notification received, reloading events...');
+    loadOwnerEvents();
+  }
+});
+
+// Run on load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    loadAndDisplayBusiness();
+    loadOwnerEvents();
+  });
+} else {
+  loadAndDisplayBusiness();
+  loadOwnerEvents();
+}
+

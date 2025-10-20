@@ -1,17 +1,18 @@
-// public/js/supabase-client.js
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
+// Supabase Client Module
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-const url  = window.SUPABASE_URL;
-const anon = window.SUPABASE_ANON_KEY;
-if (!url || !anon) {
-  console.warn('[supabase-client] Missing SUPABASE_URL/ANON_KEY on window.');
-}
+// Get Supabase configuration from window globals or meta tags
+const SUPABASE_URL = window.SUPABASE_URL || 
+  document.querySelector('meta[name="supabase-url"]')?.content ||
+  'https://gidbvemmqffogakcepka.supabase.co';
 
-if (!window.__supabase) {
-  window.__supabase = createClient(
-    window.SUPABASE_URL,
-    window.SUPABASE_ANON_KEY,
-    { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } }
-  )
-}
-export const supabase = window.__supabase
+const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 
+  document.querySelector('meta[name="supabase-anon-key"]')?.content ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w';
+
+// Create and export the Supabase client
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Also make it available globally for backward compatibility
+window.supabase = supabase;
+window.supabaseClient = supabase;

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test DB Schema - Chamber122</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: #fff; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 8px; }
+        .success { border-color: #4CAF50; background: #1e3a1e; }
+        .error { border-color: #f44336; background: #3a1e1e; }
+        .warning { border-color: #ff9800; background: #3a2e1e; }
+        button { padding: 10px 20px; margin: 5px; background: #ffd166; color: #111; border: none; border-radius: 5px; cursor: pointer; }
+        pre { background: #222; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Database Schema Test - activities_base</h1>
+    
+    <div id="status" class="test-section">
+        <h3>Status</h3>
+        <p id="status-text">Initializing...</p>
+    </div>
+
+    <div class="test-section">
+        <h3>Tests</h3>
+        <button onclick="testSchema()">Test Schema</button>
+        <button onclick="testInsert()">Test Insert</button>
+        <button onclick="testSelect()">Test Select</button>
+        <button onclick="clearLog()">Clear Output</button>
+    </div>
+
+    <div id="results" class="test-section">
+        <h3>Results</h3>
+        <pre id="output">Click a test button to see results...</pre>
+    </div>
+
+    <script type="module" src="/public/js/supabase-client.global.js?v=4"></script>
+    <script type="module">
+        import { supabase } from '/public/js/supabase-client.global.js?v=4';
+        
+        let supabaseClient = null;
+        
+        // Wait for Supabase to be ready
+        async function waitForSupabase() {
+            let attempts = 0;
+            while (attempts < 20) {
+                if (window.__supabaseClient) {
+                    supabaseClient = window.__supabaseClient;
+                    updateStatus('Supabase client ready', 'success');
+                    return true;
+                }
+                attempts++;
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            updateStatus('Failed to load Supabase client', 'error');
+            return false;
+        }
+
+        function updateStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            const textEl = document.getElementById('status-text');
+            textEl.textContent = message;
+            statusEl.className = `test-section ${type}`;
+        }
+
+        function log(message) {
+            const output = document.getElementById('output');
+            output.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+        }
+
+        function clearLog() {
+            const output = document.getElementById('output');
+            output.textContent = 'Test output cleared...\n';
+        }
+
+        async function testSchema() {
+            log('Testing activities_base schema...');
+            
+            try {
+                // Test if we can select from activities_base
+                const { data, error } = await supabaseClient
+                    .from('activities_base')
+                    .select('*')
+                    .limit(1);
+                
+                if (error) {
+                    log('ERROR: ' + JSON.stringify(error, null, 2));
+                    if (error.message.includes('kind')) {
+                        log('❌ Missing "kind" column - run SQL migration!');
+                    }
+                    if (error.message.includes('type')) {
+                        log('❌ Missing "type" column - check database schema!');
+                    }
+                    if (error.message.includes('status')) {
+                        log('❌ Missing "status" column - run SQL migration!');
+                    }
+                    if (error.message.includes('is_published')) {
+                        log('❌ Missing "is_published" column - run SQL migration!');
+                    }
+                } else {
+                    log('✅ Schema test passed - all columns exist');
+                    if (data.length > 0) {
+                        log('Sample data: ' + JSON.stringify(data[0], null, 2));
+                    }
+                }
+            } catch (err) {
+                log('EXCEPTION: ' + err.message);
+            }
+        }
+
+        async function testInsert() {
+            log('Testing insert with correct column names (type, not kind)...');
+            
+            try {
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                if (!user) {
+                    log('❌ No user logged in - please login first');
+                    return;
+                }
+
+                // Get user's first business
+                const { data: businesses } = await supabaseClient
+                    .from('businesses')
+                    .select('id')
+                    .eq('owner_id', user.id)
+                    .limit(1);
+
+                if (!businesses || businesses.length === 0) {
+                    log('❌ No businesses found for user');
+                    return;
+                }
+
+                const testEvent = {
+                    business_id: businesses[0].id,
+                    title: 'Test Event - ' + new Date().toISOString(),
+                    description: 'This is a test event to verify schema',
+                    type: 'event',
+                    status: 'draft',
+                    is_published: false,
+                    start_at: new Date(Date.now() + 86400000).toISOString(), // tomorrow
+                    end_at: new Date(Date.now() + 90000000).toISOString()
+                };
+
+                log('Inserting test event: ' + JSON.stringify(testEvent, null, 2));
+
+                const { data, error } = await supabaseClient
+                    .from('activities_base')
+                    .insert(testEvent)
+                    .select()
+                    .single();
+
+                if (error) {
+                    log('❌ Insert failed: ' + JSON.stringify(error, null, 2));
+                } else {
+                    log('✅ Insert successful: ' + JSON.stringify(data, null, 2));
+                }
+            } catch (err) {
+                log('EXCEPTION: ' + err.message);
+            }
+        }
+
+        async function testSelect() {
+            log('Testing select with correct column names (type, not kind)...');
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('activities_base')
+                    .select('id, title, type, status, is_published, created_at')
+                    .eq('type', 'event')
+                    .eq('is_published', true)
+                    .limit(5);
+
+                if (error) {
+                    log('❌ Select failed: ' + JSON.stringify(error, null, 2));
+                } else {
+                    log('✅ Select successful - found ' + data.length + ' published events');
+                    if (data.length > 0) {
+                        log('Sample: ' + JSON.stringify(data[0], null, 2));
+                    }
+                }
+            } catch (err) {
+                log('EXCEPTION: ' + err.message);
+            }
+        }
+
+        // Make functions global
+        window.testSchema = testSchema;
+        window.testInsert = testInsert;
+        window.testSelect = testSelect;
+        window.clearLog = clearLog;
+
+        // Initialize
+        waitForSupabase();
+    </script>
+</body>
+</html>
+

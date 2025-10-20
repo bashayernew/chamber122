@@ -1,5 +1,7 @@
-// public/js/header-auth-slot.js v11
-import { supabase } from '/js/supabase-client.js';
+// public/js/header-auth-slot.js v12
+import { supabase } from './supabase-client.global.js';
+
+console.log('[header-auth-slot] Module loaded, supabase available:', !!supabase);
 
 const SELS = [
   '#auth-slot', '[data-auth-slot]', '.auth-slot',

@@ -1,16 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>
-    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
-    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
-  </script>
-  <link rel="stylesheet" href="/css/header.css?v=1">
-  <script type="module" src="/js/supabase-client.js?v=20"></script>
-  <script type="module" src="/js/header-auth-slot.js?v=11"></script>
-  <script type="module" src="/js/businesses.api.js?v=1"></script>
-  <script type="module" src="/js/business-form.js?v=1"></script>
-  <script type="module" src="/js/network-status.js?v=1"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -29,6 +19,17 @@
     .btn{border-radius:12px;padding:10px 16px;border:1px solid #3a3b42}
     .btn.primary{background:#fbbf24;color:#111}
     .btn.ghost{background:#2b2c31;color:#fff}
+    
+    /* Logo Preview */
+    .logo-box{width:150px;height:150px;margin:16px 0;border:2px solid #2a2b31;border-radius:12px;overflow:hidden;background:#17181c;display:flex;align-items:center;justify-content:center}
+    .logo-box img{max-width:100%;max-height:100%;object-fit:contain}
+    
+    /* Gallery Grid */
+    .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-top:16px}
+    .gallery-item{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#17181c;border:1px solid #2a2b31}
+    .gallery-item img{width:100%;height:100%;object-fit:cover}
+    .gallery-remove{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;background:rgba(239,68,68,0.9);color:#fff;border:none;cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center}
+    .gallery-remove:hover{background:#ef4444}
   </style>
   <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
   <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
@@ -37,93 +38,143 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="bg-black text-zinc-100">
+<body data-page="owner-form" class="bg-black text-zinc-100">
   <!-- Global Header -->
   <div id="site-header"></div>
   
   <main class="card">
     <h1 style="font-size:28px;font-weight:800;margin:0 0 8px">Edit Business Profile</h1>
-    <p style="color:#9ca3af;margin:0 0 16px">Update your details and save. You'll return to your profile.</p>
+    <p style="color:#9ca3af;margin:0 0 16px">Update your media and industry. You'll return to your profile.</p>
 
-    <form id="business-form">
+    <form id="biz-form">
       <div class="row">
         <div>
           <label for="name">Business Name</label>
           <input id="name" required />
         </div>
         <div>
-          <label for="industry">Industry</label>
-          <input id="industry" />
+          <label for="phone">Phone</label>
+          <input id="phone" />
         </div>
       </div>
 
       <div class="row">
-        <div>
-          <label for="phone">Phone</label>
-          <input id="phone" />
-        </div>
         <div>
           <label for="whatsapp">WhatsApp</label>
           <input id="whatsapp" />
         </div>
-      </div>
-
-      <div class="row">
         <div>
           <label for="website">Website</label>
           <input id="website" />
         </div>
+      </div>
+
+      <div class="row">
         <div>
           <label for="instagram">Instagram</label>
           <input id="instagram" />
         </div>
-      </div>
-
-      <div class="row">
         <div>
           <label for="country">Country</label>
           <input id="country" />
         </div>
+      </div>
+
+      <div class="row">
         <div>
           <label for="city">City</label>
           <input id="city" />
         </div>
-      </div>
-
-      <div class="row">
         <div>
           <label for="area">Area</label>
           <input id="area" />
         </div>
+      </div>
+
+      <div class="row">
         <div>
-          <label for="address_line">Address</label>
-          <input id="address_line" />
+          <label for="block">Block</label>
+          <input id="block" />
+        </div>
+        <div>
+          <label for="street">Street</label>
+          <input id="street" />
         </div>
       </div>
 
       <div class="row">
         <div>
-          <label for="logo_url">Logo URL</label>
-          <input id="logo_url" />
+          <label for="floor">Floor (Optional)</label>
+          <input id="floor" />
         </div>
         <div>
-          <label for="is_published">Visible Publicly</label>
-          <select id="is_published">
-            <option value="false">No (draft)</option>
-            <option value="true">Yes (published)</option>
-          </select>
+          <label for="office_no">Office No (Optional)</label>
+          <input id="office_no" />
         </div>
+      </div>
+
+      <!-- Business Description -->
+      <div class="card">
+        <h2 class="section-title">Business Description</h2>
+        <label for="description">Tell us about your business *</label>
+        <textarea id="description" rows="4" placeholder="Describe what you offer, what makes you unique, and how you help customers..."></textarea>
+      </div>
+
+      <!-- Our Story -->
+      <div class="card">
+        <h2 class="section-title">Our Story</h2>
+        <label for="story">Why did you start this business? *</label>
+        <textarea id="story" rows="4" placeholder="Share your journey, inspiration, and what drives you..."></textarea>
+        <small class="muted">This helps customers connect with your brand and understand your mission.</small>
+      </div>
+
+      <!-- Business Logo -->
+      <div class="card">
+        <h2 class="section-title">Business Logo</h2>
+        <div class="logo-box"><img id="logoPreview" alt="Logo preview"></div>
+        <label class="subhead">Business Logo</label>
+        <input id="logo" type="file" accept="image/*">
+        <small class="muted">Recommended: square (512×512)</small>
+      </div>
+
+      <!-- Gallery -->
+      <div id="gallery-section" class="card">
+        <h2 class="section-title">Gallery</h2>
+        <input id="galleryFiles" type="file" accept="image/*" multiple>
+        <p class="muted">Add multiple images. Click × to remove existing ones.</p>
+        <div id="galleryPreview" class="gallery-grid"></div>
+      </div>
+
+      <!-- Industry -->
+      <div class="card">
+        <h2 class="section-title">Industry</h2>
+        <select id="industry" name="industry">
+          <option value="">Select industry…</option>
+          <option>Construction</option>
+          <option>Interior Design</option>
+          <option>Luxury Outdoors</option>
+          <option>Landscaping</option>
+          <option>Façade</option>
+          <option>Traditional</option>
+          <option>Minimalist</option>
+          <option>3D Modeling</option>
+          <option>Cleaning Services</option>
+          <option>Doors & Hardware</option>
+          <option>Water Delivery</option>
+          <option>Consulting</option>
+          <option>Other</option>
+        </select>
       </div>
 
       <div class="actions">
         <a class="btn ghost" href="/owner.html">Cancel</a>
-        <button class="btn primary" type="submit">Save</button>
+        <button id="saveBtn" class="btn primary" type="submit">Save</button>
       </div>
     </form>
-    <div id="form-msg" style="margin-top:10px;color:#a1a1aa"></div>
   </main>
 
-  <script type="module" src="/js/site-header.js"></script>
-  <script type="module" src="/js/owner-form.js"></script>
+  <!-- Scripts -->
+  <script type="module" src="/public/js/supabase-client.global.js?v=3"></script>
+  <script type="module" src="/public/js/owner-form.js?v=8"></script>
 </body>
 </html>

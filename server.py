@@ -101,7 +101,7 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             raise
 
 if __name__ == "__main__":
-    PORT = 8004
+    PORT = 8000
     
     with socketserver.TCPServer(("", PORT), CustomHTTPRequestHandler) as httpd:
         print(f"Server running at http://localhost:{PORT}/")

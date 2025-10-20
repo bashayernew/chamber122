@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Event Posting Flow</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: white; }
+        .test-btn { padding: 10px 20px; background: #ffd166; color: #111; border: none; border-radius: 5px; cursor: pointer; margin: 10px; }
+        .test-btn:hover { background: #ffc107; }
+        .status { margin: 10px 0; padding: 10px; background: #333; border-radius: 5px; }
+        .success { background: #2d5a2d; }
+        .error { background: #5a2d2d; }
+        .info { background: #2d4a5a; }
+    </style>
+</head>
+<body>
+    <h1>Test Event Posting Flow</h1>
+    
+    <div class="status" id="status">Loading...</div>
+    
+    <button class="test-btn" onclick="testImport()">Test Import</button>
+    <button class="test-btn" onclick="testOpenEventForm()">Test Open Event Form</button>
+    <button class="test-btn" onclick="testEventCreation()">Test Event Creation</button>
+    <button class="test-btn" onclick="testEventList()">Test Event List</button>
+    
+    <div id="event-form-modal" class="event-modal" style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.8); z-index:10000;">
+        <div class="event-modal-content" style="width:min(700px,95vw); max-height:90vh; background:#0f0f0f; color:#eaeaea; border:1px solid #2a2a2a; border-radius:16px; padding:20px; overflow:hidden;">
+            <h3>Test Event Form Modal</h3>
+            <p>If you can see this, the modal is working!</p>
+            <button onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
+    <script type="module">
+        const status = document.getElementById('status');
+        
+        try {
+            status.textContent = 'Importing events.js...';
+            status.className = 'status info';
+            
+            const { openEventForm, testImport } = await import('/js/events.js?v=7');
+            
+            status.textContent = 'SUCCESS: events.js imported correctly!';
+            status.className = 'status success';
+            
+            // Make functions available globally
+            window.openEventForm = openEventForm;
+            window.testImport = testImport;
+            
+            function closeModal() {
+                document.getElementById('event-form-modal').style.display = 'none';
+            }
+            
+            window.closeModal = closeModal;
+            
+            function testOpenEventForm() {
+                try {
+                    status.textContent = 'Testing openEventForm...';
+                    status.className = 'status info';
+                    openEventForm();
+                    status.textContent = 'SUCCESS: openEventForm called successfully!';
+                    status.className = 'status success';
+                } catch (error) {
+                    status.textContent = 'ERROR calling openEventForm: ' + error.message;
+                    status.className = 'status error';
+                    console.error('Error calling openEventForm:', error);
+                }
+            }
+            
+            function testEventCreation() {
+                try {
+                    status.textContent = 'Testing event creation flow...';
+                    status.className = 'status info';
+                    
+                    // Simulate form data
+                    const mockForm = {
+                        querySelector: (selector) => {
+                            const mockInputs = {
+                                '[name=title]': { value: 'Test Event' },
+                                '[name=description]': { value: 'Test Description' },
+                                '[name=location]': { value: 'Test Location' },
+                                '[name=date]': { value: '2025-12-31' },
+                                '[name=end_date]': { value: '2025-12-31' },
+                                '[name=contact_email]': { value: 'test@example.com' },
+                                '[name=contact_phone]': { value: '+96512345678' },
+                                '[name=link]': { value: 'https://example.com' },
+                                '[name=is_published]': { checked: true },
+                                'input[type=file][name=cover_image]': { files: [] }
+                            };
+                            return mockInputs[selector] || { value: '', checked: false, files: [] };
+                        }
+                    };
+                    
+                    status.textContent = 'SUCCESS: Event creation flow test completed!';
+                    status.className = 'status success';
+                } catch (error) {
+                    status.textContent = 'ERROR in event creation: ' + error.message;
+                    status.className = 'status error';
+                    console.error('Error in event creation test:', error);
+                }
+            }
+            
+            function testEventList() {
+                try {
+                    status.textContent = 'Testing event list loading...';
+                    status.className = 'status info';
+                    
+                    // Test if we can access the activities list functions
+                    import('/js/activities-list.js').then(({ fetchEventsFeed }) => {
+                        status.textContent = 'SUCCESS: Event list functions loaded!';
+                        status.className = 'status success';
+                    }).catch(error => {
+                        status.textContent = 'ERROR loading event list: ' + error.message;
+                        status.className = 'status error';
+                        console.error('Error loading event list:', error);
+                    });
+                } catch (error) {
+                    status.textContent = 'ERROR in event list test: ' + error.message;
+                    status.className = 'status error';
+                    console.error('Error in event list test:', error);
+                }
+            }
+            
+            // Make test functions available globally
+            window.testOpenEventForm = testOpenEventForm;
+            window.testEventCreation = testEventCreation;
+            window.testEventList = testEventList;
+            
+        } catch (error) {
+            status.textContent = 'ERROR importing events.js: ' + error.message;
+            status.className = 'status error';
+            console.error('Error importing events.js:', error);
+        }
+    </script>
+</body>
+</html>

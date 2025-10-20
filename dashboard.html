@@ -5,17 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard | Chamber122</title>
   <meta name="description" content="Your Chamber122 dashboard - manage your business, activities, and bulletins">
-  <script>
-    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
-    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
-  </script>
+  <!-- Supabase singleton -->
+  <script src="/js/supabase-client.js"></script>
+  
+  <!-- Auth/session handling -->
+  <script src="/js/auth-session.js"></script>
+  
+  <!-- Styles -->
   <link rel="stylesheet" href="/css/header.css?v=1">
   <link rel="stylesheet" href="css/style.css?v=17">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <script type="module" src="/js/supabase-client.js?v=20"></script>
-  <script type="module" src="/js/header-auth-slot.js?v=11"></script>
-  <script type="module" src="/js/require-auth.js?v=1"></script>
+  
+  <!-- Other dependencies -->
+  <script src="/js/header-auth-slot.js?v=11"></script>
+  <script src="/js/require-auth.js?v=1"></script>
+  <script src="/js/activities-list.js?v=8"></script>
   <style>
     .dashboard-container {
       max-width: 1200px;
@@ -410,44 +415,71 @@
     </div>
   </div>
 
-  <script type="module">
-    import { supabase } from '/js/supabase-client.js';
-
+  <!-- 1) Global Supabase client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-client.global.js?v=1"></script>
+  
+  <!-- 2) Auth + header -->
+  <script src="/js/header-auth-slot.js?v=1" defer></script>
+  
+  <!-- 3) Optional: gate protected pages -->
+  <script src="/js/require-auth.js?v=1" defer></script>
+  
+  <!-- 4) Page-specific code -->
+  <script src="/js/main.js?v=7" defer></script>
+  <script src="/js/activities-list.js?v=8" defer></script>
+  
+  <!-- 5) i18n and other utilities -->
+  <script src="/js/i18n.js?v=1" defer></script>
+  <script src="/js/language-switcher.js?v=1" defer></script>
+  
+  <!-- Dashboard specific script -->
+  <script>
     // Load dashboard data
     async function loadDashboardData() {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const sb = window.sb;
+        if (!sb) {
+          console.error('Supabase client not available');
+          return;
+        }
+        
+        const { data: { user } } = await sb.auth.getUser();
         if (!user) return;
 
         // Load user profile
-        const { data: profile } = await supabase
+        const { data: profile } = await sb
           .from('profiles')
           .select('full_name, created_at')
           .eq('user_id', user.id)
           .single();
 
         // Load business count
-        const { count: businessCount } = await supabase
+        const { count: businessCount } = await sb
           .from('businesses')
           .select('*', { count: 'exact', head: true })
           .eq('owner_id', user.id);
 
         // Load activities count
-        const { count: activityCount } = await supabase
+        const { count: activityCount } = await sb
           .from('activities')
           .select('*', { count: 'exact', head: true })
-          .eq('owner_id', user.id);
+          .eq('business_id', user.id);
 
         // Load bulletins count
-        const { count: bulletinCount } = await supabase
+        const { count: bulletinCount } = await sb
           .from('bulletins')
           .select('*', { count: 'exact', head: true })
-          .eq('owner_id', user.id);
+          .eq('business_id', user.id);
 
         // Update stats
-        document.getElementById('businessCount').textContent = businessCount || 0;
-        document.getElementById('activityCount').textContent = activityCount || 0;
-        document.getElementById('bulletinCount').textContent = bulletinCount || 0;
+        const businessCountEl = document.getElementById('businessCount');
+        const activityCountEl = document.getElementById('activityCount');
+        const bulletinCountEl = document.getElementById('bulletinCount');
+        
+        if (businessCountEl) businessCountEl.textContent = businessCount || 0;
+        if (activityCountEl) activityCountEl.textContent = activityCount || 0;
+        if (bulletinCountEl) bulletinCountEl.textContent = bulletinCount || 0;
         
         // Update member since
         if (profile?.created_at) {
@@ -456,13 +488,14 @@
             year: 'numeric', 
             month: 'short' 
           });
-          document.getElementById('memberSince').textContent = memberSince;
+          const memberSinceEl = document.getElementById('memberSince');
+          if (memberSinceEl) memberSinceEl.textContent = memberSince;
         }
 
         // Update welcome message with user's name
         if (profile?.full_name) {
           const welcomeTitle = document.querySelector('.welcome-title');
-          welcomeTitle.textContent = `Welcome back, ${profile.full_name}!`;
+          if (welcomeTitle) welcomeTitle.textContent = `Welcome back, ${profile.full_name}!`;
         }
 
       } catch (error) {
@@ -471,7 +504,12 @@
     }
 
     // Load data when page loads
-    document.addEventListener('DOMContentLoaded', loadDashboardData);
+    document.addEventListener('DOMContentLoaded', () => {
+      loadDashboardData();
+      if (window.initActivitiesPage) {
+        window.initActivitiesPage();
+      }
+    });
   </script>
 </body>
 </html>

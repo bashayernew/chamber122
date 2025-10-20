@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" class="dark bg-zinc-900 text-zinc-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Storage Self-Test Demo - Chamber122</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#10b981',
+            secondary: '#3b82f6'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="dark bg-zinc-900 text-zinc-100 min-h-screen p-8">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Storage Self-Test Demo</h1>
+    
+    <div class="bg-zinc-800 rounded-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Implementation Summary</h2>
+      <div class="space-y-3 text-sm">
+        <div class="flex items-center">
+          <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+          <span>Created <code class="bg-zinc-700 px-2 py-1 rounded">public/js/storage-selftest.js</code> with <code>__testStorage()</code> function</span>
+        </div>
+        <div class="flex items-center">
+          <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+          <span>Updated <code class="bg-zinc-700 px-2 py-1 rounded">public/js/boot.js</code> to conditionally import storage-selftest on events page with <code>?dev=1</code></span>
+        </div>
+        <div class="flex items-center">
+          <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+          <span>Added dev-only "Storage Test" button to <code class="bg-zinc-700 px-2 py-1 rounded">public/events.html</code></span>
+        </div>
+        <div class="flex items-center">
+          <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+          <span>Enhanced logging in <code class="bg-zinc-700 px-2 py-1 rounded">public/js/events.page.js</code> for upload and insert operations</span>
+        </div>
+        <div class="flex items-center">
+          <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+          <span>Updated <code class="bg-zinc-700 px-2 py-1 rounded">public/js/api.js</code> uploadCoverImage to use business-media bucket</span>
+        </div>
+        <div class="flex items-center">
+          <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+          <span>Added event form submission handler with cover image upload support</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-zinc-800 rounded-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Testing Instructions</h2>
+      <div class="space-y-4">
+        <div>
+          <h3 class="font-semibold text-primary mb-2">1. Test Storage Self-Test Function</h3>
+          <p class="text-sm text-zinc-300 mb-2">Navigate to: <code class="bg-zinc-700 px-2 py-1 rounded">/public/events.html?dev=1</code></p>
+          <ul class="text-sm text-zinc-400 ml-4 space-y-1">
+            <li>• Sign in to your account</li>
+            <li>• Look for the "Storage Test" button (only visible with ?dev=1)</li>
+            <li>• Click the button to test business-media bucket upload</li>
+            <li>• Check browser console for logs: <code class="bg-zinc-700 px-1 rounded">[selftest] upload success. public URL:</code></li>
+          </ul>
+        </div>
+        
+        <div>
+          <h3 class="font-semibold text-primary mb-2">2. Test Event Creation with Cover Image</h3>
+          <p class="text-sm text-zinc-300 mb-2">On the same page (/public/events.html?dev=1):</p>
+          <ul class="text-sm text-zinc-400 ml-4 space-y-1">
+            <li>• Click "Create Event" button</li>
+            <li>• Fill out the form with required fields</li>
+            <li>• Upload a cover image file</li>
+            <li>• Submit the form</li>
+            <li>• Check browser console for logs:</li>
+            <li class="ml-4">- <code class="bg-zinc-700 px-1 rounded">[events] storage key:</code></li>
+            <li class="ml-4">- <code class="bg-zinc-700 px-1 rounded">[events] cover public URL:</code></li>
+            <li class="ml-4">- <code class="bg-zinc-700 px-1 rounded">[events] create success with row id:</code></li>
+          </ul>
+        </div>
+        
+        <div>
+          <h3 class="font-semibold text-primary mb-2">3. Verify Storage Files</h3>
+          <ul class="text-sm text-zinc-400 ml-4 space-y-1">
+            <li>• Go to Supabase Dashboard → Storage → business-media</li>
+            <li>• Confirm files are stored under correct business_id/events/ folder structure</li>
+            <li>• Verify public URLs are accessible</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-zinc-800 rounded-lg p-6">
+      <h2 class="text-xl font-semibold mb-4">Expected Console Logs</h2>
+      <div class="space-y-3">
+        <div class="bg-zinc-900 rounded p-3">
+          <h4 class="font-semibold text-green-400 mb-2">Storage Test Success:</h4>
+          <pre class="text-xs text-zinc-300 overflow-x-auto">
+[selftest] ready — call __testStorage(<business_id>) in console
+[selftest] uploading to business-media/ <business_id>/events/selftest-<uuid>.png
+[selftest] upload success. public URL: https://.../business-media/<business_id>/events/selftest-<uuid>.png
+          </pre>
+        </div>
+        
+        <div class="bg-zinc-900 rounded p-3">
+          <h4 class="font-semibold text-blue-400 mb-2">Event Creation Success:</h4>
+          <pre class="text-xs text-zinc-300 overflow-x-auto">
+[events] storage key: <business_id>/events/<uuid>.jpg
+[events] cover public URL: https://.../business-media/<business_id>/events/<uuid>.jpg
+[events] create success with row id: <event_id> and cover_image_url: <url>
+          </pre>
+        </div>
+        
+        <div class="bg-zinc-900 rounded p-3">
+          <h4 class="font-semibold text-red-400 mb-2">Error Cases:</h4>
+          <pre class="text-xs text-zinc-300 overflow-x-auto">
+[selftest] upload failed: <error_object>
+Hint: check Storage » business-media » Policies. Insert/Update must allow auth.uid() owner and key must start with {business_id}/
+
+[events] storage upload failed, falling back to data URL: <error_object>
+          </pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

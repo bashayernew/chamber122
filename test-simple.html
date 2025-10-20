@@ -1,46 +1,78 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Simple Login Test</title>
-  <script>
-    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
-    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
-  </script>
-  <script type="module" src="/js/supabase-client.js?v=20"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Add Event Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: white; }
+        .test-btn { padding: 10px 20px; background: #ffd166; color: #111; border: none; border-radius: 5px; cursor: pointer; margin: 10px; }
+        .test-btn:hover { background: #ffc107; }
+        .status { margin: 10px 0; padding: 10px; background: #333; border-radius: 5px; }
+    </style>
 </head>
 <body>
-  <h1>Simple Login Test</h1>
-  <form id="test-form">
-    <input id="email" type="email" placeholder="Email" required>
-    <input id="password" type="password" placeholder="Password" required>
-    <button id="login-btn" type="submit">Login</button>
-  </form>
-  <div id="result"></div>
+    <h1>Simple Add Event Test</h1>
+    
+    <div class="status" id="status">Ready to test...</div>
+    
+    <button class="test-btn" onclick="testDirectCall()">Test Direct Call</button>
+    <button class="test-btn" onclick="testModal()">Test Modal Display</button>
+    
+    <div id="event-form-modal" class="event-modal" style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.8); z-index:10000;">
+        <div class="event-modal-content" style="width:min(700px,95vw); max-height:90vh; background:#0f0f0f; color:#eaeaea; border:1px solid #2a2a2a; border-radius:16px; padding:20px; overflow:hidden;">
+            <h3>Test Event Form Modal</h3>
+            <p>If you can see this, the modal is working!</p>
+            <button onclick="closeModal()">Close</button>
+        </div>
+    </div>
 
-  <script type="module">
-    import { supabase } from '/js/supabase-client.js';
-    
-    console.log('Script loaded, supabase:', !!supabase);
-    
-    document.getElementById('test-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      
-      document.getElementById('result').innerHTML = 'Testing...';
-      
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        
-        if (error) {
-          document.getElementById('result').innerHTML = `Error: ${error.message}`;
-        } else {
-          document.getElementById('result').innerHTML = `Success! User: ${data.user?.email}`;
+    <script>
+        function closeModal() {
+            document.getElementById('event-form-modal').style.display = 'none';
         }
-      } catch (err) {
-        document.getElementById('result').innerHTML = `Exception: ${err.message}`;
-      }
-    });
-  </script>
+        
+        function testModal() {
+            const status = document.getElementById('status');
+            try {
+                status.textContent = 'Testing modal display...';
+                const modal = document.getElementById('event-form-modal');
+                modal.style.display = 'flex';
+                status.textContent = 'SUCCESS: Modal displayed!';
+                status.style.background = '#2d5a2d';
+            } catch (error) {
+                status.textContent = 'ERROR: ' + error.message;
+                status.style.background = '#5a2d2d';
+                console.error('Error testing modal:', error);
+            }
+        }
+        
+        function testDirectCall() {
+            const status = document.getElementById('status');
+            try {
+                status.textContent = 'Testing direct function call...';
+                // Try to call the function directly
+                if (typeof window.openEventForm === 'function') {
+                    window.openEventForm();
+                    status.textContent = 'SUCCESS: openEventForm called!';
+                    status.style.background = '#2d5a2d';
+                } else {
+                    status.textContent = 'ERROR: openEventForm not available on window';
+                    status.style.background = '#5a2d2d';
+                }
+            } catch (error) {
+                status.textContent = 'ERROR: ' + error.message;
+                status.style.background = '#5a2d2d';
+                console.error('Error testing direct call:', error);
+            }
+        }
+        
+        // Auto-test on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const status = document.getElementById('status');
+            status.textContent = 'Page loaded. Testing modal functionality...';
+            testModal();
+        });
+    </script>
 </body>
 </html>

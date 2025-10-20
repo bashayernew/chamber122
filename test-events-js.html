@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Events.js</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: white; }
+        .test-btn { padding: 10px 20px; background: #ffd166; color: #111; border: none; border-radius: 5px; cursor: pointer; margin: 10px; }
+        .test-btn:hover { background: #ffc107; }
+        .status { margin: 10px 0; padding: 10px; background: #333; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Test Events.js Import</h1>
+    
+    <div class="status" id="status">Loading...</div>
+    
+    <button class="test-btn" onclick="testImport()">Test Import</button>
+    
+    <div id="event-form-modal" class="event-modal" style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.8); z-index:10000;">
+        <div class="event-modal-content" style="width:min(700px,95vw); max-height:90vh; background:#0f0f0f; color:#eaeaea; border:1px solid #2a2a2a; border-radius:16px; padding:20px; overflow:hidden;">
+            <h3>Test Event Form Modal</h3>
+            <p>If you can see this, the modal is working!</p>
+            <button onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
+    <script type="module">
+        const status = document.getElementById('status');
+        
+        try {
+            status.textContent = 'Importing openEventForm...';
+            const { openEventForm } = await import('/js/events.js?v=6');
+            
+            status.textContent = 'SUCCESS: openEventForm imported!';
+            status.style.background = '#2d5a2d';
+            
+            // Make it available globally
+            window.openEventForm = openEventForm;
+            
+            function closeModal() {
+                document.getElementById('event-form-modal').style.display = 'none';
+            }
+            
+            window.closeModal = closeModal;
+            
+            function testImport() {
+                try {
+                    status.textContent = 'Testing openEventForm call...';
+                    openEventForm();
+                    status.textContent = 'SUCCESS: openEventForm called successfully!';
+                    status.style.background = '#2d5a2d';
+                } catch (error) {
+                    status.textContent = 'ERROR calling openEventForm: ' + error.message;
+                    status.style.background = '#5a2d2d';
+                    console.error('Error calling openEventForm:', error);
+                }
+            }
+            
+            window.testImport = testImport;
+            
+        } catch (error) {
+            status.textContent = 'ERROR importing: ' + error.message;
+            status.style.background = '#5a2d2d';
+            console.error('Error importing events.js:', error);
+        }
+    </script>
+</body>
+</html>

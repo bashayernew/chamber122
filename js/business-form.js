@@ -1,101 +1,87 @@
-// public/js/business-form.js
-import { supabase } from '/js/supabase-client.js';
-import { getMyBusiness } from '/js/businesses.api.js';
-import { go } from '/js/nav.js';
+// js/business-form.js v=3 (ESM)
+import { supabase } from '../public/js/supabase-client.global.js';
+import { upsertMyBusiness } from './businesses.api.js';
 
-const SEL = {
-  name:            ['#biz_name', '#business_name', '#name', 'input[name="biz_name"]', 'input[name="business_name"]'],
-  owner_full_name: ['#owner_full_name', '#owner_name', 'input[name="owner_full_name"]', 'input[name="owner_name"]'],
-  email:           ['#biz_email', '#email', 'input[type="email"][name]', 'input[name="biz_email"]'],
-  phone:           ['#biz_phone', '#phone', 'input[type="tel"][name]', 'input[name="biz_phone"]'],
-  category:        ['#biz_category', '[name="biz_category"]', '#category', '[name="category"]'],
-  city:            ['#biz_city', '[name="biz_city"]', '#city', '[name="city"]'],
-  country:         ['#biz_country', '[name="biz_country"]', '#country', '[name="country"]'],
-  description:     ['#biz_description', '#description', 'textarea[name="biz_description"]', 'textarea[name="description"]'],
-  story:           ['#biz_story', '#story', 'textarea[name="biz_story"]', 'textarea[name="story"]'],
-  website:         ['#biz_website', '#website', 'input[type="url"][name]', 'input[name="biz_website"]'],
-  instagram:       ['#biz_instagram', '#instagram', 'input[name="biz_instagram"]', 'input[name="instagram"]'],
-};
+console.log('[business-form] Module loaded');
 
-const $1 = (sel) => document.querySelector(sel);
-const getVal = (keys) => {
-  for (const s of keys) { const el = $1(s); if (el) return el.value?.trim() || ''; }
-  return '';
-};
-const setVal = (keys, v) => {
-  for (const s of keys) { const el = $1(s); if (el) { el.value = v ?? ''; return; } }
-};
-
-
-async function hydrateForm() {
-  const { data: sess } = await supabase.auth.getSession();
-  if (!sess?.session?.user) { go('/auth.html#login'); return; }
-
-  try {
-    const biz = await getMyBusiness();
-    if (!biz) return;
-
-    setVal(SEL.name,            biz.name);
-    setVal(SEL.owner_full_name, biz.owner_full_name);
-    setVal(SEL.email,           biz.email);
-    setVal(SEL.phone,           biz.phone);
-    setVal(SEL.category,        biz.category);
-    setVal(SEL.city,            biz.city);
-    setVal(SEL.country,         biz.country ?? 'Kuwait');
-    setVal(SEL.description,     biz.description);
-    setVal(SEL.story,           biz.story);
-    setVal(SEL.website,         biz.website);
-    setVal(SEL.instagram,       biz.instagram);
-  } catch (error) {
-    console.warn('[business-form] Error loading existing business data:', error);
-    // Continue with empty form - this is not a critical error
-  }
+async function getOwnerId() {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data?.user) throw new Error('Not authenticated');
+  return data.user.id;
 }
 
+async function saveBusiness(formData) {
+  console.log('[business-form] saveBusiness called with:', formData);
+  
+  const owner_id = await getOwnerId();
+  console.log('[business-form] Owner ID:', owner_id);
 
-async function onSubmit(e) {
-  e.preventDefault()
-
-  const { data: userData, error: userErr } = await supabase.auth.getUser()
-  if (userErr || !userData?.user) {
-    alert('Not signed in')
-    return
-  }
-
-  const payload = {
-    owner_id: userData.user.id,
-    name: getVal(SEL.name),
-    owner_full_name: getVal(SEL.owner_full_name),
-    email: getVal(SEL.email),
-    phone: getVal(SEL.phone),
-    category: getVal(SEL.category),
-    city: getVal(SEL.city),
-    country: getVal(SEL.country) || 'Kuwait',
-    description: getVal(SEL.description),
-    story: getVal(SEL.story),
-    website: getVal(SEL.website),
-    instagram: getVal(SEL.instagram),
-    status: 'draft',
-    is_published: false,
-  }
-
-  const { error } = await supabase
-    .from('businesses')
-    .upsert(payload, { onConflict: 'owner_id' })
-
+  // Use the API helper
+  const { data, error } = await upsertMyBusiness(formData);
+  
   if (error) {
-    console.error('Save failed', error)
-    alert('Error saving profile')
-    return
+    console.error('[business-form] Save failed:', error);
+    throw error;
   }
 
-  // ✅ Redirect to profile page
-  window.location.href = '/owner.html'
+  console.log('[business-form] Save successful:', data);
+  return data;
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-  const form = document.querySelector('#biz-form, #biz_form, form[data-biz-form]');
-  if (!form) return;
-  await hydrateForm();
-  form.addEventListener('submit', onSubmit);
+// Bind to form
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('[business-form] DOM ready, looking for form...');
+  
+  const form = document.getElementById('business-form') || 
+               document.getElementById('biz-form') ||
+               document.querySelector('form[data-biz-form]');
+  
+  if (!form) {
+    console.log('[business-form] No business form found on this page');
+    return;
+  }
+  
+  console.log('[business-form] Form found:', form.id);
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    console.log('[business-form] Form submit triggered');
+    
+    const submitBtn = form.querySelector('[type=submit]') || form.querySelector('button[type="submit"]');
+    const statusEl = document.getElementById('save-status');
+
+    try {
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving…';
+      }
+      if (statusEl) statusEl.textContent = 'Saving…';
+
+      const fd = new FormData(form);
+      const payload = Object.fromEntries(fd.entries());
+      
+      console.log('[business-form] Form data collected:', payload);
+
+      const saved = await saveBusiness(payload);
+
+      if (statusEl) statusEl.textContent = 'Saved ✔';
+      if (submitBtn) submitBtn.textContent = 'Save';
+      
+      alert('Business profile saved successfully!');
+      
+      // Reload to show updated data
+      location.reload();
+
+    } catch (err) {
+      console.error('[business-form] Submit error:', err);
+      if (statusEl) statusEl.textContent = err.message || 'Failed to save';
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save';
+      }
+      alert('Failed to save: ' + err.message);
+    }
+  });
+  
+  console.log('[business-form] Form handler attached');
 });

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en" class="dark bg-zinc-900 text-zinc-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile Edit Test - Chamber122</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="p-8">
+  <div class="max-w-5xl mx-auto">
+    <h1 class="text-4xl font-bold mb-2">✅ Profile & Gallery - FIXED</h1>
+    <p class="text-zinc-400 mb-8">Test the new profile editing and gallery upload features</p>
+
+    <!-- Quick Access -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <a href="http://localhost:8000/public/profile.html" target="_blank" 
+         class="bg-gradient-to-r from-green-500 to-emerald-600 p-8 rounded-xl text-center hover:shadow-lg transition-all">
+        <div class="text-4xl mb-3">👤</div>
+        <h3 class="text-xl font-bold mb-2">Open Profile Page</h3>
+        <p class="text-sm opacity-90">Test editing & gallery upload</p>
+      </a>
+      <a href="http://localhost:8000/auth.html" target="_blank"
+         class="bg-gradient-to-r from-blue-500 to-indigo-600 p-8 rounded-xl text-center hover:shadow-lg transition-all">
+        <div class="text-4xl mb-3">🔑</div>
+        <h3 class="text-xl font-bold mb-2">Login First</h3>
+        <p class="text-sm opacity-90">Must be logged in to edit</p>
+      </a>
+    </div>
+
+    <!-- What's Fixed -->
+    <div class="bg-zinc-800 border-2 border-green-500 rounded-xl p-6 mb-6">
+      <h2 class="text-2xl font-bold mb-4 text-green-400">✅ What Was Fixed</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="space-y-3">
+          <div class="flex items-start">
+            <i class="fas fa-check-circle text-green-400 mt-1 mr-3"></i>
+            <div>
+              <strong>Real Data Loading</strong>
+              <p class="text-sm text-zinc-400">Profile now fetches actual business data from database (not placeholders)</p>
+            </div>
+          </div>
+          <div class="flex items-start">
+            <i class="fas fa-check-circle text-green-400 mt-1 mr-3"></i>
+            <div>
+              <strong>Edit Form Added</strong>
+              <p class="text-sm text-zinc-400">Click "Edit Profile" to update name, description, logo</p>
+            </div>
+          </div>
+          <div class="flex items-start">
+            <i class="fas fa-check-circle text-green-400 mt-1 mr-3"></i>
+            <div>
+              <strong>Save to Database</strong>
+              <p class="text-sm text-zinc-400">Changes persist in Supabase businesses table</p>
+            </div>
+          </div>
+        </div>
+        <div class="space-y-3">
+          <div class="flex items-start">
+            <i class="fas fa-check-circle text-green-400 mt-1 mr-3"></i>
+            <div>
+              <strong>Gallery Upload Works</strong>
+              <p class="text-sm text-zinc-400">Upload multiple images at once</p>
+            </div>
+          </div>
+          <div class="flex items-start">
+            <i class="fas fa-check-circle text-green-400 mt-1 mr-3"></i>
+            <div>
+              <strong>Auto Refresh</strong>
+              <p class="text-sm text-zinc-400">Profile auto-refreshes after gallery upload</p>
+            </div>
+          </div>
+          <div class="flex items-start">
+            <i class="fas fa-check-circle text-green-400 mt-1 mr-3"></i>
+            <div>
+              <strong>Character Counter</strong>
+              <p class="text-sm text-zinc-400">See 0/200 chars while typing description</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test Instructions -->
+    <div class="bg-zinc-800 rounded-xl p-6 mb-6 border border-zinc-700">
+      <h2 class="text-2xl font-bold mb-4">🧪 Test Instructions</h2>
+      
+      <div class="space-y-6">
+        <!-- Test 1 -->
+        <div class="bg-zinc-900 p-4 rounded-lg">
+          <h3 class="text-lg font-bold mb-3 text-blue-400">Test 1: Profile Edit</h3>
+          <ol class="list-decimal ml-5 space-y-2 text-sm">
+            <li>Make sure you're <strong class="text-yellow-400">logged in</strong> (go to /auth.html if not)</li>
+            <li>Open <a href="http://localhost:8000/public/profile.html" class="text-blue-400 underline" target="_blank">Profile Page</a></li>
+            <li>You should see your <strong>actual business name</strong> (not "Your Business")</li>
+            <li>Click green <strong>"Edit Profile"</strong> button</li>
+            <li>Form appears with your current details pre-filled</li>
+            <li>Change the <strong>Business Name</strong> to something new</li>
+            <li>Update the <strong>Description</strong> (watch character counter)</li>
+            <li>Click <strong>"Save Changes"</strong></li>
+            <li>Button shows "Saving..." with spinner</li>
+            <li>Success toast appears: "Profile updated successfully!"</li>
+            <li>View mode shows your NEW values</li>
+            <li><strong>Refresh page (F5)</strong> - changes should persist!</li>
+          </ol>
+        </div>
+
+        <!-- Test 2 -->
+        <div class="bg-zinc-900 p-4 rounded-lg">
+          <h3 class="text-lg font-bold mb-3 text-purple-400">Test 2: Gallery Upload</h3>
+          <ol class="list-decimal ml-5 space-y-2 text-sm">
+            <li>On profile page, scroll to <strong>Gallery section</strong></li>
+            <li>Click <strong>"Upload Images"</strong> button</li>
+            <li>Select 1-3 image files (JPG, PNG, etc.)</li>
+            <li>Watch upload progress toasts appear</li>
+            <li>Images appear in gallery grid</li>
+            <li><strong>Profile auto-refreshes</strong> (you'll see "Profile refreshed" toast)</li>
+            <li>Business name/description stay updated</li>
+            <li>Click trash icon on image to delete it</li>
+          </ol>
+        </div>
+
+        <!-- Test 3 -->
+        <div class="bg-zinc-900 p-4 rounded-lg">
+          <h3 class="text-lg font-bold mb-3 text-green-400">Test 3: Data Persistence</h3>
+          <ol class="list-decimal ml-5 space-y-2 text-sm">
+            <li>After editing profile, <strong>refresh the page</strong> (F5)</li>
+            <li>Your edits should still be there</li>
+            <li>After uploading images, <strong>refresh the page</strong></li>
+            <li>Gallery images should still be there</li>
+            <li>Open in <strong>different tab</strong> - same data shows</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <!-- Expected Behavior -->
+    <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 mb-6">
+      <h2 class="text-2xl font-bold mb-4">✅ Expected Behavior</h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-black/30 rounded-lg p-4">
+          <h3 class="font-bold mb-2"><i class="fas fa-eye mr-2"></i>View Mode</h3>
+          <ul class="space-y-1 text-sm">
+            <li>• Shows business name from database</li>
+            <li>• Shows description from database</li>
+            <li>• Shows logo if available</li>
+            <li>• "Edit Profile" button visible</li>
+          </ul>
+        </div>
+        <div class="bg-black/30 rounded-lg p-4">
+          <h3 class="font-bold mb-2"><i class="fas fa-edit mr-2"></i>Edit Mode</h3>
+          <ul class="space-y-1 text-sm">
+            <li>• Form pre-filled with current values</li>
+            <li>• Character counter updates live</li>
+            <li>• Cancel button restores view</li>
+            <li>• Save button updates database</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Troubleshooting -->
+    <div class="bg-yellow-900/20 border border-yellow-500 rounded-xl p-6">
+      <h2 class="text-xl font-bold mb-4 text-yellow-400">⚠️ Troubleshooting</h2>
+      
+      <div class="space-y-3 text-sm">
+        <div>
+          <strong class="text-white">Issue: Still seeing "Your Business" placeholder</strong>
+          <p class="text-zinc-300 ml-4 mt-1">
+            → You might not have a business record yet. Sign up via /auth.html#signup first.
+          </p>
+        </div>
+        
+        <div>
+          <strong class="text-white">Issue: Save button doesn't work</strong>
+          <p class="text-zinc-300 ml-4 mt-1">
+            → Check console (F12) for errors. Verify RLS policies allow UPDATE on businesses table.
+          </p>
+        </div>
+        
+        <div>
+          <strong class="text-white">Issue: Gallery upload fails</strong>
+          <p class="text-zinc-300 ml-4 mt-1">
+            → Check storage policies on 'gallery' bucket. Ensure authenticated users can INSERT.
+          </p>
+        </div>
+        
+        <div>
+          <strong class="text-white">Issue: Changes don't persist after refresh</strong>
+          <p class="text-zinc-300 ml-4 mt-1">
+            → Check database - use Supabase dashboard to verify UPDATE actually happened.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success Criteria -->
+    <div class="bg-zinc-800 rounded-xl p-6 border border-zinc-700">
+      <h2 class="text-xl font-bold mb-4">🎯 Success Criteria</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <h3 class="font-semibold mb-2 text-green-400">Profile Editing</h3>
+          <label class="flex items-center space-x-2 mb-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Edit button appears</span>
+          </label>
+          <label class="flex items-center space-x-2 mb-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Form shows with current data</span>
+          </label>
+          <label class="flex items-center space-x-2 mb-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Save updates database</span>
+          </label>
+          <label class="flex items-center space-x-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Changes persist on refresh</span>
+          </label>
+        </div>
+        <div>
+          <h3 class="font-semibold mb-2 text-purple-400">Gallery Upload</h3>
+          <label class="flex items-center space-x-2 mb-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Upload button works</span>
+          </label>
+          <label class="flex items-center space-x-2 mb-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Images appear in grid</span>
+          </label>
+          <label class="flex items-center space-x-2 mb-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Profile auto-refreshes</span>
+          </label>
+          <label class="flex items-center space-x-2">
+            <input type="checkbox" class="w-4 h-4">
+            <span class="text-sm">Delete function works</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-8 text-center">
+      <a href="http://localhost:8000/public/profile.html" target="_blank"
+         class="inline-block bg-gradient-to-r from-green-500 to-blue-500 text-white px-8 py-4 rounded-xl font-bold text-lg hover:shadow-xl transition-all">
+        🚀 Test Profile Page Now
+      </a>
+    </div>
+  </div>
+</body>
+</html>
+

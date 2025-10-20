@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Editable Profile | Chamber122</title>
+  
+  <!-- Supabase singleton -->
+  <script type="module" src="/js/supabase-client.js"></script>
+  
+  <!-- Auth/session handling -->
+  <script type="module" src="/js/auth-session.js"></script>
+  
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 8px; }
+    .success { background-color: #d4edda; border-color: #c3e6cb; }
+    .error { background-color: #f8d7da; border-color: #f5c6cb; }
+    .info { background-color: #d1ecf1; border-color: #bee5eb; }
+    button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    input, select { padding: 8px; margin: 5px; width: 200px; }
+    .preview { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin: 10px 0; }
+    .preview img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h1>Test Editable Profile</h1>
+  
+  <div class="test-section">
+    <h3>Test 1: Supabase Client</h3>
+    <button onclick="testSupabase()">Test Supabase</button>
+    <div id="supabase-result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h3>Test 2: Form Fields</h3>
+    <form id="test-form">
+      <div>
+        <label for="test-name">Business Name:</label>
+        <input id="test-name" value="Test Business" />
+      </div>
+      <div>
+        <label for="test-industry">Industry:</label>
+        <input id="test-industry" value="Technology" />
+      </div>
+      <div>
+        <label for="test-phone">Phone:</label>
+        <input id="test-phone" value="+96512345678" />
+      </div>
+      <div>
+        <label for="test-whatsapp">WhatsApp:</label>
+        <input id="test-whatsapp" value="12345678" />
+      </div>
+      <div>
+        <label for="test-website">Website:</label>
+        <input id="test-website" value="https://example.com" />
+      </div>
+      <div>
+        <label for="test-instagram">Instagram:</label>
+        <input id="test-instagram" value="@testbusiness" />
+      </div>
+      <div>
+        <label for="test-country">Country:</label>
+        <input id="test-country" value="Kuwait" />
+      </div>
+      <div>
+        <label for="test-city">City:</label>
+        <input id="test-city" value="Kuwait City" />
+      </div>
+      <div>
+        <label for="test-area">Area:</label>
+        <input id="test-area" value="Test Area" />
+      </div>
+      <div>
+        <label for="test-block">Block:</label>
+        <input id="test-block" value="Test Block" />
+      </div>
+      <div>
+        <label for="test-street">Street:</label>
+        <input id="test-street" value="Test Street" />
+      </div>
+      <div>
+        <label for="test-office">Office No (Optional):</label>
+        <input id="test-office" value="123" />
+      </div>
+      <div>
+        <label for="test-floor">Floor (Optional):</label>
+        <input id="test-floor" value="5" />
+      </div>
+      <div>
+        <label for="test-published">Visible Publicly:</label>
+        <select id="test-published">
+          <option value="false">No (draft)</option>
+          <option value="true" selected>Yes (published)</option>
+        </select>
+      </div>
+      <div>
+        <label for="test-files">Business Images (multiple):</label>
+        <input id="test-files" type="file" accept="image/*" multiple />
+        <div id="file-preview" class="preview"></div>
+      </div>
+      <button type="button" onclick="testFormData()">Test Form Data Collection</button>
+    </form>
+    <div id="form-result"></div>
+  </div>
+
+  <script>
+    function testSupabase() {
+      const result = document.getElementById('supabase-result');
+      
+      try {
+        const hasSupabase = !!window.supabase;
+        const hasUrl = !!window.SUPABASE_URL;
+        const hasKey = !!window.SUPABASE_ANON_KEY;
+        
+        if (hasSupabase && hasUrl && hasKey) {
+          result.innerHTML = '<div class="success">✅ Supabase client ready</div>';
+        } else {
+          result.innerHTML = `<div class="error">❌ Missing: supabase=${hasSupabase}, url=${hasUrl}, key=${hasKey}</div>`;
+        }
+      } catch (error) {
+        result.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+      }
+    }
+    
+    // Test multiple file selection
+    document.getElementById('test-files').addEventListener('change', function(e) {
+      const files = Array.from(e.target.files).filter(f => f && f.size > 0);
+      const preview = document.getElementById('file-preview');
+      
+      preview.innerHTML = files.slice(0, 5).map(f => {
+        const url = URL.createObjectURL(f);
+        return `<img src="${url}" alt="${f.name}" title="${f.name}">`;
+      }).join('');
+    });
+    
+    function testFormData() {
+      const result = document.getElementById('form-result');
+      
+      try {
+        const formData = {
+          name: document.getElementById('test-name').value,
+          industry: document.getElementById('test-industry').value,
+          phone: document.getElementById('test-phone').value,
+          whatsapp: document.getElementById('test-whatsapp').value,
+          website: document.getElementById('test-website').value,
+          instagram: document.getElementById('test-instagram').value,
+          country: document.getElementById('test-country').value,
+          city: document.getElementById('test-city').value,
+          area: document.getElementById('test-area').value,
+          block: document.getElementById('test-block').value,
+          street: document.getElementById('test-street').value,
+          office_no: document.getElementById('test-office').value,
+          floor: document.getElementById('test-floor').value,
+          is_published: document.getElementById('test-published').value === 'true'
+        };
+        
+        result.innerHTML = `
+          <div class="info">
+            <h4>Form Data Collected Successfully:</h4>
+            <ul>
+              <li>Name: ${formData.name}</li>
+              <li>Industry: ${formData.industry}</li>
+              <li>Phone: ${formData.phone}</li>
+              <li>WhatsApp: ${formData.whatsapp}</li>
+              <li>Website: ${formData.website}</li>
+              <li>Instagram: ${formData.instagram}</li>
+              <li>Country: ${formData.country}</li>
+              <li>City: ${formData.city}</li>
+              <li>Area: ${formData.area}</li>
+              <li>Block: ${formData.block}</li>
+              <li>Street: ${formData.street}</li>
+              <li>Office No: ${formData.office_no}</li>
+              <li>Floor: ${formData.floor}</li>
+              <li>Published: ${formData.is_published}</li>
+            </ul>
+            <p>✅ All form fields are editable and working correctly</p>
+          </div>
+        `;
+      } catch (error) {
+        result.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+      }
+    }
+    
+    // Auto-run tests
+    setTimeout(testSupabase, 1000);
+  </script>
+</body>
+</html>

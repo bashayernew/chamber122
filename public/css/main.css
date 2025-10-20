@@ -1,0 +1,290 @@
+/* ---- Owner Profile View (dark) ---- */
+.container { max-width: 1100px; margin: 0 auto; padding: 1.25rem; }
+.profile-wrap { display: grid; gap: 1rem; }
+
+.card {
+  background: #0f1115; border: 1px solid #23252b; border-radius: 14px;
+  padding: 1rem 1.25rem; box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+}
+
+.profile-header {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: center;
+}
+
+.avatar-wrap {
+  width: 88px; height: 88px; border-radius: 14px; overflow: hidden; background:#1a1d23;
+  display:flex; align-items:center; justify-content:center;
+}
+.avatar { width: 100%; height: 100%; object-fit: cover; }
+
+.title { margin: 0 0 .25rem; font-size: 1.5rem; font-weight: 700; }
+.title-row { display:flex; gap:.5rem; align-items:center; flex-wrap: wrap; }
+.muted { color:#8b8f99; font-size:.9rem; }
+
+.badge {
+  background:#1c1f27; border:1px solid #2a2f38; color:#cbd5e1;
+  padding:.25rem .55rem; border-radius:999px; font-size:.8rem; text-transform:capitalize;
+}
+.chip {
+  background:#0c0f14; border:1px solid #333843; color:#e2e8f0;
+  padding:.2rem .5rem; border-radius:999px; font-size:.8rem;
+}
+
+.actions .btn {
+  display:inline-flex; align-items:center; gap:.5rem; padding:.55rem .9rem;
+  border-radius:10px; border:1px solid #2b313b; text-decoration:none;
+}
+.btn-primary { background:#111826; color:#e9edf5; }
+.btn-primary:hover { background:#151c2c; }
+
+.section-title { margin:.25rem 0 .75rem; font-size:1.05rem; letter-spacing:.3px; color:#e8e8ea; }
+
+.details-grid {
+  display:grid; gap:.75rem; grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.details-grid .full { grid-column: 1 / -1; }
+.label { display:block; color:#9aa1ad; font-size:.85rem; margin-bottom:.1rem; }
+.value { color:#e6e9ef; word-break:break-word; text-decoration:none; }
+
+.gallery-grid {
+  display:grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap:.75rem;
+}
+.gallery-grid .ph {
+  background:#12161d; border:1px dashed #2d3440; border-radius:12px; height:120px;
+  display:flex; align-items:center; justify-content:center; color:#6b7280; font-size:.9rem;
+}
+.gallery-grid img {
+  width:100%; height: 120px; object-fit:cover; border-radius:12px; border:1px solid #23252b;
+}
+
+/* Minimal editor */
+.editor-wrap { display: grid; gap: 1rem; max-width: 900px; margin: 0 auto; padding: 1rem; }
+.card { background:#0f1115; border:1px solid #23252b; border-radius:14px; padding:1rem 1.25rem; }
+.section-title { margin:0 0 .75rem; font-size:1.05rem; color:#e8e8ea; }
+.muted { color:#8b8f99; }
+
+.logo-box {
+  width: 140px; height: 140px;
+  border-radius: 14px; border: 1px solid #23252b;
+  background: #1a1d23; overflow: hidden; position: relative;
+}
+.logo-box img { width: 100%; height: 100%; object-fit: cover; display: none; }
+.logo-box .placeholder {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  color: #a7b0bd; font-weight: 600;
+}
+.gallery-grid-5 {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: .75rem; margin-top: .75rem;
+}
+.gallery-grid-5 .slot { height: 120px; border-radius: 12px; border: 1px dashed #2d3440; background: #12161d; overflow: hidden; }
+.gallery-grid-5 .slot img { width: 100%; height: 100%; object-fit: cover; display: none; }
+
+.actions { display:flex; gap:.75rem; justify-content:flex-end; }
+.btn { display:inline-flex; align-items:center; gap:.5rem; padding:.55rem .9rem; border-radius:10px; border:1px solid #2b313b; color:#e9edf5; text-decoration:none; background:#0c0f14; }
+.btn-primary { background:#111826; }
+.btn-primary:disabled { opacity:.6; cursor:not-allowed; }
+
+/* ---- Media overrides ---- */
+/* Never tint images – kill any global filters */
+img, .card img, .logo-box img, .gallery img {
+  mix-blend-mode: normal !important;
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* Logo: square, cover */
+#biz-logo, #logoPreview {
+  width: 140px;
+  height: 140px;
+  border-radius: 12px;        /* square with rounded corners */
+  object-fit: cover;
+  display: block;
+  /* Prevent color changes */
+  filter: none !important;
+  -webkit-filter: none !important;
+  /* Preserve original colors */
+  image-rendering: auto;
+  -webkit-image-rendering: auto;
+}
+
+/* If some global .avatar makes it circular, break that here */
+#biz-logo.avatar, #logoPreview.avatar {
+  border-radius: 12px !important;
+}
+
+/* Edit page logo container (keep if you have a box) */
+.logo-box {
+  width: 140px;
+  height: 140px;
+  border-radius: 12px;
+  border: 1px solid #23252b;
+  background: #111418;
+  overflow: hidden;
+}
+
+/* Ensure logo preview maintains original colors */
+.logo-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  /* Preserve original image colors */
+  filter: none !important;
+  -webkit-filter: none !important;
+  image-rendering: auto;
+  -webkit-image-rendering: auto;
+  /* Prevent any color space conversion */
+  color-scheme: normal;
+}
+
+/* THUMBNAILS */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;      /* Square */
+  border-radius: 12px;
+  border: 1px solid #23252b;
+  background: #0f1318;
+  overflow: hidden;
+  position: relative;
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Gallery image styling for better consistency */
+.gallery-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+
+/* Enhanced gallery grid styling */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.gallery-item {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0f1012;
+  border: 1px solid #23262b;
+  height: 140px;
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(0,0,0,.6);
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gallery-remove:hover {
+  background: rgba(220, 38, 38, 0.8);
+}
+
+/* Description and Story text styling */
+.description-text, .story-text {
+  color: #e2e8f0;
+  line-height: 1.6;
+  font-size: 15px;
+  padding: 16px 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.description-text:empty::before,
+.story-text:empty::before {
+  content: "No description provided yet.";
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.story-text:empty::before {
+  content: "No story shared yet.";
+}
+
+/* Delete (×) button on each thumb (Edit page only) */
+.thumb .del {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid #333a45;
+  background: #12161d;
+  color: #cbd5e1;
+  font-weight: 700;
+  line-height: 24px;
+  text-align: center;
+  cursor: pointer;
+  opacity: .9;
+}
+.thumb .del:hover { opacity: 1; }
+
+/* Profile lists */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.list .item {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #0f1318;
+  border: 1px solid #23252b;
+}
+
+.list .muted {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.subhead {
+  font-size: 14px;
+  color: #a7b0bd;
+  margin: 2px 0 10px;
+}

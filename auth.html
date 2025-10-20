@@ -7,20 +7,19 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Login / Sign Up | Chamber122</title>
-  <script>
-    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
-    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
-  </script>
+  
+  <!-- Styles -->
   <link rel="stylesheet" href="/css/header.css?v=1">
   <link rel="stylesheet" href="css/style.css?v=18">
   <link rel="stylesheet" href="css/auth.css?v=18">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <script type="module" src="/js/supabase-client.js?v=20"></script>
-  <script type="module" src="/js/header-auth-slot.js?v=11"></script>
-  <script type="module" src="/js/auth-login.js?v=24"></script>
+  
+  <!-- Auth login handler loaded separately for immediate execution -->
+  <script type="module" src="/public/js/supabase-client.global.js?v=3"></script>
+  <script type="module" src="/public/js/auth-login.js?v=2"></script>
 </head>
-<body>
+<body data-page="auth">
   <nav class="navbar">
     <div class="nav-container">
       <a href="index.html" class="logo site-logo">
@@ -131,6 +130,7 @@
             </div>
             
             <button id="login-btn" type="submit" class="btn btn-primary" data-testid="login-submit" data-i18n="auth.logIn">Log In</button>
+            <div id="login-status" class="muted small" style="margin-top: 8px; font-size: 0.9rem; color: #9ca3af;"></div>
             <a id="forgotLink" href="#" class="forgot-link" data-i18n="auth.forgotPassword">Forgot password?</a>
           </form>
 
@@ -483,70 +483,36 @@
     </div>
   </footer>
 
+  <!-- Classic scripts for auth page (signup flow) -->
   <script src="js/main.js?v=7"></script>
-  <script type="module" src="./js/i18n.js"></script>
-  <script type="module" src="js/config.js"></script>
-  <script type="module" src="js/auth-state-manager.js"></script>
-  <script type="module" src="js/signup-utils.js"></script>
-  <script type="module" src="js/signup-stepper.js"></script>
-  <script type="module" src="js/file-upload.js"></script>
-  <script type="module" src="js/storage.js"></script>
-  <script type="module" src="js/file-validate.js"></script>
-  <script type="module" src="js/upload-doc.js"></script>
-  <script type="module" src="js/signup-and-upload.js"></script>
-  <script type="module" src="js/auth-signup.js?v=21"></script>
   <script src="js/error-handler.js?v=21"></script>
+  <link rel="stylesheet" href="css/modal.css?v=18">
+  
+  <!-- Single module entry point (loads header-auth-slot) -->
+  <script type="module" src="/public/js/boot.js?v=1"></script>
+  
+  <!-- Signup modules (loaded separately for auth page) -->
+  <script type="module" src="./js/i18n.js"></script>
   <script type="module" src="js/signup-with-documents.js?v=21"></script>
-  <script type="module" src="js/account-completeness.js"></script>
   <script type="module">
     import { initSignupPage } from '/js/signup-with-documents.js';
-    
-    // Initialize signup page when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {
       initSignupPage();
     });
   </script>
-  <!-- Import authentication scripts -->
-  <script type="module" src="js/modal-login-required.js"></script>
-  <script type="module" src="js/guest.js"></script>
+  
+  <!-- Auth API handlers -->
   <script type="module">
-    import {
-      signupWithEmailPassword,
-      loginWithEmailPassword,
-      sendPhoneOtp,
-      verifyPhoneOtp,
-      sendEmailMagicLink
-    } from '/js/auth-api.js?v=21';
-    import { initNavAuthState } from '/js/nav-auth-state.js';
-    
-    // Initialize navbar auth state
-    initNavAuthState();
+    import { signupWithEmailPassword, sendPhoneOtp, verifyPhoneOtp, sendEmailMagicLink } from '/js/auth-api.js?v=21';
     
     document.addEventListener('DOMContentLoaded', () => {
-      // Debug: Log configuration on page load
-      import('./js/config-dev.js?v=21').then(({ logConfig }) => {
-        logConfig();
-      });
-      
-      // LOGIN: email + password - handled by auth-login.js
-
-      // FORGOT PASSWORD - handled by auth-login.js
-
-      // LOGIN: phone OTP (only when user chooses it)
+      // Phone OTP
       document.querySelector('#btnSendOtp')?.addEventListener('click', async () => {
         const phone = document.querySelector('#login-phone').value.trim();
         if (!phone) { alert('Enter your phone'); return; }
         try {
           await sendPhoneOtp(phone);
           alert('Code sent by SMS.');
-          // Try WebOTP auto-fill (best-effort)
-          if ('OTPCredential' in window && navigator.credentials) {
-            const ac = new AbortController(); setTimeout(()=>ac.abort(), 60000);
-            try {
-              const cred = await navigator.credentials.get({ otp:{ transport:['sms'] }, signal: ac.signal });
-              if (cred?.code) document.querySelector('#login-phone-code').value = cred.code;
-            } catch(_) {}
-          }
         } catch (err) { alert(err.message); }
       });
 
@@ -560,12 +526,11 @@
         } catch (err) { alert(err.message); }
       });
 
-      // SIGNUP: email + password (+ optional phone)
+      // Signup
       document.querySelector('#signup-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.querySelector('#signup-email').value.trim();
         const pw = document.querySelector('#signup-password').value;
-        const phone = (document.querySelector('#signup-phone').value || '').trim() || null;
         
         if (!email || !pw) {
           alert('Please fill in all required fields');
@@ -583,34 +548,24 @@
         btn.disabled = true;
         
         try {
-          const r = await signupWithEmailPassword({ email, password: pw, phone });
+          const r = await signupWithEmailPassword({ email, password: pw, phone: null });
           if (r.requiresConfirm) {
             alert('Account created. Check your email to confirm, then log in.');
           } else {
             location.replace('/owner-activities.html');
           }
         } catch (err) {
-          if (String(err.message).includes('already exists')) {
-            const go = confirm(err.message + '\nGo to login now?');
-            if (go) {
-              document.querySelector('#login-email').value = email;
-              location.hash = '#login';
-            }
-          } else {
-            alert(err.message);
-          }
+          alert(err.message);
         } finally {
           btn.innerHTML = originalText;
           btn.disabled = false;
         }
       });
 
-      // MAGIC LINK: optional
+      // Magic link
       document.querySelector('#magicForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.querySelector('#magic-email').value.trim()
-                     || document.querySelector('#login-email').value.trim()
-                     || document.querySelector('#signup-email').value.trim();
+        const email = document.querySelector('#magic-email').value.trim();
         if (!email) { alert('Enter email'); return; }
         try {
           await sendEmailMagicLink(email);
@@ -619,7 +574,6 @@
       });
     });
   </script>
-  <link rel="stylesheet" href="css/modal.css?v=18">
   
   <script>
     // Password toggle function

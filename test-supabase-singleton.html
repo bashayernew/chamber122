@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supabase Singleton Test | Chamber122</title>
+  
+  <!-- Supabase singleton -->
+  <script type="module" src="/js/supabase-client.js"></script>
+  
+  <!-- Auth/session handling -->
+  <script type="module" src="/js/auth-session.js"></script>
+</head>
+<body>
+  <h1>Supabase Singleton Test</h1>
+  <div id="test-results"></div>
+  
+  <script>
+    // Test window.supabase availability
+    function testSupabaseAvailability() {
+      const results = document.getElementById('test-results');
+      
+      try {
+        // Test 1: Check if window.supabase exists
+        const hasSupabase = !!window.supabase;
+        results.innerHTML += `<p>✅ window.supabase exists: ${hasSupabase}</p>`;
+        
+        // Test 2: Check if window.SUPABASE_URL exists
+        const hasUrl = !!window.SUPABASE_URL;
+        results.innerHTML += `<p>✅ window.SUPABASE_URL exists: ${hasUrl}</p>`;
+        
+        // Test 3: Check if window.SUPABASE_ANON_KEY exists
+        const hasKey = !!window.SUPABASE_ANON_KEY;
+        results.innerHTML += `<p>✅ window.SUPABASE_ANON_KEY exists: ${hasKey}</p>`;
+        
+        // Test 4: Check if all three are true
+        const allGood = hasSupabase && hasUrl && hasKey;
+        results.innerHTML += `<p><strong>🎯 Overall Result: ${allGood ? 'PASS' : 'FAIL'}</strong></p>`;
+        
+        if (allGood) {
+          results.innerHTML += `<p style="color: green;">✅ Supabase singleton is working correctly!</p>`;
+        } else {
+          results.innerHTML += `<p style="color: red;">❌ Supabase singleton has issues.</p>`;
+        }
+        
+        // Test 5: Try to use supabase
+        if (hasSupabase) {
+          try {
+            const client = window.supabase;
+            results.innerHTML += `<p>✅ Supabase client is usable: ${typeof client.auth}</p>`;
+          } catch (e) {
+            results.innerHTML += `<p style="color: red;">❌ Error using supabase client: ${e.message}</p>`;
+          }
+        }
+        
+      } catch (error) {
+        results.innerHTML += `<p style="color: red;">❌ Test error: ${error.message}</p>`;
+      }
+    }
+    
+    // Run test after a short delay to ensure scripts are loaded
+    setTimeout(testSupabaseAvailability, 1000);
+  </script>
+</body>
+</html>

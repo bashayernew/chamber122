@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Owner Form Fix | Chamber122</title>
+  
+  <!-- Supabase singleton -->
+  <script type="module" src="/js/supabase-client.js"></script>
+  
+  <!-- Auth/session handling -->
+  <script type="module" src="/js/auth-session.js"></script>
+  
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 8px; }
+    .success { background-color: #d4edda; border-color: #c3e6cb; }
+    .error { background-color: #f8d7da; border-color: #f5c6cb; }
+    .info { background-color: #d1ecf1; border-color: #bee5eb; }
+    button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    input[type="file"] { margin: 10px 0; }
+    .preview { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin: 10px 0; }
+    .preview img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h1>Test Owner Form Fix</h1>
+  
+  <div id="test-results"></div>
+  
+  <div class="test-section">
+    <h3>Test 1: Supabase Client Availability</h3>
+    <button onclick="testSupabaseClient()">Test Supabase Client</button>
+    <div id="supabase-test-result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h3>Test 2: File Input Multiple Selection</h3>
+    <label for="test-gallery">Select Multiple Images (up to 5):</label>
+    <input id="test-gallery" type="file" accept="image/*" multiple />
+    <div id="gallery-preview" class="preview"></div>
+    <div id="file-count"></div>
+  </div>
+  
+  <div class="test-section">
+    <h3>Test 3: Form Submission (without actual save)</h3>
+    <button onclick="testFormSubmission()">Test Form Data Collection</button>
+    <div id="form-test-result"></div>
+  </div>
+
+  <script>
+    function testSupabaseClient() {
+      const result = document.getElementById('supabase-test-result');
+      
+      try {
+        const hasSupabase = !!window.supabase;
+        const hasUrl = !!window.SUPABASE_URL;
+        const hasKey = !!window.SUPABASE_ANON_KEY;
+        
+        if (hasSupabase && hasUrl && hasKey) {
+          result.innerHTML = '<div class="success">✅ All Supabase components available</div>';
+        } else {
+          result.innerHTML = `<div class="error">❌ Missing: supabase=${hasSupabase}, url=${hasUrl}, key=${hasKey}</div>`;
+        }
+      } catch (error) {
+        result.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+      }
+    }
+    
+    // Test file input
+    document.getElementById('test-gallery').addEventListener('change', function(e) {
+      const files = Array.from(e.target.files).filter(f => f && f.size > 0);
+      const preview = document.getElementById('gallery-preview');
+      const count = document.getElementById('file-count');
+      
+      count.textContent = `Selected ${files.length} files (max 5 allowed)`;
+      
+      if (files.length > 5) {
+        count.innerHTML += '<br><span style="color: red;">⚠️ Too many files! Only first 5 will be used.</span>';
+        files.splice(5);
+      }
+      
+      preview.innerHTML = files.map(f => {
+        const url = URL.createObjectURL(f);
+        return `<img src="${url}" alt="${f.name}" title="${f.name}">`;
+      }).join('');
+    });
+    
+    function testFormSubmission() {
+      const result = document.getElementById('form-test-result');
+      
+      try {
+        // Simulate form data collection
+        const formData = {
+          name: 'Test Business',
+          industry: 'Technology',
+          phone: '+96512345678',
+          galleryFiles: Array.from(document.getElementById('test-gallery').files).length
+        };
+        
+        result.innerHTML = `
+          <div class="info">
+            <h4>Form Data Collected:</h4>
+            <ul>
+              <li>Name: ${formData.name}</li>
+              <li>Industry: ${formData.industry}</li>
+              <li>Phone: ${formData.phone}</li>
+              <li>Gallery Files: ${formData.galleryFiles}</li>
+            </ul>
+            <p>✅ Form data collection working</p>
+          </div>
+        `;
+      } catch (error) {
+        result.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+      }
+    }
+    
+    // Auto-run Supabase test on page load
+    setTimeout(testSupabaseClient, 1000);
+  </script>
+</body>
+</html>

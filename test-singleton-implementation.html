@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Singleton Implementation | Chamber122</title>
+  
+  <script type="module" src="/js/supabase-client.js"></script>
+  <script type="module" src="/js/auth-session.js"></script>
+  
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 8px; }
+    .success { background-color: #d4edda; border-color: #c3e6cb; }
+    .error { background-color: #f8d7da; border-color: #f5c6cb; }
+    .info { background-color: #d1ecf1; border-color: #bee5eb; }
+    button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Test Singleton Supabase Implementation</h1>
+  
+  <div class="test-section">
+    <h3>Test 1: Supabase Client Singleton</h3>
+    <button onclick="testSupabaseSingleton()">Test Singleton</button>
+    <div id="singleton-result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h3>Test 2: Form Field Validation</h3>
+    <button onclick="testFormFields()">Test Form Fields</button>
+    <div id="form-result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h3>Test 3: Script Loading Order</h3>
+    <button onclick="testScriptOrder()">Test Script Order</button>
+    <div id="script-result"></div>
+  </div>
+
+  <script>
+    function testSupabaseSingleton() {
+      const result = document.getElementById('singleton-result');
+      
+      try {
+        const hasSupabase = !!window.supabase;
+        const hasUrl = !!window.SUPABASE_URL;
+        const hasKey = !!window.SUPABASE_ANON_KEY;
+        const isClient = hasSupabase && typeof window.supabase.auth === 'object';
+        
+        if (hasSupabase && hasUrl && hasKey && isClient) {
+          result.innerHTML = '<div class="success">✅ Supabase singleton working correctly</div>';
+        } else {
+          result.innerHTML = `<div class="error">❌ Issues: supabase=${hasSupabase}, url=${hasUrl}, key=${hasKey}, client=${isClient}</div>`;
+        }
+      } catch (error) {
+        result.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+      }
+    }
+    
+    function testFormFields() {
+      const result = document.getElementById('form-result');
+      
+      const requiredFields = [
+        'name', 'industry', 'phone', 'whatsapp', 'website', 'instagram',
+        'country', 'city', 'area', 'block', 'street', 'office_no', 'floor',
+        'address_line', 'logo_url', 'is_published', 'logo_file', 'gallery_files',
+        'save_btn', 'form-msg', 'business-form'
+      ];
+      
+      const missingFields = requiredFields.filter(field => !document.getElementById(field));
+      
+      if (missingFields.length === 0) {
+        result.innerHTML = '<div class="success">✅ All required form fields present</div>';
+      } else {
+        result.innerHTML = `<div class="error">❌ Missing fields: ${missingFields.join(', ')}</div>`;
+      }
+    }
+    
+    function testScriptOrder() {
+      const result = document.getElementById('script-result');
+      
+      try {
+        // Check if scripts are loaded in correct order
+        const scripts = Array.from(document.querySelectorAll('script[type="module"]'));
+        const supabaseScript = scripts.find(s => s.src.includes('supabase-client.js'));
+        const authScript = scripts.find(s => s.src.includes('auth-session.js'));
+        
+        if (supabaseScript && authScript) {
+          const supabaseIndex = scripts.indexOf(supabaseScript);
+          const authIndex = scripts.indexOf(authScript);
+          
+          if (supabaseIndex < authIndex) {
+            result.innerHTML = '<div class="success">✅ Script loading order is correct</div>';
+          } else {
+            result.innerHTML = '<div class="error">❌ Script loading order is incorrect</div>';
+          }
+        } else {
+          result.innerHTML = '<div class="info">ℹ️ Script order test not applicable on this page</div>';
+        }
+      } catch (error) {
+        result.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+      }
+    }
+    
+    // Auto-run tests
+    setTimeout(() => {
+      testSupabaseSingleton();
+      testFormFields();
+      testScriptOrder();
+    }, 1000);
+  </script>
+</body>
+</html>

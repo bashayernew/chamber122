@@ -8,13 +8,12 @@
   <meta http-equiv="Expires" content="0">
   <title>Chamber122 - Discover Amazing MSMEs in Kuwait</title>
   <meta name="description" content="Search, explore, and connect with businesses shaping Kuwait's future. Join Chamber122's directory of local MSMEs.">
-  <script>
-    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
-    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
-  </script>
+  <!-- Global Supabase Client -->
+  <script type="module" src="/public/js/supabase-client.global.js?v=3"></script>
+  
+  <!-- Header Auth -->
   <link rel="stylesheet" href="/css/header.css?v=1">
-  <script type="module" src="/js/supabase-client.js?v=20"></script>
-  <script type="module" src="/js/header-auth-slot.js?v=11"></script>
+  <script type="module" src="/public/js/header-auth-slot.js"></script>
   <link rel="stylesheet" href="css/style.css?v=17">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -177,28 +176,26 @@
     </div>
   </section>
 
-  <!-- This Week's Event Section -->
+  <!-- Upcoming Events Section -->
   <section class="event-highlight">
     <div class="section-header">
-      <h2 class="section-title" data-i18n="sections.thisWeekEvent">This Week's Event</h2>
+      <h2 class="section-title" data-i18n="sections.thisWeekEvent">Upcoming Events</h2>
       <p class="section-subtitle" data-i18n="sections.thisWeekEventSubtitle">Don't miss out on the latest community happenings</p>
     </div>
     
-    <div class="event-card-featured">
-      <div class="event-image">
-        <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=500&h=300&fit=crop" alt="MSME Networking Night">
-        <div class="event-badge">This Week</div>
+    <div id="upcoming-events-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px;">
+      <!-- Dynamic events will be loaded here -->
+      <div style="text-align: center; padding: 40px; color: #aaa; grid-column: 1 / -1;">
+        <i class="fas fa-calendar-alt" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+        <h3>Loading upcoming events...</h3>
+        <p>Please wait while we fetch the latest events.</p>
       </div>
-      <div class="event-content">
-        <h3>MSME Networking Night</h3>
-        <div class="event-meta">
-          <span class="event-date"><i class="fas fa-calendar"></i> Friday, Jan 31, 2025</span>
-          <span class="event-time"><i class="fas fa-clock"></i> 7:00 PM - 10:00 PM</span>
-          <span class="event-location"><i class="fas fa-map-marker-alt"></i> Kuwait Chamber of Commerce</span>
-        </div>
-        <p class="event-description">Join fellow MSME owners for an evening of networking, knowledge sharing, and community building. Light refreshments provided.</p>
-        <a href="events.html" class="event-btn">Learn More</a>
-      </div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 30px;">
+      <a href="events.html" class="btn primary" style="display: inline-block; padding: 12px 24px; background: #ffd166; color: #111; text-decoration: none; border-radius: 8px; font-weight: 600;">
+        View All Events
+      </a>
     </div>
   </section>
 
@@ -292,16 +289,98 @@
     </div>
   </div>
 
+  <!-- Page-specific logic -->
   <script src="js/main.js?v=7"></script>
   <script type="module" src="js/language-switcher.js"></script>
   <script type="module" src="./js/i18n.js"></script>
   <script type="module" src="js/config.js"></script>
-  <script type="module" src="js/supabase-client.js"></script>
   <script type="module" src="js/auth-state-manager.js"></script>
   <script type="module" src="./js/modal-login-required.js"></script>
   <script type="module" src="./js/gating.js"></script>
   <script type="module" src="js/compliance-banner.js"></script>
   <script type="module" src="js/notification-system.js"></script>
+  
+  <!-- Load Featured Event -->
+  <script type="module">
+    import { supabase } from '/public/js/supabase-client.global.js?v=3';
+    
+    async function loadUpcomingEvents() {
+      try {
+        const { data: events, error } = await supabase
+          .from('activities_base')
+          .select('id,business_id,title,description,location,start_at,end_at,cover_image_url,status,is_published,deleted_at,created_at')
+          .eq('type', 'event')
+          .eq('is_published', true)
+          .is('deleted_at', null)
+          .gte('end_at', new Date().toISOString())   // still running or future
+          .order('start_at', { ascending: true })
+          .limit(6);
+
+        if (error) {
+          console.error('Error loading upcoming events:', error);
+          return;
+        }
+
+        const eventsGrid = document.getElementById('upcoming-events-grid');
+        if (!eventsGrid) return;
+
+        if (!events || events.length === 0) {
+          eventsGrid.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #aaa; grid-column: 1 / -1;">
+              <i class="fas fa-calendar-alt" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+              <h3>No upcoming events</h3>
+              <p>Check back soon for new community events!</p>
+            </div>
+          `;
+          return;
+        }
+
+        eventsGrid.innerHTML = events.map(event => {
+          const startDate = event.start_at ? new Date(event.start_at) : null;
+          const endDate = event.end_at ? new Date(event.end_at) : null;
+          
+          return `
+            <div class="event-card" style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; overflow: hidden; transition: transform 0.2s;">
+              <div style="height: 200px; background: linear-gradient(135deg, #ffd166, #ff6b6b); position: relative;">
+                ${event.cover_image_url ? 
+                  `<img src="${event.cover_image_url}" alt="${event.title}" style="width: 100%; height: 100%; object-fit: cover;">` :
+                  `<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #111; font-size: 48px;"><i class="fas fa-calendar-alt"></i></div>`
+                }
+                <div style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.7); color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">
+                  ${event.type || 'Event'}
+                </div>
+              </div>
+              <div style="padding: 20px;">
+                <h3 style="margin: 0 0 12px; color: #fff; font-size: 18px; font-weight: 600; line-height: 1.3;">${event.title || 'Untitled Event'}</h3>
+                <div style="margin-bottom: 12px; color: #ffd166; font-size: 14px;">
+                  <i class="fas fa-clock" style="margin-right: 6px;"></i>
+                  ${startDate ? startDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : 'TBA'}
+                  ${startDate ? ` at ${startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''}
+                </div>
+                ${event.location ? `
+                  <div style="margin-bottom: 12px; color: #aaa; font-size: 14px;">
+                    <i class="fas fa-map-marker-alt" style="margin-right: 6px;"></i>
+                    ${event.location}
+                  </div>
+                ` : ''}
+                <p style="color: #ccc; font-size: 14px; line-height: 1.4; margin-bottom: 15px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                  ${event.description || 'Join us for this exciting community event!'}
+                </p>
+                <a href="/event.html?id=${event.id}" style="display: block; text-align: center; background: #ffd166; color: #111; padding: 10px 16px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 600;">
+                  Learn More
+                </a>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (error) {
+        console.error('Error loading upcoming events:', error);
+      }
+    }
+
+    // Load upcoming events when page loads
+    document.addEventListener('DOMContentLoaded', loadUpcomingEvents);
+  </script>
 </body>
 </html>
 

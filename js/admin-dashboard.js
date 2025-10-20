@@ -11,12 +11,36 @@ class AdminDashboard {
   async init() {
     try {
       // Require admin authentication
-      await requireAuth('/auth.html');
+      const isAuthenticated = await requireAuth('/auth.html');
+      if (!isAuthenticated) return;
+      
+      // Check if user is admin
+      const isAdmin = await this.checkAdminStatus();
+      if (!isAdmin) {
+        alert('Access denied. Admin privileges required.');
+        window.location.href = '/index.html';
+        return;
+      }
       
       this.setupEventListeners();
       await this.loadDashboardData();
     } catch (error) {
       console.error('Error initializing admin dashboard:', error);
+    }
+  }
+
+  async checkAdminStatus() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+      
+      // Check if user has admin role in metadata or email contains admin
+      return user.user_metadata?.role === 'admin' || 
+             user.email?.includes('admin') ||
+             user.email === 'admin@chamber122.com';
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+      return false;
     }
   }
 
@@ -62,12 +86,12 @@ class AdminDashboard {
       const pendingApprovals = msmes?.filter(m => m.status === 'pending').length || 0;
 
       // Load event stats
-      const { data: events } = await supabase.from('events').select('id');
-      const totalEvents = events?.length || 0;
+      const { data: activities } = await supabase.from('activities').select('id, type, kind');
+      const normalized = (activities || []).map(r => ({ ...r, type: r.type ?? r.kind }));
+      const totalEvents = normalized.filter(a => a.type === 'event').length;
 
       // Load bulletin stats
-      const { data: bulletins } = await supabase.from('bulletins').select('id');
-      const totalBulletins = bulletins?.length || 0;
+      const totalBulletins = normalized.filter(a => a.type === 'bulletin').length;
 
       // Update UI
       document.getElementById('total-msmes').textContent = totalMsmes;

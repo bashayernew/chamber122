@@ -1,0 +1,22 @@
+.c122-dialog { border:none; padding:0; background:transparent; }
+.c122-dialog::backdrop { background: rgba(0,0,0,0.6); }
+.c122-card {
+  width: min(92vw, 460px);
+  background: #0f1115;
+  color: #eaeef5;
+  border: 1px solid #2a2f3a;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.4);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}
+.c122-card-head { display:flex; align-items:center; gap:10px; margin-bottom: 8px; }
+.c122-card-head h3 { margin:0; font-size: 1.1rem; font-weight: 700; letter-spacing:.2px; }
+.c122-dot { width:10px; height:10px; border-radius:999px; background: #f5c75c; box-shadow:0 0 10px #f5c75c66; }
+.c122-desc { margin: 8px 0 18px; color:#c9d2e0; line-height:1.5; }
+.c122-actions { display:flex; justify-content:flex-end; gap:10px; }
+.btn { padding: 10px 14px; border-radius: 10px; border:1px solid #2a2f3a; background:#151822; color:#eaeef5; cursor:pointer; font-weight:600; }
+.btn:hover { filter: brightness(1.1); }
+.btn.ghost { background: transparent; }
+.btn.primary { background:#1f2430; border-color:#f5c75c; box-shadow: inset 0 0 0 1px #f5c75c33; }
+

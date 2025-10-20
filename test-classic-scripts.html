@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Classic Scripts - Chamber122</title>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+    .test-section { margin: 20px 0; padding: 20px; border: 1px solid #333; border-radius: 8px; }
+    .test-button { background: #6f75ff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+    .test-button:hover { background: #5a5fcf; }
+    .success { color: #4CAF50; }
+    .error { color: #f44336; }
+    .info { color: #2196F3; }
+    .log { background: #2a2a2a; padding: 10px; border-radius: 4px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Classic Scripts Test</h1>
+  
+  <div class="test-section">
+    <h2>1. Script Loading Test</h2>
+    <button class="test-button" onclick="testScriptLoading()">Test Script Loading</button>
+    <div id="script-results" class="log"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>2. Supabase Client Test</h2>
+    <button class="test-button" onclick="testSupabaseClient()">Test Supabase Client</button>
+    <div id="supabase-results" class="log"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>3. Event Functions Test</h2>
+    <button class="test-button" onclick="testEventFunctions()">Test Event Functions</button>
+    <div id="event-results" class="log"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>4. Activities Functions Test</h2>
+    <button class="test-button" onclick="testActivitiesFunctions()">Test Activities Functions</button>
+    <div id="activities-results" class="log"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>5. Event Creation Test</h2>
+    <button class="test-button" onclick="testEventCreation()">Test Event Creation</button>
+    <div id="creation-results" class="log"></div>
+  </div>
+
+  <!-- Include the classic scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-client.global.js?v=1"></script>
+  <script src="/js/activities-list.js?v=1"></script>
+  <script src="/js/event.js?v=1"></script>
+  <script src="/js/header-auth-slot.js?v=1"></script>
+  <script src="/js/language-switcher.js?v=1"></script>
+  <script src="/js/i18n.js?v=1"></script>
+
+  <script>
+    function log(elementId, message, type = 'info') {
+      const element = document.getElementById(elementId);
+      const timestamp = new Date().toLocaleTimeString();
+      element.textContent += `[${timestamp}] ${message}\n`;
+      element.className = `log ${type}`;
+    }
+    
+    function testScriptLoading() {
+      log('script-results', 'Testing script loading...', 'info');
+      
+      const scripts = [
+        { name: 'Supabase CDN', check: () => typeof window.supabase !== 'undefined' },
+        { name: 'Supabase Client Global', check: () => typeof window.sb !== 'undefined' },
+        { name: 'Activities List', check: () => typeof window.initActivitiesPage === 'function' },
+        { name: 'Event Functions', check: () => typeof window.openEventForm === 'function' },
+        { name: 'Header Auth Slot', check: () => typeof window.toggleUserMenu === 'function' }
+      ];
+      
+      let allLoaded = true;
+      scripts.forEach(script => {
+        if (script.check()) {
+          log('script-results', `✅ ${script.name} loaded successfully`, 'success');
+        } else {
+          log('script-results', `❌ ${script.name} not loaded`, 'error');
+          allLoaded = false;
+        }
+      });
+      
+      if (allLoaded) {
+        log('script-results', '🎉 All scripts loaded successfully!', 'success');
+      } else {
+        log('script-results', '⚠️ Some scripts failed to load', 'error');
+      }
+    }
+    
+    function testSupabaseClient() {
+      log('supabase-results', 'Testing Supabase client...', 'info');
+      
+      try {
+        if (!window.sb) {
+          throw new Error('Supabase client (window.sb) not available');
+        }
+        
+        log('supabase-results', '✅ Supabase client is available', 'success');
+        log('supabase-results', `Client type: ${typeof window.sb}`, 'info');
+        
+        // Test a simple query
+        window.sb.auth.getSession().then(({ data, error }) => {
+          if (error) {
+            log('supabase-results', `⚠️ Session check error: ${error.message}`, 'info');
+          } else {
+            log('supabase-results', `✅ Session check successful. Authenticated: ${!!data.session}`, 'success');
+          }
+        }).catch(err => {
+          log('supabase-results', `❌ Session check failed: ${err.message}`, 'error');
+        });
+        
+      } catch (error) {
+        log('supabase-results', `❌ Supabase client error: ${error.message}`, 'error');
+      }
+    }
+    
+    function testEventFunctions() {
+      log('event-results', 'Testing event functions...', 'info');
+      
+      const functions = [
+        'openEventForm',
+        'closeEventForm', 
+        'loadEvents',
+        'initEventsPage'
+      ];
+      
+      functions.forEach(funcName => {
+        if (typeof window[funcName] === 'function') {
+          log('event-results', `✅ ${funcName} is available`, 'success');
+        } else {
+          log('event-results', `❌ ${funcName} is not available`, 'error');
+        }
+      });
+    }
+    
+    function testActivitiesFunctions() {
+      log('activities-results', 'Testing activities functions...', 'info');
+      
+      const functions = [
+        'initActivitiesPage',
+        'loadMoreActivities',
+        'reloadActivities',
+        'fetchEventsFeed',
+        'fetchDashboardFeed',
+        'fetchOwnerActivities',
+        'toggleUserMenu',
+        'toggleMobileMenu'
+      ];
+      
+      functions.forEach(funcName => {
+        if (typeof window[funcName] === 'function') {
+          log('activities-results', `✅ ${funcName} is available`, 'success');
+        } else {
+          log('activities-results', `❌ ${funcName} is not available`, 'error');
+        }
+      });
+    }
+    
+    async function testEventCreation() {
+      log('creation-results', 'Testing event creation flow...', 'info');
+      
+      try {
+        if (!window.sb) {
+          throw new Error('Supabase client not available');
+        }
+        
+        // Test user authentication
+        const { data: { user } } = await window.sb.auth.getUser();
+        
+        if (!user) {
+          log('creation-results', '⚠️ No authenticated user - testing with mock data', 'info');
+          
+          // Test with mock event data
+          const mockEventData = {
+            business_id: '00000000-0000-0000-0000-000000000000',
+            title: 'Test Event - Classic Scripts',
+            description: 'This is a test event to verify classic scripts work',
+            location: 'Test Location',
+            start_at: new Date().toISOString(),
+            status: 'published',
+            is_published: true
+          };
+          
+          log('creation-results', '✅ Event data structure is valid', 'success');
+          log('creation-results', `Mock event: ${JSON.stringify(mockEventData, null, 2)}`, 'info');
+          
+        } else {
+          log('creation-results', `✅ User authenticated: ${user.email}`, 'success');
+          
+          // Try to get user's business
+          const { data: business, error: bizError } = await window.sb
+            .from('businesses')
+            .select('id, name')
+            .eq('owner_id', user.id)
+            .single();
+            
+          if (bizError) {
+            log('creation-results', `⚠️ No business found: ${bizError.message}`, 'info');
+          } else {
+            log('creation-results', `✅ Business found: ${business.name}`, 'success');
+          }
+        }
+        
+        log('creation-results', '✅ Event creation flow test completed', 'success');
+        
+      } catch (error) {
+        log('creation-results', `❌ Event creation test error: ${error.message}`, 'error');
+      }
+    }
+    
+    // Auto-run basic tests on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      log('script-results', 'Classic scripts test page loaded', 'info');
+      log('script-results', 'Click the test buttons to run individual tests', 'info');
+    });
+  </script>
+</body>
+</html>

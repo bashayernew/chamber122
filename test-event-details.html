@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Details Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+    .test-section { margin: 20px 0; padding: 20px; border: 1px solid #333; border-radius: 8px; }
+    button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    .log { background: #000; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+  <h1>Event Details Debug Test</h1>
+  
+  <div class="test-section">
+    <h2>1. List All Events</h2>
+    <button onclick="listEvents()">List All Events</button>
+    <div id="events-list"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>2. Test Event Details</h2>
+    <input type="text" id="event-id" placeholder="Enter event ID" style="padding: 8px; margin: 5px; width: 300px;">
+    <button onclick="testEventDetails()">Test Event Details</button>
+    <div id="event-details"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>3. Console Logs</h2>
+    <div id="console-log" class="log"></div>
+  </div>
+
+  <script>
+    // Capture console logs
+    const originalLog = console.log;
+    const originalError = console.error;
+    const logDiv = document.getElementById('console-log');
+    
+    function addLog(message, type = 'log') {
+      const timestamp = new Date().toLocaleTimeString();
+      const div = document.createElement('div');
+      div.style.color = type === 'error' ? '#ff6b6b' : '#4ecdc4';
+      div.textContent = `[${timestamp}] ${message}`;
+      logDiv.appendChild(div);
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+    
+    console.log = function(...args) {
+      originalLog.apply(console, args);
+      addLog(args.join(' '));
+    };
+    
+    console.error = function(...args) {
+      originalError.apply(console, args);
+      addLog(args.join(' '), 'error');
+    };
+
+    // Import Supabase
+    import('/public/js/supabase-client.global.js?v=3').then(({ supabase }) => {
+      window.supabase = supabase;
+      console.log('Supabase client loaded');
+    });
+
+    async function listEvents() {
+      if (!window.supabase) {
+        console.error('Supabase not loaded yet');
+        return;
+      }
+      
+      try {
+        const { data: events, error } = await window.supabase
+          .from('activities_base')
+          .select('id, title, business_id, type')
+          .eq('type', 'event')
+          .limit(10);
+          
+        if (error) {
+          console.error('Error listing events:', error);
+          return;
+        }
+        
+        console.log('Found events:', events);
+        
+        const eventsDiv = document.getElementById('events-list');
+        if (events && events.length > 0) {
+          eventsDiv.innerHTML = events.map(event => 
+            `<div style="margin: 10px 0; padding: 10px; border: 1px solid #444; border-radius: 4px;">
+              <strong>${event.title || 'Untitled'}</strong><br>
+              ID: ${event.id}<br>
+              Business ID: ${event.business_id || 'None'}<br>
+              <button onclick="document.getElementById('event-id').value='${event.id}'">Use This ID</button>
+            </div>`
+          ).join('');
+        } else {
+          eventsDiv.innerHTML = '<p>No events found</p>';
+        }
+      } catch (e) {
+        console.error('Exception listing events:', e);
+      }
+    }
+
+    async function testEventDetails() {
+      const eventId = document.getElementById('event-id').value.trim();
+      if (!eventId) {
+        alert('Please enter an event ID');
+        return;
+      }
+      
+      if (!window.supabase) {
+        console.error('Supabase not loaded yet');
+        return;
+      }
+      
+      console.log('Testing event details for ID:', eventId);
+      
+      try {
+        // Test 1: Load event without business join
+        const { data: eventOnly, error: eventError } = await window.supabase
+          .from('activities_base')
+          .select('*')
+          .eq('id', eventId)
+          .single();
+          
+        if (eventError) {
+          console.error('Error loading event only:', eventError);
+          document.getElementById('event-details').innerHTML = '<p>Error loading event: ' + eventError.message + '</p>';
+          return;
+        }
+        
+        console.log('Event found:', eventOnly);
+        
+        // Test 2: Load with business join
+        const { data: eventWithBusiness, error: businessError } = await window.supabase
+          .from('activities_base')
+          .select('*, businesses:business_id (name, logo_url)')
+          .eq('id', eventId)
+          .single();
+          
+        if (businessError) {
+          console.error('Error loading event with business:', businessError);
+          document.getElementById('event-details').innerHTML = 
+            `<p>Event found but business join failed: ${businessError.message}</p>
+             <pre>${JSON.stringify(eventOnly, null, 2)}</pre>`;
+        } else {
+          console.log('Event with business:', eventWithBusiness);
+          document.getElementById('event-details').innerHTML = 
+            `<pre>${JSON.stringify(eventWithBusiness, null, 2)}</pre>`;
+        }
+      } catch (e) {
+        console.error('Exception testing event details:', e);
+        document.getElementById('event-details').innerHTML = '<p>Exception: ' + e.message + '</p>';
+      }
+    }
+  </script>
+</body>
+</html>

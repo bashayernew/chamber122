@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Add Event Button</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: white; }
+        .test-btn { padding: 10px 20px; background: #ffd166; color: #111; border: none; border-radius: 5px; cursor: pointer; margin: 10px; }
+        .test-btn:hover { background: #ffc107; }
+        .status { margin: 10px 0; padding: 10px; background: #333; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Test Add Event Button</h1>
+    
+    <div class="status" id="status">Ready to test...</div>
+    
+    <button class="test-btn" onclick="testOpenEventForm()">Test openEventForm()</button>
+    <button class="test-btn" onclick="testButtonClick()">Test Button Click</button>
+    
+    <div id="event-form-modal" class="event-modal" style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.8); z-index:10000;">
+        <div class="event-modal-content" style="width:min(700px,95vw); max-height:90vh; background:#0f0f0f; color:#eaeaea; border:1px solid #2a2a2a; border-radius:16px; padding:20px; overflow:hidden;">
+            <h3>Test Event Form Modal</h3>
+            <p>If you can see this, the modal is working!</p>
+            <button onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the function
+        import { openEventForm } from '/js/events.js?v=6';
+        
+        // Make it available globally for testing
+        window.openEventForm = openEventForm;
+        
+        function closeModal() {
+            document.getElementById('event-form-modal').style.display = 'none';
+        }
+        
+        window.closeModal = closeModal;
+        
+        function testOpenEventForm() {
+            const status = document.getElementById('status');
+            try {
+                status.textContent = 'Testing openEventForm()...';
+                openEventForm();
+                status.textContent = 'SUCCESS: openEventForm() called without errors!';
+                status.style.background = '#2d5a2d';
+            } catch (error) {
+                status.textContent = 'ERROR: ' + error.message;
+                status.style.background = '#5a2d2d';
+                console.error('Error testing openEventForm:', error);
+            }
+        }
+        
+        function testButtonClick() {
+            const status = document.getElementById('status');
+            try {
+                status.textContent = 'Testing button click simulation...';
+                // Simulate the button click
+                const event = new Event('click');
+                const button = document.createElement('button');
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    console.log('Button clicked!');
+                    openEventForm();
+                });
+                button.dispatchEvent(event);
+                status.textContent = 'SUCCESS: Button click simulation worked!';
+                status.style.background = '#2d5a2d';
+            } catch (error) {
+                status.textContent = 'ERROR: ' + error.message;
+                status.style.background = '#5a2d2d';
+                console.error('Error testing button click:', error);
+            }
+        }
+        
+        // Make functions globally available
+        window.testOpenEventForm = testOpenEventForm;
+        window.testButtonClick = testButtonClick;
+        
+        // Auto-test on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const status = document.getElementById('status');
+            status.textContent = 'Page loaded. Ready to test Add Event button functionality.';
+        });
+    </script>
+    
+    <script>
+        // Fallback for testing without modules
+        function testOpenEventFormFallback() {
+            const status = document.getElementById('status');
+            try {
+                status.textContent = 'Testing openEventForm() (fallback)...';
+                if (window.openEventForm) {
+                    window.openEventForm();
+                    status.textContent = 'SUCCESS: openEventForm() called without errors!';
+                    status.style.background = '#2d5a2d';
+                } else {
+                    status.textContent = 'ERROR: openEventForm not available';
+                    status.style.background = '#5a2d2d';
+                }
+            } catch (error) {
+                status.textContent = 'ERROR: ' + error.message;
+                status.style.background = '#5a2d2d';
+                console.error('Error testing openEventForm:', error);
+            }
+        }
+        
+        function testButtonClickFallback() {
+            const status = document.getElementById('status');
+            try {
+                status.textContent = 'Testing button click simulation (fallback)...';
+                if (window.openEventForm) {
+                    window.openEventForm();
+                    status.textContent = 'SUCCESS: Button click simulation worked!';
+                    status.style.background = '#2d5a2d';
+                } else {
+                    status.textContent = 'ERROR: openEventForm not available';
+                    status.style.background = '#5a2d2d';
+                }
+            } catch (error) {
+                status.textContent = 'ERROR: ' + error.message;
+                status.style.background = '#5a2d2d';
+                console.error('Error testing button click:', error);
+            }
+        }
+        
+        // Make fallback functions available
+        window.testOpenEventForm = testOpenEventFormFallback;
+        window.testButtonClick = testButtonClickFallback;
+    </script>
+</body>
+</html>

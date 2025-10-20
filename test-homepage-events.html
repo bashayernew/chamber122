@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en" class="dark bg-zinc-900 text-zinc-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Homepage Events Demo - Chamber122</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+    .demo-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .demo-section {
+      background: #2a2a2a;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 30px;
+      border: 1px solid #3a3a3a;
+    }
+    .demo-title {
+      color: #ffd166;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .events-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 25px;
+    }
+    .event-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform 0.2s;
+    }
+    .event-card:hover {
+      transform: translateY(-2px);
+    }
+    .event-image {
+      height: 200px;
+      background: linear-gradient(135deg, #ffd166, #ff6b6b);
+      position: relative;
+    }
+    .event-type-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .event-content {
+      padding: 20px;
+    }
+    .event-title {
+      margin: 0 0 12px;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    .event-meta {
+      margin-bottom: 12px;
+      color: #ffd166;
+      font-size: 14px;
+    }
+    .event-location {
+      margin-bottom: 12px;
+      color: #aaa;
+      font-size: 14px;
+    }
+    .event-description {
+      color: #ccc;
+      font-size: 14px;
+      line-height: 1.4;
+      margin-bottom: 15px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .event-business {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 15px;
+      padding-top: 12px;
+      border-top: 1px solid #2a2a2a;
+    }
+    .business-logo {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      object-fit: cover;
+    }
+    .business-name {
+      color: #888;
+      font-size: 12px;
+    }
+    .event-button {
+      display: block;
+      text-align: center;
+      background: #ffd166;
+      color: #111;
+      padding: 10px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .view-all-btn {
+      display: inline-block;
+      padding: 12px 24px;
+      background: #ffd166;
+      color: #111;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      margin-top: 20px;
+    }
+    .profile-section {
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid #3a3a3a;
+    }
+    .profile-section h3 {
+      color: #ffd166;
+      font-size: 18px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .event-item {
+      background: #2a2a2a;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-left: 4px solid #ffd166;
+    }
+    .event-item.past {
+      border-left-color: #666;
+      opacity: 0.8;
+    }
+    .event-item-header {
+      display: flex;
+      justify-content: between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .event-status {
+      background: #ffd166;
+      color: #111;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .event-status.past {
+      background: #666;
+      color: #fff;
+    }
+    .event-name {
+      color: #fff;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    .event-date {
+      color: #aaa;
+      font-size: 14px;
+    }
+    .event-location-small {
+      color: #888;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+    .improvement {
+      background: #1a3a1a;
+      border: 1px solid #2a5a2a;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    .improvement-title {
+      color: #4ade80;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .improvement-desc {
+      color: #ccc;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-container">
+    <h1 style="text-align: center; color: #ffd166; margin-bottom: 30px;">
+      <i class="fas fa-home"></i> Homepage & Profile Improvements Demo
+    </h1>
+
+    <!-- Homepage Events Improvement -->
+    <div class="demo-section">
+      <div class="demo-title">
+        <i class="fas fa-calendar-alt"></i>
+        Homepage Events - Now Shows Multiple Events
+      </div>
+      
+      <div class="improvement">
+        <div class="improvement-title">
+          <i class="fas fa-check-circle"></i>
+          What's New
+        </div>
+        <div class="improvement-desc">
+          The homepage now displays up to 6 upcoming events in a responsive grid layout instead of just 1 featured event.
+          Each event card shows the business logo, contact info, and a "Learn More" button.
+        </div>
+      </div>
+
+      <!-- Sample Events Grid -->
+      <div class="events-grid">
+        <div class="event-card">
+          <div class="event-image">
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #111; font-size: 48px;">
+              <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="event-type-badge">Event</div>
+          </div>
+          <div class="event-content">
+            <h3 class="event-title">Kuwait Tech Conference 2024</h3>
+            <div class="event-meta">
+              <i class="fas fa-clock" style="margin-right: 6px;"></i>
+              Sat, Jan 15 at 9:00 AM - 5:00 PM
+            </div>
+            <div class="event-location">
+              <i class="fas fa-map-marker-alt" style="margin-right: 6px;"></i>
+              Kuwait City Convention Center
+            </div>
+            <p class="event-description">Join us for the biggest tech conference in Kuwait. Learn about the latest trends in AI, blockchain, and digital transformation.</p>
+            <div class="event-business">
+              <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=48&h=48&fit=crop" alt="TechFlow Kuwait" class="business-logo">
+              <span class="business-name">by TechFlow Kuwait</span>
+            </div>
+            <a href="#" class="event-button">Learn More</a>
+          </div>
+        </div>
+
+        <div class="event-card">
+          <div class="event-image">
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #111; font-size: 48px;">
+              <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="event-type-badge">Event</div>
+          </div>
+          <div class="event-content">
+            <h3 class="event-title">Fashion Week Kuwait</h3>
+            <div class="event-meta">
+              <i class="fas fa-clock" style="margin-right: 6px;"></i>
+              Fri, Jan 20 at 6:00 PM - 10:00 PM
+            </div>
+            <div class="event-location">
+              <i class="fas fa-map-marker-alt" style="margin-right: 6px;"></i>
+              Marina Walk, Kuwait City
+            </div>
+            <p class="event-description">Experience the latest fashion trends from Kuwait's top designers. An evening of style, elegance, and networking.</p>
+            <div class="event-business">
+              <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=48&h=48&fit=crop" alt="Elegance Boutique" class="business-logo">
+              <span class="business-name">by Elegance Boutique</span>
+            </div>
+            <a href="#" class="event-button">Learn More</a>
+          </div>
+        </div>
+
+        <div class="event-card">
+          <div class="event-image">
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #111; font-size: 48px;">
+              <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="event-type-badge">Event</div>
+          </div>
+          <div class="event-content">
+            <h3 class="event-title">Startup Pitch Night</h3>
+            <div class="event-meta">
+              <i class="fas fa-clock" style="margin-right: 6px;"></i>
+              Thu, Jan 25 at 7:00 PM - 9:00 PM
+            </div>
+            <div class="event-location">
+              <i class="fas fa-map-marker-alt" style="margin-right: 6px;"></i>
+              Co-working Space, Salmiya
+            </div>
+            <p class="event-description">Watch innovative startups pitch their ideas to investors. Great networking opportunity for entrepreneurs.</p>
+            <div class="event-business">
+              <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=48&h=48&fit=crop" alt="Startup Kuwait" class="business-logo">
+              <span class="business-name">by Startup Kuwait</span>
+            </div>
+            <a href="#" class="event-button">Learn More</a>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align: center;">
+        <a href="events.html" class="view-all-btn">View All Events</a>
+      </div>
+    </div>
+
+    <!-- Profile Events Improvement -->
+    <div class="demo-section">
+      <div class="demo-title">
+        <i class="fas fa-user-circle"></i>
+        MSME Profile - Events Organized by Status
+      </div>
+      
+      <div class="improvement">
+        <div class="improvement-title">
+          <i class="fas fa-check-circle"></i>
+          What's New
+        </div>
+        <div class="improvement-desc">
+          The MSME profile page now separates events into "Ongoing & Upcoming" and "Past Events" sections.
+          Each event shows detailed information including dates, location, contact details, and status.
+        </div>
+      </div>
+
+      <!-- Ongoing Events Section -->
+      <div class="profile-section">
+        <h3>
+          <i class="fas fa-calendar-check" style="color: #4ade80;"></i>
+          Ongoing & Upcoming Events
+        </h3>
+        
+        <div class="event-item">
+          <div class="event-item-header">
+            <span class="event-status">Ongoing</span>
+          </div>
+          <div class="event-name">Kuwait Tech Conference 2024</div>
+          <div class="event-date">
+            <i class="fas fa-calendar" style="margin-right: 5px;"></i>
+            Sat, Jan 15 at 9:00 AM - 5:00 PM
+          </div>
+          <div class="event-location-small">
+            <i class="fas fa-map-marker-alt" style="margin-right: 5px;"></i>
+            Kuwait City Convention Center
+          </div>
+        </div>
+
+        <div class="event-item">
+          <div class="event-item-header">
+            <span class="event-status">Upcoming</span>
+          </div>
+          <div class="event-name">Fashion Week Kuwait</div>
+          <div class="event-date">
+            <i class="fas fa-calendar" style="margin-right: 5px;"></i>
+            Fri, Jan 20 at 6:00 PM - 10:00 PM
+          </div>
+          <div class="event-location-small">
+            <i class="fas fa-map-marker-alt" style="margin-right: 5px;"></i>
+            Marina Walk, Kuwait City
+          </div>
+        </div>
+      </div>
+
+      <!-- Past Events Section -->
+      <div class="profile-section">
+        <h3>
+          <i class="fas fa-calendar-times" style="color: #888;"></i>
+          Past Events
+        </h3>
+        
+        <div class="event-item past">
+          <div class="event-item-header">
+            <span class="event-status past">Completed</span>
+          </div>
+          <div class="event-name">Holiday Networking Mixer</div>
+          <div class="event-date">
+            <i class="fas fa-calendar" style="margin-right: 5px;"></i>
+            Fri, Dec 15 at 7:00 PM - 10:00 PM
+          </div>
+          <div class="event-location-small">
+            <i class="fas fa-map-marker-alt" style="margin-right: 5px;"></i>
+            The Avenues Mall
+          </div>
+        </div>
+
+        <div class="event-item past">
+          <div class="event-item-header">
+            <span class="event-status past">Completed</span>
+          </div>
+          <div class="event-name">Business Workshop Series</div>
+          <div class="event-date">
+            <i class="fas fa-calendar" style="margin-right: 5px;"></i>
+            Sat, Dec 10 at 10:00 AM - 4:00 PM
+          </div>
+          <div class="event-location-small">
+            <i class="fas fa-map-marker-alt" style="margin-right: 5px;"></i>
+            Chamber122 Office
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="demo-section">
+      <div class="demo-title">
+        <i class="fas fa-list-check"></i>
+        Summary of Improvements
+      </div>
+      
+      <div class="improvement">
+        <div class="improvement-title">
+          <i class="fas fa-home"></i>
+          Homepage Events
+        </div>
+        <div class="improvement-desc">
+          • Shows up to 6 events instead of just 1<br>
+          • Responsive grid layout that adapts to screen size<br>
+          • Each event card includes business logo and contact info<br>
+          • "View All Events" button to see complete listings
+        </div>
+      </div>
+
+      <div class="improvement">
+        <div class="improvement-title">
+          <i class="fas fa-user-circle"></i>
+          MSME Profile Events
+        </div>
+        <div class="improvement-desc">
+          • Events separated into "Ongoing & Upcoming" and "Past Events"<br>
+          • Visual indicators (green for ongoing, gray for past)<br>
+          • Detailed event information with dates, times, and locations<br>
+          • Contact buttons for each event (email, phone, website)<br>
+          • Direct links to view full event details
+        </div>
+      </div>
+
+      <div class="improvement">
+        <div class="improvement-title">
+          <i class="fas fa-mobile-alt"></i>
+          Mobile Responsive
+        </div>
+        <div class="improvement-desc">
+          • Both improvements work seamlessly on mobile devices<br>
+          • Grid layout adjusts to single column on small screens<br>
+          • Touch-friendly buttons and interactive elements
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px; padding: 20px; background: #1a1a1a; border-radius: 12px;">
+      <h3 style="color: #ffd166; margin-bottom: 15px;">Ready to Test?</h3>
+      <p style="color: #ccc; margin-bottom: 20px;">Visit the actual pages to see these improvements in action:</p>
+      <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+        <a href="/" style="background: #ffd166; color: #111; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+          <i class="fas fa-home"></i> Homepage
+        </a>
+        <a href="/public/profile.html" style="background: #3b82f6; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+          <i class="fas fa-user-circle"></i> Profile Page
+        </a>
+        <a href="/events.html" style="background: #10b981; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+          <i class="fas fa-calendar-alt"></i> All Events
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

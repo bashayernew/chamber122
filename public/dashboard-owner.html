@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en" class="dark bg-zinc-900 text-zinc-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Chamber122</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#10b981',
+            secondary: '#3b82f6'
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body data-page="dashboard" class="dark bg-zinc-900 text-zinc-100 min-h-screen">
+  <!-- Navigation -->
+  <nav class="bg-zinc-800 border-b border-zinc-700">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center">
+          <a href="/" class="text-xl font-bold text-white">Chamber122</a>
+        </div>
+        <div class="flex items-center space-x-4">
+          <a href="/public/events.html" class="text-zinc-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Events</a>
+          <a href="/public/bulletins.html" class="text-zinc-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Bulletins</a>
+          <a href="/public/profile.html" class="text-zinc-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Profile</a>
+          <a href="/public/dashboard-owner.html" class="text-white px-3 py-2 rounded-md text-sm font-medium bg-zinc-700">Dashboard</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-white mb-2">Dashboard</h1>
+      <p class="text-zinc-400">Manage your events and bulletins</p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-wrap gap-4 mb-8">
+      <button id="createEventBtn" class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors">
+        <i class="fas fa-plus mr-2"></i>Create Event
+      </button>
+      <button id="createBulletinBtn" class="bg-secondary text-white px-6 py-3 rounded-lg hover:bg-secondary/90 transition-colors">
+        <i class="fas fa-bullhorn mr-2"></i>Create Bulletin
+      </button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="border-b border-zinc-700 mb-6">
+      <nav class="-mb-px flex space-x-8">
+        <button id="publishedTab" class="tab-button border-b-2 border-primary text-primary py-2 px-1 text-sm font-medium">
+          Published Feed
+        </button>
+        <button id="draftsTab" class="tab-button border-b-2 border-transparent text-zinc-400 hover:text-zinc-300 py-2 px-1 text-sm font-medium">
+          Drafts
+        </button>
+      </nav>
+    </div>
+
+    <!-- Content Areas -->
+    <div id="publishedContent" class="tab-content">
+      <h2 class="text-xl font-semibold text-white mb-4">Published Activities</h2>
+      
+      <!-- Loading State -->
+      <div id="publishedLoading" class="text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <p class="mt-2 text-zinc-400">Loading published activities...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div id="publishedEmpty" class="text-center py-12 hidden">
+        <i class="fas fa-calendar-check text-6xl text-zinc-600 mb-4"></i>
+        <h3 class="text-xl font-semibold text-zinc-300 mb-2">No published content yet</h3>
+        <p class="text-zinc-500">Create your first event or bulletin to get started.</p>
+      </div>
+
+      <!-- Published Activities List -->
+      <div id="publishedList" class="space-y-4 hidden">
+        <!-- Activities will be dynamically inserted here -->
+      </div>
+    </div>
+
+    <div id="draftsContent" class="tab-content hidden">
+      <h2 class="text-xl font-semibold text-white mb-4">Draft Content</h2>
+      
+      <!-- Loading State -->
+      <div id="draftsLoading" class="text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <p class="mt-2 text-zinc-400">Loading drafts...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div id="draftsEmpty" class="text-center py-12 hidden">
+        <i class="fas fa-edit text-6xl text-zinc-600 mb-4"></i>
+        <h3 class="text-xl font-semibold text-zinc-300 mb-2">No drafts yet</h3>
+        <p class="text-zinc-500">Create content and save as draft to see it here.</p>
+      </div>
+
+      <!-- Drafts List -->
+      <div id="draftsList" class="space-y-4 hidden">
+        <!-- Drafts will be dynamically inserted here -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Create Event Modal -->
+  <div id="eventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-zinc-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-white">Create Event</h2>
+            <button id="closeEventModal" class="text-zinc-400 hover:text-white">
+              <i class="fas fa-times text-xl"></i>
+            </button>
+          </div>
+
+          <form id="eventForm" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-zinc-300 mb-2">Title *</label>
+                <input type="text" id="eventTitle" required class="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-zinc-300 mb-2">Location</label>
+                <input type="text" id="eventLocation" class="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-zinc-300 mb-2">Description</label>
+              <textarea id="eventDescription" rows="3" class="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-zinc-300 mb-2">Start Date & Time *</label>
+                <input type="datetime-local" id="eventStartAt" required class="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-zinc-300 mb-2">End Date & Time</label>
+                <input type="datetime-local" id="eventEndAt" class="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-zinc-300 mb-2">Contact Email</label>
+                <input type="email" id="eventContactEmail" class="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-zinc-300 mb-2">Contact Phone</label>
+                <input type="tel" id="eventContactPhone" class="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-zinc-300 mb-2">Registration URL</label>
+              <input type="url" id="eventRegistrationUrl" class="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-zinc-300 mb-2">Cover Image URL</label>
+              <input type="url" id="eventCoverUrl" class="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-zinc-300 mb-2">Status</label>
+                <select id="eventStatus" class="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary">
+                  <option value="published">Published</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="draft">Draft</option>
+                </select>
+              </div>
+              <div class="flex items-center">
+                <input type="checkbox" id="eventIsPublished" checked class="w-4 h-4 text-primary bg-zinc-700 border-zinc-600 rounded focus:ring-primary">
+                <label for="eventIsPublished" class="ml-2 text-sm text-zinc-300">Make publicly visible</label>
+              </div>
+            </div>
+
+            <div class="flex justify-end space-x-4 pt-4">
+              <button type="button" id="cancelEvent" class="px-4 py-2 text-zinc-400 hover:text-white">
+                Cancel
+              </button>
+              <button type="submit" id="submitEvent" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed">
+                <span id="submitEventText">Create Event</span>
+                <span id="submitEventSpinner" class="hidden">
+                  <i class="fas fa-spinner fa-spin mr-2"></i>Creating...
+                </span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="/public/js/boot.js?v=1"></script>
+</body>
+</html>

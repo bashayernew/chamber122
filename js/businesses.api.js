@@ -1,20 +1,28 @@
-// public/js/businesses.api.js
-import { supabase } from '/js/supabase-client.js';
+// js/businesses.api.js v=2 (ESM)
+import { supabase } from '../public/js/supabase-client.global.js';
+
+console.log('[businesses.api] Module loaded');
 
 export async function getMyBusiness() {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not signed in');
+    
+    console.log('[businesses.api] Fetching business for user:', user.id);
+    
     const { data, error } = await supabase
       .from('businesses')
       .select('*')
       .eq('owner_id', user.id)
       .maybeSingle();
+    
     if (error) throw error;
+    
+    console.log('[businesses.api] Business fetched:', data ? 'found' : 'not found');
     return data;
-  } catch (networkError) {
-    console.warn('[businesses.api] Network error in getMyBusiness:', networkError);
-    throw new Error('Network connection issue. Please check your internet connection and try again.');
+  } catch (error) {
+    console.error('[businesses.api] Error in getMyBusiness:', error);
+    throw error;
   }
 }
 
@@ -23,24 +31,19 @@ export async function upsertMyBusiness(payload) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not signed in');
 
-    // Map only columns that actually exist in the table
+    console.log('[businesses.api] Upserting business for user:', user.id);
+    console.log('[businesses.api] Payload:', payload);
+
+    // Map only columns that exist in the table
     const body = {
       owner_id: user.id,
       name: payload.name ?? null,
-      owner_full_name: payload.owner_full_name ?? null,
-      email: payload.email ?? null,
-      phone: payload.phone ?? null,
-      category: payload.category ?? null,
+      short_description: payload.short_description ?? payload.description ?? null,
+      industry: payload.category ?? payload.industry ?? null,
       city: payload.city ?? null,
       country: payload.country ?? 'Kuwait',
-      description: payload.description ?? null,
-      story: payload.story ?? null,
-      website: payload.website ?? null,
-      instagram: payload.instagram ?? null,
-      facebook: payload.facebook ?? null,
+      whatsapp: payload.whatsapp ?? payload.phone ?? null,
       logo_url: payload.logo_url ?? null,
-      photos: Array.isArray(payload.photos) ? payload.photos : [],
-      is_public: payload.is_public ?? true
     };
 
     const { data, error } = await supabase
@@ -49,9 +52,15 @@ export async function upsertMyBusiness(payload) {
       .select()
       .single();
 
-    return { data, error };
-  } catch (networkError) {
-    console.warn('[businesses.api] Network error in upsertMyBusiness:', networkError);
-    throw new Error('Network connection issue. Please check your internet connection and try again.');
+    if (error) {
+      console.error('[businesses.api] Upsert error:', error);
+      throw error;
+    }
+
+    console.log('[businesses.api] Upsert successful:', data);
+    return { data, error: null };
+  } catch (error) {
+    console.error('[businesses.api] Error in upsertMyBusiness:', error);
+    return { data: null, error };
   }
 }
