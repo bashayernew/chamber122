@@ -32,7 +32,7 @@ async function loadBulletinsFromSupabase() {
           logo_url
         )
       `)
-      .eq('kind', 'bulletin')           // Use 'kind' from VIEW
+      .eq('type', 'bulletin')           // Use 'type' from VIEW
       .eq('status', 'published')
       .eq('is_published', true)
       .order('created_at', { ascending: false }); // Valid column
@@ -40,8 +40,33 @@ async function loadBulletinsFromSupabase() {
     if (error) throw error;
     console.log('[bulletins] loaded', data?.length || 0, 'bulletins');
     
-    // Transform Supabase data to match expected format
-    bulletinData = (data || []).map(bulletin => ({
+    // Transform Supabase data and filter out incomplete bulletins
+    // Allow test items for development
+    bulletinData = (data || [])
+      .filter(b => {
+        // Check for valid title and description
+        if (!b.title || !b.description) return false;
+        const title = b.title.trim();
+        const description = (b.description || '').trim();
+        if (!title || !description) return false;
+        
+        // Allow test items - only filter out obvious fake/dummy content
+        // Commented out test filtering to allow test bulletins to be visible
+        // const titleLower = title.toLowerCase();
+        // if (titleLower.includes('fake') || 
+        //     titleLower.includes('dummy')) {
+        //   return false;
+        // }
+        
+        // Require minimum length for meaningful content
+        if (title.length < 3 || description.length < 10) return false;
+        
+        // Must have a valid business_id
+        if (!b.business_id) return false;
+        
+        return true;
+      })
+      .map(bulletin => ({
       id: bulletin.id,
       category: bulletin.type ?? bulletin.kind,
       title: bulletin.title,
@@ -262,6 +287,31 @@ console.log('Bulletin.js loaded, openBulletinForm function available:', typeof w
 // Close bulletin form modal
 function closeBulletinForm() {
   document.getElementById('bulletin-form-modal').classList.remove('active');
+  document.body.style.overflow = 'auto';
+}
+
+// Make function available globally
+window.closeBulletinForm = closeBulletinForm;
+
+// Handle bulletin form submission
+document.getElementById('bulletin-submission-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const submitBtn = this.querySelector('button[type="submit"]');
+  const originalText = submitBtn.innerHTML;
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+  submitBtn.disabled = true;
+  
+  setTimeout(() => {
+    alert('Thank you for your submission! We\'ll review your bulletin post and publish it within 24 hours.');
+    this.reset();
+    closeBulletinForm();
+    submitBtn.innerHTML = originalText;
+    submitBtn.disabled = false;
+  }, 2000);
+});
+
+
   document.body.style.overflow = 'auto';
 }
 

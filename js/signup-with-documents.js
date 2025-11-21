@@ -11,7 +11,7 @@ function wireOneInput(el) {
   el.addEventListener('change', async (e) => {
     console.log(`File input changed: ${e.target.id}`);
     const file = e.target.files?.[0];
-    const type = e.target.dataset.doc; // "license" | "iban" | "signature_auth" | "articles" | "logo"
+    const type = e.target.dataset.doc; // "license" | "iban" | "signature_auth" | "articles" | "logo" | "gallery"
     
     if (!file) {
       console.log('No file selected');
@@ -24,7 +24,43 @@ function wireOneInput(el) {
     }
     
     console.log(`Processing file: ${file.name} (${file.size} bytes) for type: ${type}`);
-
+    
+    // For gallery, handle multiple files separately (only preview, no upload to temp)
+    if (type === 'gallery') {
+      // Handle gallery files (multiple)
+      const galleryPreview = document.getElementById('gallery-preview');
+      if (galleryPreview && e.target.files) {
+        const files = Array.from(e.target.files).slice(0, 5); // Limit to 5
+        galleryPreview.innerHTML = ''; // Clear previous previews
+        
+        console.log('[signup] Showing gallery preview for', files.length, 'files');
+        
+        files.forEach((galleryFile, index) => {
+          const fileUrl = URL.createObjectURL(galleryFile);
+          const img = document.createElement('img');
+          img.src = fileUrl;
+          img.style.width = '100px';
+          img.style.height = '100px';
+          img.style.objectFit = 'cover';
+          img.style.borderRadius = '8px';
+          img.style.border = '2px solid rgba(212, 175, 55, 0.3)';
+          img.style.display = 'block';
+          img.alt = `Gallery preview ${index + 1}`;
+          galleryPreview.appendChild(img);
+        });
+        
+        galleryPreview.style.display = 'grid';
+        galleryPreview.style.gridTemplateColumns = 'repeat(auto-fill, minmax(100px, 1fr))';
+        galleryPreview.style.gap = '0.5rem';
+        galleryPreview.style.marginTop = '0.5rem';
+        
+        console.log('[signup] Gallery preview updated with', files.length, 'images');
+      } else {
+        console.warn('[signup] Gallery preview element not found or no files');
+      }
+      return; // Don't proceed with upload for gallery files
+    }
+    
     // Show loading state
     const status = document.querySelector(`[data-upload-status="${type}"]`);
     const progress = document.getElementById(`${type}-progress`);
@@ -60,6 +96,11 @@ function wireOneInput(el) {
         logoPreview.style.borderRadius = '8px';
         logoPreview.style.marginTop = '0.5rem';
       }
+      
+      // Store file in state for later upload
+      if (!state.uploaded.logo) state.uploaded.logo = {};
+      state.uploaded.logo.file = file;
+      console.log('[signup] Logo file stored in state:', file.name, file.size);
     } else {
       // Local preview for other documents
       const img = document.querySelector(`[data-local-preview="${type}"]`);
@@ -93,6 +134,11 @@ function wireOneInput(el) {
       }
       
       state.uploaded[type] = res;
+      
+      // Store the file reference for later upload
+      if (type === 'logo') {
+        state.uploaded.logo.file = file; // Store the actual file object
+      }
 
       // Special handling for logo success
       if (type === 'logo') {
@@ -280,11 +326,151 @@ function showEmailConfirmationUI(email) {
 }
 
 export async function onCompleteSignup(fields) {
-  // Attach uploaded logo path if present
-  const logoPath = state.uploaded.logo?.path ?? null;
+  // Get logo file from state if available
+  let logoFile = null;
+  if (state.uploaded.logo) {
+    // First try to get the file object stored in state
+    if (state.uploaded.logo.file) {
+      logoFile = state.uploaded.logo.file;
+      console.log('[signup] Logo file found in state:', logoFile.name);
+    } else {
+      // Try to get the actual file from the file input
+      const logoInput = document.getElementById('logo-file');
+      if (logoInput && logoInput.files && logoInput.files.length > 0) {
+        logoFile = logoInput.files[0];
+        console.log('[signup] Logo file found from input:', logoFile.name);
+      } else {
+        // Try to get from sessionStorage fallback
+        const fallbackKey = state.uploaded.logo.fallbackKey;
+        if (fallbackKey) {
+          const fileData = sessionStorage.getItem(fallbackKey);
+          if (fileData) {
+            try {
+              const parsed = JSON.parse(fileData);
+              if (parsed.localUrl) {
+                // Fetch the blob from the local URL
+                const response = await fetch(parsed.localUrl);
+                const blob = await response.blob();
+                logoFile = new File([blob], parsed.name, { type: parsed.type });
+                console.log('[signup] Logo file retrieved from sessionStorage');
+              }
+            } catch (err) {
+              console.error('[signup] Error retrieving logo from sessionStorage:', err);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Get gallery files from input
+  let galleryFiles = [];
+  const galleryInput = document.getElementById('gallery-files');
+  if (galleryInput && galleryInput.files && galleryInput.files.length > 0) {
+    galleryFiles = Array.from(galleryInput.files).slice(0, 5); // Limit to 5
+    console.log('[signup] Gallery files found:', galleryFiles.length);
+  }
+  
   const row = await createBusinessRecord({
     ...fields,
-    logo_url: fields.logo_url ?? logoPath,
+    logo_file: logoFile, // Pass the actual file for upload
+    logo_url: fields.logo_url ?? state.uploaded.logo?.signedUrl ?? null,
+    gallery_files: galleryFiles, // Pass gallery files for upload
   });
+  
+  console.log('[signup] Business created with logo:', row.logo_url);
+  return row;
+}
+      <p style="color: #0c4a6e; margin-bottom: 1.5rem;">
+        Click the link in your email to complete your account setup, then return here to finish your business listing.
+      </p>
+      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <button id="resend-confirmation" class="btn btn-outline" style="padding: 0.5rem 1rem;">
+          Resend Email
+        </button>
+        <button id="back-to-signup" class="btn btn-ghost" style="padding: 0.5rem 1rem;">
+          Back to Signup
+        </button>
+      </div>
+    </div>
+  `;
+  
+  // Insert after the form
+  if (signupForm) {
+    signupForm.parentNode.insertBefore(confirmationDiv, signupForm.nextSibling);
+  }
+  
+  // Add event listeners
+  document.getElementById('resend-confirmation')?.addEventListener('click', async () => {
+    try {
+      await resendConfirmation(email);
+      alert('Confirmation email resent!');
+    } catch (error) {
+      alert('Error resending email: ' + error.message);
+    }
+  });
+  
+  document.getElementById('back-to-signup')?.addEventListener('click', () => {
+    confirmationDiv.remove();
+    if (signupForm) {
+      signupForm.style.display = 'block';
+    }
+  });
+}
+
+export async function onCompleteSignup(fields) {
+  // Get logo file from state if available
+  let logoFile = null;
+  if (state.uploaded.logo) {
+    // First try to get the file object stored in state
+    if (state.uploaded.logo.file) {
+      logoFile = state.uploaded.logo.file;
+      console.log('[signup] Logo file found in state:', logoFile.name);
+    } else {
+      // Try to get the actual file from the file input
+      const logoInput = document.getElementById('logo-file');
+      if (logoInput && logoInput.files && logoInput.files.length > 0) {
+        logoFile = logoInput.files[0];
+        console.log('[signup] Logo file found from input:', logoFile.name);
+      } else {
+        // Try to get from sessionStorage fallback
+        const fallbackKey = state.uploaded.logo.fallbackKey;
+        if (fallbackKey) {
+          const fileData = sessionStorage.getItem(fallbackKey);
+          if (fileData) {
+            try {
+              const parsed = JSON.parse(fileData);
+              if (parsed.localUrl) {
+                // Fetch the blob from the local URL
+                const response = await fetch(parsed.localUrl);
+                const blob = await response.blob();
+                logoFile = new File([blob], parsed.name, { type: parsed.type });
+                console.log('[signup] Logo file retrieved from sessionStorage');
+              }
+            } catch (err) {
+              console.error('[signup] Error retrieving logo from sessionStorage:', err);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Get gallery files from input
+  let galleryFiles = [];
+  const galleryInput = document.getElementById('gallery-files');
+  if (galleryInput && galleryInput.files && galleryInput.files.length > 0) {
+    galleryFiles = Array.from(galleryInput.files).slice(0, 5); // Limit to 5
+    console.log('[signup] Gallery files found:', galleryFiles.length);
+  }
+  
+  const row = await createBusinessRecord({
+    ...fields,
+    logo_file: logoFile, // Pass the actual file for upload
+    logo_url: fields.logo_url ?? state.uploaded.logo?.signedUrl ?? null,
+    gallery_files: galleryFiles, // Pass gallery files for upload
+  });
+  
+  console.log('[signup] Business created with logo:', row.logo_url);
   return row;
 }

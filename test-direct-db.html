@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Direct DB Access - Chamber122</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f0f0f;
+            color: #e5e7eb;
+        }
+        .container {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #333;
+        }
+        h1 { color: #f59e0b; }
+        .button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover { background: #047857; }
+        .section {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #444;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .status.success { background: #065f46; color: #d1fae5; }
+        .status.error { background: #7f1d1d; color: #fecaca; }
+        .status.info { background: #1e3a8a; color: #dbeafe; }
+        .event-item {
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .log {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test Direct Database Access</h1>
+        
+        <div class="section">
+            <h3>Step 1: Test Basic Connection</h3>
+            <button id="testConnection" class="button">Test Supabase Connection</button>
+            <button id="testAuth" class="button">Test Authentication</button>
+        </div>
+
+        <div class="section">
+            <h3>Step 2: Test Events Table Access</h3>
+            <button id="testAllEvents" class="button">Get All Events (No Filters)</button>
+            <button id="testPublishedEvents" class="button">Get Published Events Only</button>
+            <button id="testEventCount" class="button">Get Event Count</button>
+        </div>
+
+        <div class="section">
+            <h3>Step 3: Test RLS Policies</h3>
+            <button id="testPublicRLS" class="button">Test Public RLS</button>
+            <button id="testOwnerRLS" class="button">Test Owner RLS</button>
+        </div>
+
+        <div class="section">
+            <h3>Step 4: Test Views</h3>
+            <button id="testActivitiesBase" class="button">Test activities_base View</button>
+            <button id="testActivitiesCurrent" class="button">Test activities_current View</button>
+        </div>
+
+        <div class="section">
+            <h3>Results</h3>
+            <div id="results"></div>
+        </div>
+
+        <div class="section">
+            <h3>Events Found</h3>
+            <div id="events-display"></div>
+        </div>
+
+        <div class="section">
+            <h3>Console Log</h3>
+            <div id="console-log" class="log"></div>
+        </div>
+    </div>
+
+    <!-- Load Supabase client -->
+    <script src="/assets/js/supabase-client.global.js"></script>
+    
+    <script>
+        // Capture console logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const originalDebug = console.debug;
+
+        function captureLog(type, ...args) {
+            const logEl = document.getElementById('console-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            logEl.textContent += `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+            
+            // Call original function
+            if (type === 'log') originalLog(...args);
+            else if (type === 'error') originalError(...args);
+            else if (type === 'warn') originalWarn(...args);
+            else if (type === 'debug') originalDebug(...args);
+        }
+
+        console.log = (...args) => captureLog('log', ...args);
+        console.error = (...args) => captureLog('error', ...args);
+        console.warn = (...args) => captureLog('warn', ...args);
+        console.debug = (...args) => captureLog('debug', ...args);
+
+        const resultsEl = document.getElementById('results');
+        const eventsDisplayEl = document.getElementById('events-display');
+
+        function addResult(title, content, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${title}:</strong> ${content}`;
+            resultsEl.appendChild(div);
+        }
+
+        function clearResults() {
+            resultsEl.innerHTML = '';
+            eventsDisplayEl.innerHTML = '';
+        }
+
+        function displayEvents(events) {
+            eventsDisplayEl.innerHTML = '';
+            
+            if (!events || events.length === 0) {
+                eventsDisplayEl.innerHTML = '<div class="status info">No events found</div>';
+                return;
+            }
+
+            events.forEach((event, index) => {
+                const div = document.createElement('div');
+                div.className = 'event-item';
+                div.innerHTML = `
+                    <strong>Event ${index + 1}:</strong><br>
+                    <strong>ID:</strong> ${event.id}<br>
+                    <strong>Title:</strong> ${event.title || 'No title'}<br>
+                    <strong>Status:</strong> ${event.status}<br>
+                    <strong>Published:</strong> ${event.is_published}<br>
+                    <strong>Kind:</strong> ${event.kind || 'general'}<br>
+                    <strong>Created:</strong> ${new Date(event.created_at).toLocaleString()}<br>
+                    <strong>Start:</strong> ${event.start_at ? new Date(event.start_at).toLocaleString() : 'No start date'}<br>
+                    <strong>Business ID:</strong> ${event.business_id}<br>
+                    <strong>Description:</strong> ${event.description ? event.description.substring(0, 100) + '...' : 'No description'}
+                `;
+                eventsDisplayEl.appendChild(div);
+            });
+        }
+
+        // Wait for Supabase to load
+        function waitForSupabase() {
+            return new Promise((resolve) => {
+                if (window.supabase) {
+                    resolve();
+                } else {
+                    const checkSupabase = () => {
+                        if (window.supabase) {
+                            resolve();
+                        } else {
+                            setTimeout(checkSupabase, 100);
+                        }
+                    };
+                    checkSupabase();
+                }
+            });
+        }
+
+        // Test connection
+        document.getElementById('testConnection').addEventListener('click', async () => {
+            clearResults();
+            addResult('Connection Test', 'Testing Supabase connection...', 'info');
+            
+            try {
+                await waitForSupabase();
+                addResult('Connection Test', 'Supabase client loaded successfully', 'success');
+                console.log('Supabase client:', window.supabase);
+            } catch (err) {
+                addResult('Connection Test', `Error: ${err.message}`, 'error');
+            }
+        });
+
+        // Test auth
+        document.getElementById('testAuth').addEventListener('click', async () => {
+            clearResults();
+            addResult('Auth Test', 'Testing authentication...', 'info');
+            
+            try {
+                await waitForSupabase();
+                const { data: { session }, error } = await window.supabase.auth.getSession();
+                
+                if (error) {
+                    addResult('Auth Test', `Error: ${error.message}`, 'error');
+                } else if (session) {
+                    addResult('Auth Test', `Authenticated as: ${session.user.email}`, 'success');
+                } else {
+                    addResult('Auth Test', 'Not authenticated (anonymous access)', 'info');
+                }
+            } catch (err) {
+                addResult('Auth Test', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Test all events
+        document.getElementById('testAllEvents').addEventListener('click', async () => {
+            clearResults();
+            addResult('All Events Test', 'Testing direct events table access...', 'info');
+            
+            try {
+                await waitForSupabase();
+                const { data, error } = await window.supabase
+                    .from('events')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+
+                if (error) {
+                    addResult('All Events', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('All Events', `Found ${data?.length || 0} events (all access)`, 'success');
+                    displayEvents(data);
+                }
+            } catch (err) {
+                addResult('All Events', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Test published events
+        document.getElementById('testPublishedEvents').addEventListener('click', async () => {
+            clearResults();
+            addResult('Published Events Test', 'Testing published events only...', 'info');
+            
+            try {
+                await waitForSupabase();
+                const { data, error } = await window.supabase
+                    .from('events')
+                    .select('*')
+                    .eq('status', 'published')
+                    .eq('is_published', true)
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+
+                if (error) {
+                    addResult('Published Events', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('Published Events', `Found ${data?.length || 0} published events`, 'success');
+                    displayEvents(data);
+                }
+            } catch (err) {
+                addResult('Published Events', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Test event count
+        document.getElementById('testEventCount').addEventListener('click', async () => {
+            clearResults();
+            addResult('Event Count Test', 'Testing event counts...', 'info');
+            
+            try {
+                await waitForSupabase();
+                
+                // Total count
+                const { count: totalCount, error: totalError } = await window.supabase
+                    .from('events')
+                    .select('*', { count: 'exact', head: true });
+
+                // Published count
+                const { count: publishedCount, error: publishedError } = await window.supabase
+                    .from('events')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('status', 'published')
+                    .eq('is_published', true);
+
+                if (totalError) {
+                    addResult('Event Count', `Total count error: ${totalError.message}`, 'error');
+                } else {
+                    addResult('Event Count', `Total events: ${totalCount}`, 'success');
+                }
+
+                if (publishedError) {
+                    addResult('Event Count', `Published count error: ${publishedError.message}`, 'error');
+                } else {
+                    addResult('Event Count', `Published events: ${publishedCount}`, 'success');
+                }
+            } catch (err) {
+                addResult('Event Count', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Test public RLS
+        document.getElementById('testPublicRLS').addEventListener('click', async () => {
+            clearResults();
+            addResult('Public RLS Test', 'Testing public RLS policies...', 'info');
+            
+            try {
+                await waitForSupabase();
+                
+                // Test as anonymous user
+                const { data, error } = await window.supabase
+                    .from('events')
+                    .select('*')
+                    .eq('status', 'published')
+                    .eq('is_published', true)
+                    .limit(10);
+
+                if (error) {
+                    addResult('Public RLS', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('Public RLS', `Public access: ${data?.length || 0} events visible`, 'success');
+                    displayEvents(data);
+                }
+            } catch (err) {
+                addResult('Public RLS', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Test owner RLS
+        document.getElementById('testOwnerRLS').addEventListener('click', async () => {
+            clearResults();
+            addResult('Owner RLS Test', 'Testing owner RLS policies...', 'info');
+            
+            try {
+                await waitForSupabase();
+                
+                const { data: { session } } = await window.supabase.auth.getSession();
+                if (!session) {
+                    addResult('Owner RLS', 'Not authenticated - cannot test owner RLS', 'info');
+                    return;
+                }
+
+                const { data, error } = await window.supabase
+                    .from('events')
+                    .select('*')
+                    .limit(10);
+
+                if (error) {
+                    addResult('Owner RLS', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('Owner RLS', `Owner access: ${data?.length || 0} events visible`, 'success');
+                    displayEvents(data);
+                }
+            } catch (err) {
+                addResult('Owner RLS', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Test activities_base view
+        document.getElementById('testActivitiesBase').addEventListener('click', async () => {
+            clearResults();
+            addResult('Activities Base Test', 'Testing activities_base view...', 'info');
+            
+            try {
+                await waitForSupabase();
+                const { data, error } = await window.supabase
+                    .from('activities_base')
+                    .select('*')
+                    .eq('kind', 'event')
+                    .limit(10);
+
+                if (error) {
+                    addResult('Activities Base', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('Activities Base', `Found ${data?.length || 0} events in view`, 'success');
+                    displayEvents(data);
+                }
+            } catch (err) {
+                addResult('Activities Base', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Test activities_current view
+        document.getElementById('testActivitiesCurrent').addEventListener('click', async () => {
+            clearResults();
+            addResult('Activities Current Test', 'Testing activities_current view...', 'info');
+            
+            try {
+                await waitForSupabase();
+                const { data, error } = await window.supabase
+                    .from('activities_current')
+                    .select('*')
+                    .eq('type', 'event')
+                    .limit(10);
+
+                if (error) {
+                    addResult('Activities Current', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('Activities Current', `Found ${data?.length || 0} events in view`, 'success');
+                    displayEvents(data);
+                }
+            } catch (err) {
+                addResult('Activities Current', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Initialize
+        addResult('Test Tool', 'Ready! Click the buttons above to test database access.', 'info');
+    </script>
+</body>
+</html>

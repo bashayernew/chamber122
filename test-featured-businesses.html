@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Featured Businesses - Chamber122</title>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <script type="module" src="/public/js/supabase-client.global.js?v=3"></script>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 20px; 
+      background: #1a1a1a; 
+      color: #fff; 
+      line-height: 1.6;
+    }
+    .test-section { 
+      margin: 30px 0; 
+      padding: 25px; 
+      background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%); 
+      border-radius: 16px; 
+      border: 1px solid #2a2a2a; 
+    }
+    .featured-carousel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+    .featured-card {
+      background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+      border-radius: 16px;
+      padding: 24px;
+      border: 1px solid #333;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .featured-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(255, 209, 102, 0.2);
+    }
+    .success { color: #51cf66; font-weight: bold; }
+    .error { color: #ff6b6b; font-weight: bold; }
+    .info { color: #74c0fc; }
+    .test-button { 
+      padding: 12px 24px; 
+      background: linear-gradient(135deg, #ffd166, #ffed4e); 
+      color: #111; 
+      border: none; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      margin: 8px; 
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .test-button:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 4px 12px rgba(255, 209, 102, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Featured Businesses Test</h1>
+  <p class="info">Testing the featured businesses display and "Visit Profile" functionality.</p>
+
+  <div class="test-section">
+    <h2>📊 Test Featured Businesses Loading</h2>
+    <button class="test-button" onclick="testFeaturedBusinesses()">Load Featured Businesses</button>
+    <button class="test-button" onclick="testEmptyState()">Test Empty State</button>
+    <div id="test-results"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>🎨 Featured Businesses Preview</h2>
+    <div class="featured-carousel" id="featured-preview">
+      <div style="text-align: center; padding: 40px; color: #aaa; grid-column: 1 / -1;">
+        <i class="fas fa-building" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+        <h3>Click "Load Featured Businesses" to see preview</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>🔗 Navigation Test</h2>
+    <button class="test-button" onclick="testProfileNavigation()">Test Visit Profile Function</button>
+    <div id="navigation-results"></div>
+  </div>
+
+  <script type="module">
+    import { supabase } from '/public/js/supabase-client.global.js?v=3';
+
+    // Test Featured Businesses Loading
+    window.testFeaturedBusinesses = async function() {
+      const result = document.getElementById('test-results');
+      const preview = document.getElementById('featured-preview');
+      
+      result.innerHTML = '<span class="info">Loading featured businesses...</span>';
+      
+      try {
+        const { data: businesses, error } = await supabase
+          .from('businesses')
+          .select('id, name, category, logo_url, created_at')
+          .eq('status', 'approved')
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        if (error) {
+          result.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+          return;
+        }
+
+        if (!businesses || businesses.length === 0) {
+          // Show empty state
+          preview.innerHTML = `
+            <div style="text-align: center; padding: 60px 40px; color: #aaa; grid-column: 1 / -1; background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); border-radius: 16px; border: 2px dashed #444;">
+              <i class="fas fa-building" style="font-size: 64px; margin-bottom: 24px; display: block; color: #ffd166;"></i>
+              <h3 style="font-size: 24px; margin-bottom: 12px; color: #fff;">No businesses yet</h3>
+              <p style="font-size: 16px; margin-bottom: 32px; color: #ccc;">Be the first to join our community!</p>
+              <a href="get-listed.html" class="test-button" style="margin-top: 16px; display: inline-block; padding: 16px 32px; font-size: 18px; font-weight: 600; background: linear-gradient(135deg, #ffd166, #ffed4e); color: #111; text-decoration: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(255, 209, 102, 0.3); transition: all 0.3s ease;">Get Listed</a>
+            </div>
+          `;
+          result.innerHTML = '<span class="info">ℹ️ No businesses found - showing empty state</span>';
+        } else {
+          // Show businesses
+          preview.innerHTML = businesses.map(business => `
+            <div class="featured-card" onclick="testOpenProfile('${business.id}')">
+              <div style="position: relative; margin-bottom: 16px;">
+                <img src="${business.logo_url || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=200&fit=crop'}" alt="${business.name}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px;">
+                <div style="position: absolute; top: 12px; right: 12px; background: linear-gradient(135deg, #ffd166, #ffed4e); color: #111; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">Featured</div>
+              </div>
+              <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px; color: #fff;">${business.name}</h3>
+              <div style="color: #ffd166; font-size: 14px; margin-bottom: 16px; font-weight: 500;">${business.category || 'Business'}</div>
+              <div style="background: linear-gradient(135deg, #ffd166, #ffed4e); color: #111; padding: 12px 20px; border-radius: 8px; text-align: center; font-weight: 600; transition: all 0.3s ease; border: none; cursor: pointer; width: 100%;">Visit Profile</div>
+            </div>
+          `).join('');
+          result.innerHTML = `<span class="success">✅ Loaded ${businesses.length} featured businesses</span>`;
+        }
+      } catch (err) {
+        result.innerHTML = `<span class="error">❌ Exception: ${err.message}</span>`;
+      }
+    };
+
+    // Test Empty State
+    window.testEmptyState = function() {
+      const preview = document.getElementById('featured-preview');
+      preview.innerHTML = `
+        <div style="text-align: center; padding: 60px 40px; color: #aaa; grid-column: 1 / -1; background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); border-radius: 16px; border: 2px dashed #444;">
+          <i class="fas fa-building" style="font-size: 64px; margin-bottom: 24px; display: block; color: #ffd166;"></i>
+          <h3 style="font-size: 24px; margin-bottom: 12px; color: #fff;">No businesses yet</h3>
+          <p style="font-size: 16px; margin-bottom: 32px; color: #ccc;">Be the first to join our community!</p>
+          <a href="get-listed.html" class="test-button" style="margin-top: 16px; display: inline-block; padding: 16px 32px; font-size: 18px; font-weight: 600; background: linear-gradient(135deg, #ffd166, #ffed4e); color: #111; text-decoration: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(255, 209, 102, 0.3); transition: all 0.3s ease;">Get Listed</a>
+        </div>
+      `;
+    };
+
+    // Test Profile Navigation
+    window.testProfileNavigation = function() {
+      const result = document.getElementById('navigation-results');
+      result.innerHTML = '<span class="info">Testing profile navigation...</span>';
+      
+      try {
+        if (typeof window.openMSMEOverlay === 'function') {
+          result.innerHTML = '<span class="success">✅ Visit Profile function is available and ready</span>';
+        } else {
+          result.innerHTML = '<span class="error">❌ Visit Profile function not found</span>';
+        }
+      } catch (err) {
+        result.innerHTML = `<span class="error">❌ Error: ${err.message}</span>`;
+      }
+    };
+
+    // Test Open Profile (simulated)
+    window.testOpenProfile = function(businessId) {
+      alert(`Visit Profile clicked for business ID: ${businessId}\n\nThis would normally open the business profile overlay.`);
+    };
+
+    // Auto-run tests on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      testProfileNavigation();
+      testFeaturedBusinesses();
+    });
+  </script>
+</body>
+</html>

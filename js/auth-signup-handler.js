@@ -103,7 +103,7 @@ async function handleLogin(e) {
   try {
     await signInWithPassword(email, password);
     // Redirect to owner activities
-    window.location.href = '/owner-activities.html';
+    window.location.href = '/owner.html';
   } catch (error) {
     console.error('Login error:', error);
     alert('Login failed: ' + error.message);
@@ -169,7 +169,7 @@ async function completeSignupProcess(user, formData = null) {
     alert('Account created successfully! Welcome to Chamber122.');
     
     // Redirect to owner activities
-    window.location.href = '/owner-activities.html';
+    window.location.href = '/owner.html';
     
   } catch (error) {
     console.error('Complete signup process error:', error);

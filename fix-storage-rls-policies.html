@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Storage RLS Policies - Chamber122</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f0f0f;
+            color: #e5e7eb;
+        }
+        .container {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #333;
+        }
+        h1 {
+            color: #f59e0b;
+            margin-bottom: 20px;
+        }
+        .warning {
+            background: #dc2626;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #b91c1c;
+        }
+        .section {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+        }
+        .button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: background 0.2s;
+        }
+        .button:hover {
+            background: #047857;
+        }
+        .button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .log {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #065f46;
+            color: #d1fae5;
+            border: 1px solid #10b981;
+        }
+        .status.error {
+            background: #7f1d1d;
+            color: #fecaca;
+            border: 1px solid #ef4444;
+        }
+        .status.info {
+            background: #1e3a8a;
+            color: #dbeafe;
+            border: 1px solid #3b82f6;
+        }
+        .sql-code {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Fix Storage RLS Policies</h1>
+        
+        <div class="warning">
+            <strong>🚨 CRITICAL:</strong> Your uploads are failing because the RLS policies on the `business-media` bucket are blocking uploads. This will fix it immediately.
+        </div>
+
+        <div class="section">
+            <h3>Step 1: Copy and Run This SQL</h3>
+            <p>Go to your Supabase Dashboard → SQL Editor and run this:</p>
+            
+            <div class="sql-code">
+-- Drop existing restrictive policies
+DROP POLICY IF EXISTS "Users can upload their own files" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update their own files" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete their own files" ON storage.objects;
+
+-- Create permissive RLS policies for business-media bucket
+CREATE POLICY "Allow authenticated users to upload to business-media" ON storage.objects
+FOR INSERT WITH CHECK (
+  bucket_id = 'business-media' 
+  AND auth.role() = 'authenticated'
+);
+
+CREATE POLICY "Allow authenticated users to update business-media" ON storage.objects
+FOR UPDATE USING (
+  bucket_id = 'business-media' 
+  AND auth.role() = 'authenticated'
+);
+
+CREATE POLICY "Allow authenticated users to delete business-media" ON storage.objects
+FOR DELETE USING (
+  bucket_id = 'business-media' 
+  AND auth.role() = 'authenticated'
+);
+
+-- Allow public read access
+CREATE POLICY "Allow public read access to business-media" ON storage.objects
+FOR SELECT USING (bucket_id = 'business-media');
+            </div>
+            
+            <button id="copySql" class="button">Copy SQL to Clipboard</button>
+        </div>
+
+        <div class="section">
+            <h3>Step 2: Test Upload</h3>
+            <p>After running the SQL, test if uploads work:</p>
+            
+            <button id="testUpload" class="button">Test Upload</button>
+            <button id="testEvent" class="button">Test Event Creation</button>
+        </div>
+
+        <div class="section">
+            <h3>Step 3: Alternative - Disable RLS (Temporary)</h3>
+            <p>If the above doesn't work, temporarily disable RLS on the bucket:</p>
+            
+            <div class="sql-code">
+-- TEMPORARY: Disable RLS on business-media bucket
+ALTER TABLE storage.objects DISABLE ROW LEVEL SECURITY;
+            </div>
+            
+            <button id="disableRLS" class="button">Copy Disable RLS SQL</button>
+        </div>
+
+        <div class="section">
+            <h3>Status</h3>
+            <div id="status"></div>
+        </div>
+
+        <div class="section">
+            <h3>Log</h3>
+            <div id="log" class="log"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js@2';
+
+        // Supabase configuration
+        const SUPABASE_URL = 'https://gidbvemmqffogakcepka.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dhY2Vwa2EiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcyNTk0NTQ4MCwiZXhwIjoyMDQxNTIxNDgwfQ.xpMI1i5czqv5hpO-vaLD5xKWsBmAdEryq9IA_jOi3J0';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const logEl = document.getElementById('log');
+        const statusEl = document.getElementById('status');
+        const copySqlBtn = document.getElementById('copySql');
+        const testUploadBtn = document.getElementById('testUpload');
+        const testEventBtn = document.getElementById('testEvent');
+        const disableRLSBtn = document.getElementById('disableRLS');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.textContent += `[${timestamp}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function setStatus(message, type = 'info') {
+            statusEl.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        const sqlCode = `-- Drop existing restrictive policies
+DROP POLICY IF EXISTS "Users can upload their own files" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update their own files" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete their own files" ON storage.objects;
+
+-- Create permissive RLS policies for business-media bucket
+CREATE POLICY "Allow authenticated users to upload to business-media" ON storage.objects
+FOR INSERT WITH CHECK (
+  bucket_id = 'business-media' 
+  AND auth.role() = 'authenticated'
+);
+
+CREATE POLICY "Allow authenticated users to update business-media" ON storage.objects
+FOR UPDATE USING (
+  bucket_id = 'business-media' 
+  AND auth.role() = 'authenticated'
+);
+
+CREATE POLICY "Allow authenticated users to delete business-media" ON storage.objects
+FOR DELETE USING (
+  bucket_id = 'business-media' 
+  AND auth.role() = 'authenticated'
+);
+
+-- Allow public read access
+CREATE POLICY "Allow public read access to business-media" ON storage.objects
+FOR SELECT USING (bucket_id = 'business-media');`;
+
+        const disableRLSCode = `-- TEMPORARY: Disable RLS on business-media bucket
+ALTER TABLE storage.objects DISABLE ROW LEVEL SECURITY;`;
+
+        copySqlBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(sqlCode).then(() => {
+                log('SQL copied to clipboard! Paste it in Supabase SQL Editor.', 'success');
+                setStatus('SQL copied to clipboard!', 'success');
+            }).catch(err => {
+                log('Failed to copy SQL: ' + err.message, 'error');
+            });
+        });
+
+        disableRLSBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(disableRLSCode).then(() => {
+                log('Disable RLS SQL copied to clipboard!', 'success');
+                setStatus('Disable RLS SQL copied to clipboard!', 'success');
+            }).catch(err => {
+                log('Failed to copy SQL: ' + err.message, 'error');
+            });
+        });
+
+        testUploadBtn.addEventListener('click', async () => {
+            log('Testing upload...');
+            setStatus('Testing upload...', 'info');
+
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session?.user) {
+                    throw new Error('Not authenticated');
+                }
+
+                // Get business ID
+                const { data: biz } = await supabase
+                    .from('businesses')
+                    .select('id')
+                    .eq('owner_id', session.user.id)
+                    .single();
+
+                if (!biz) {
+                    throw new Error('No business found');
+                }
+
+                // Create a test file
+                const testContent = 'test file content';
+                const testFile = new File([testContent], 'test.txt', { type: 'text/plain' });
+                const key = `${biz.id}/test/test-${Date.now()}.txt`;
+
+                log(`Uploading test file to: ${key}`);
+
+                const { data, error } = await supabase.storage
+                    .from('business-media')
+                    .upload(key, testFile);
+
+                if (error) {
+                    throw error;
+                }
+
+                log('✅ Upload successful!', 'success');
+                setStatus('Upload test successful! RLS policies are working.', 'success');
+
+            } catch (error) {
+                log(`❌ Upload failed: ${error.message}`, 'error');
+                setStatus(`Upload failed: ${error.message}`, 'error');
+            }
+        });
+
+        testEventBtn.addEventListener('click', () => {
+            log('Opening events page for testing...');
+            window.open('/events.html', '_blank');
+        });
+
+        // Auto-log initial status
+        log('Storage RLS Policy Fix Tool Ready');
+        log('1. Copy the SQL code above');
+        log('2. Go to Supabase Dashboard → SQL Editor');
+        log('3. Paste and run the SQL');
+        log('4. Test upload with the button below');
+    </script>
+</body>
+</html>

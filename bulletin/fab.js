@@ -1,396 +1,462 @@
-// Bulletin FAB (Floating Action Button) Handler
-import { supabase } from '../js/supabase-client.js';
-import { reloadBulletinFeed } from './list.js';
+// /bulletin/fab.js
+console.log('[bulletin/fab.js] Starting to load...');
+import { uploadBusinessImage } from '../js/lib/uploads.js';
 
-// global guard to block blue composer completely
-window.DISABLE_BULLETIN_COMPOSER = true;
+// Safe helpers
+const qs = (sel) => document.querySelector(sel);
+const val = (sel) => (qs(sel)?.value ?? '').trim();
 
-/**
- * Upload file to storage and get public URL
- * @param {File} file - File to upload
- * @returns {Promise<string|null>} Public URL or null
- */
-async function uploadAndGetUrl(file) {
-  if (!file) return null;
-  
-  try {
-    const path = `covers/${crypto.randomUUID()}-${file.name}`;
-    const { error } = await supabase.storage
-      .from('business-assets')
-      .upload(path, file, { upsert: false });
-    
-    if (error) throw error;
-    
-    const { data } = supabase.storage.from('business-assets').getPublicUrl(path);
-    return data?.publicUrl || null;
-  } catch (error) {
-    console.error('Upload error:', error);
-    throw error;
+if (window.DEBUG) console.log('[bulletin] Initializing FAB...');
+
+// Get Supabase client
+async function getSupabase() {
+  // Try immediate access
+  let client = window.__supabase || window.__supabaseClient || window.supabase;
+  if (client) {
+    return client;
   }
+  
+  // Wait for client to be ready (max 3 seconds)
+  const maxWait = 3000;
+  const start = Date.now();
+  
+  return new Promise((resolve, reject) => {
+    const check = setInterval(() => {
+      client = window.__supabase || window.__supabaseClient || window.supabase;
+      if (client) {
+        clearInterval(check);
+        resolve(client);
+      } else if (Date.now() - start > maxWait) {
+        clearInterval(check);
+        reject(new Error('Supabase client not initialized. Make sure supabase-client.global.js is loaded first.'));
+      }
+    }, 50);
+  });
 }
-
-let currentUser = null;
-let userProfile = null;
 
 // Initialize FAB on page load
-document.addEventListener('DOMContentLoaded', async () => {
-  // guard so we attach once
-  if (!window._fabWired) {
-    window._fabWired = true;
-    await initializeFAB();
-  }
-});
-
 async function initializeFAB() {
-  const fab = document.querySelector('#fabAddBulletin'); // your + button
-  const modal = document.getElementById('bulletinModal'); // BLACK modal only
-
-  if (!fab || !modal) {
-    console.warn('FAB button or modal not found - this page may not need the FAB functionality');
-    return;
+  try {
+    if (window.DEBUG) console.log('[bulletin] FAB initializing...');
+    setupEventListeners();
+    loadBulletins();
+  } catch (error) {
+    console.error('[bulletin] Error initializing FAB:', error);
   }
-
-  // Get current user
-  const { data: { user } } = await supabase.auth.getUser();
-  currentUser = user;
-
-  if (user) {
-    // Load user profile to check role
-    await loadUserProfile();
-  }
-
-  // OPEN: only open the black modal
-  fab.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    openBulletinModal();
-  });
-
-  // CLOSE X: prevent any other handlers from running
-  modal.addEventListener('click', (e) => {
-    const x = e.target.closest('.modal-close, .close, .close-bulletin, #bClose, #bCancel');
-    if (x) {
-      e.preventDefault();
-      e.stopPropagation();
-      closeBulletinModal();
-    }
-  });
-
-  // Setup form handlers
-  setupComposerHandlers(modal);
-  
-  console.log('FAB initialized with black modal only');
 }
 
-async function loadUserProfile() {
-  if (!currentUser) return;
-
+// Load bulletins from database
+async function loadBulletins() {
   try {
+    const supabase = await getSupabase();
+    console.log('[bulletin] Loading bulletins from bulletins table...');
+    
     const { data, error } = await supabase
-      .from('businesses')
-      .select('id')
-      .eq('owner_id', currentUser.id)
-      .single();
+      .from('bulletins')
+      .select('id,title,body,business_id,cover_url,created_at,contact_phone,contact_email,governorate,area,street,block,floor,businesses(id,name,logo_url)')
+      .eq('status', 'published')
+      .eq('is_published', true)
+      .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error loading business profile:', error);
+      console.error('[bulletin] Error loading bulletins:', error);
+      const errorMsg = error.message || String(error);
+      if (errorMsg.includes('ERR_NAME_NOT_RESOLVED') || errorMsg.includes('Failed to fetch') || errorMsg.includes('network')) {
+        const grid = qs('#bulletin-grid');
+        if (grid) {
+          grid.innerHTML = '<div style="text-align: center; padding: 40px; color: #e11d48;"><i class="fas fa-wifi" style="font-size: 48px; margin-bottom: 16px;"></i><h3 style="color: #e11d48; margin: 0 0 8px 0;">Connection Error</h3><p style="margin: 0; font-size: 14px;">Unable to connect to the server. Please check your internet connection and try again.</p></div>';
+        }
+      }
+      displayBulletins([]);
       return;
     }
 
-    userProfile = data;
-  } catch (error) {
-    console.error('Error in loadUserProfile:', error);
+    console.log('[bulletin] Loaded', data?.length || 0, 'bulletins');
+    
+    // Transform data to match display format and filter out incomplete bulletins
+    // Allow test items for development
+    const transformedData = (data || [])
+      .filter(b => {
+        // Check for valid title and body
+        if (!b.title || !b.body) return false;
+        const title = b.title.trim();
+        const body = b.body.trim();
+        if (!title || !body) return false;
+        
+        // Allow test items - only filter out obvious fake/dummy content
+        // Commented out test filtering to allow test bulletins to be visible
+        // const titleLower = title.toLowerCase();
+        // if (titleLower.includes('fake') || 
+        //     titleLower.includes('dummy')) {
+        //   return false;
+        // }
+        
+        // Require minimum length for meaningful content
+        if (title.length < 3 || body.length < 10) return false;
+        
+        // Must have a valid business_id
+        if (!b.business_id) return false;
+        
+        return true;
+      })
+      .map(b => ({
+        id: b.id,
+        title: b.title,
+        description: b.body,
+        business_name: b.businesses?.name || 'Business',
+        business_logo_url: b.businesses?.logo_url,
+        cover_image_url: b.cover_url,
+        location: [b.governorate, b.area, b.street, b.block, b.floor].filter(Boolean).join(', '),
+        created_at: b.created_at,
+        contact_phone: b.contact_phone,
+        contact_email: b.contact_email
+      }));
+    
+    console.log('[bulletin] Filtered to', transformedData.length, 'valid bulletins');
+    displayBulletins(transformedData);
+  } catch (err) {
+    console.error('[bulletin] Error loading bulletins:', err);
+    displayBulletins([]);
   }
 }
 
-function openBulletinModal() {
-  const modal = document.getElementById('bulletinModal');
-  if (!modal) {
-    console.error('Bulletin modal not found');
+// Display bulletins in the grid
+function displayBulletins(bulletins) {
+  const grid = qs('#bulletin-grid');
+  if (!grid) {
+    if (window.DEBUG) console.warn('[bulletin] Bulletin grid not found');
     return;
   }
-  
-  // Ensure guest modal is closed first
-  const guestModal = document.getElementById('guest-bulletin-modal');
-  if (guestModal) {
-    guestModal.style.display = 'none';
-  }
-  
-  // Open the main bulletin modal
-  modal.classList.add('show');
-  modal.removeAttribute('hidden');
-  console.log('Black modal opened - guest modal hidden');
-}
 
-function closeBulletinModal() {
-  const modal = document.getElementById('bulletinModal');
-  if (!modal) {
-    console.error('Bulletin modal not found');
+  if (!bulletins || bulletins.length === 0) {
+    grid.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No bulletins found.</p>';
     return;
   }
-  
-  // Close the main bulletin modal
-  modal.classList.remove('show');
-  modal.setAttribute('hidden', '');
-  
-  // Ensure guest modal is also closed (prevent it from opening)
-  const guestModal = document.getElementById('guest-bulletin-modal');
-  if (guestModal) {
-    guestModal.style.display = 'none';
-  }
-  
-  console.log('Black modal closed - all modals hidden');
+
+  // Format date range helper
+  const formatDateRange = (start, end) => {
+    const s = start ? new Date(start) : null;
+    const e = end ? new Date(end) : null;
+    const opts = { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+    if (s && e) return `${s.toLocaleString([], opts)} – ${e.toLocaleString([], opts)}`;
+    if (s) return s.toLocaleString([], opts);
+    return '—';
+  };
+
+  grid.innerHTML = bulletins.map(bulletin => {
+    const coverImage = bulletin.cover_image_url || bulletin.cover_url || '';
+    const startDate = bulletin.start_at || bulletin.start_date || bulletin.publish_at || bulletin.created_at || null;
+    const endDate = bulletin.end_at || bulletin.deadline_date || bulletin.end_date || bulletin.expire_at || null;
+    const description = (bulletin.description || bulletin.content || bulletin.body || '').substring(0, 100);
+    const location = bulletin.location || '';
+    const bulletinId = bulletin.id || bulletin.item_id || '';
+    
+    return `
+      <div style="display: block; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; overflow: hidden; transition: all 0.3s ease; cursor: pointer; height: 100%; position: relative;"
+           onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.4)';"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+        <a href="/bulletin.html?id=${encodeURIComponent(bulletinId)}" style="text-decoration: none; color: inherit; display: block;">
+          ${coverImage ? `
+            <div style="width: 100%; height: 180px; overflow: hidden; background: #2a2a2a;">
+              <img src="${coverImage}" alt="${bulletin.title || 'Bulletin'}" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+          ` : `
+            <div style="width: 100%; height: 180px; background: linear-gradient(135deg, #ffd166, #ff6b6b); display: flex; align-items: center; justify-content: center;">
+              <i class="fas fa-bullhorn" style="color: #111; font-size: 48px;"></i>
+            </div>
+          `}
+          <div style="padding: 16px;">
+            <h3 style="color: #fff; font-size: 16px; font-weight: 600; margin: 0 0 8px 0; line-height: 1.3;">${bulletin.title ?? 'Announcement'}</h3>
+            ${(startDate || endDate) ? `
+              <div style="color: #f2c64b; font-size: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
+                <i class="fas fa-clock" style="font-size: 10px;"></i>
+                <span>${formatDateRange(startDate, endDate)}</span>
+              </div>
+            ` : ''}
+            ${location ? `
+              <div style="color: #AFAFAF; font-size: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
+                <i class="fas fa-map-marker-alt" style="font-size: 10px;"></i>
+                <span>${location}</span>
+              </div>
+            ` : ''}
+            ${description ? `
+              <p style="color: #AFAFAF; font-size: 13px; line-height: 1.5; margin: 8px 0 0 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                ${description}${(bulletin.description || bulletin.content || bulletin.body || '').length > 100 ? '...' : ''}
+              </p>
+            ` : ''}
+          </div>
+        </a>
+      </div>
+    `;
+  }).join('');
 }
 
-// OLD/LEGACY — removed handleFABClick function, now using direct openBulletinModal()
-
-// Removed isProvider function - no longer needed
-
-function showAuthRequiredDialog(modal) {
-  modal.innerHTML = `
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2>Sign in required</h2>
-        <button class="modal-close" onclick="closeModal()">&times;</button>
-      </div>
-      <div class="auth-dialog">
-        <h3>Please log in or create an account to post a bulletin</h3>
-        <p>You need to be signed in to create and share bulletins with the community.</p>
-        <div class="actions">
-          <button class="btn btn-primary" onclick="goToLogin()">Log In</button>
-          <button class="btn btn-secondary" onclick="goToSignup()">Sign Up</button>
-          <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
-        </div>
-      </div>
-    </div>
-  `;
-  modal.classList.add('show');
-}
-
-function showLoginDialog(modal) {
-  modal.innerHTML = `
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2>Sign In Required</h2>
-        <button class="modal-close" onclick="closeModal()">&times;</button>
-      </div>
-      <div class="auth-dialog">
-        <h3>Please sign in to post a bulletin</h3>
-        <p>You need to be signed in to create and share bulletins with the community.</p>
-        <button class="btn btn-primary" onclick="goToLogin()">Login</button>
-        <button class="btn btn-secondary" onclick="goToSignup()">Sign Up</button>
-      </div>
-    </div>
-  `;
-  modal.classList.add('show');
-}
-
-function showUpgradeDialog(modal) {
-  // Hide "Become a Provider" dialog on bulletin page
-  const onBulletinPage = location.pathname.endsWith('/bulletin.html');
-  if (onBulletinPage) {
-    // Never show provider upgrade gate on bulletin page
-    // Show auth required dialog instead
-    showAuthRequiredDialog(modal);
-    return;
-  }
-  
-  modal.innerHTML = `
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2>Business Account Required</h2>
-        <button class="modal-close" onclick="closeModal()">&times;</button>
-      </div>
-      <div class="auth-dialog">
-        <h3>Only business owners can post bulletins</h3>
-        <p>Create a business account to share opportunities, job postings, and announcements with the community.</p>
-        <button class="btn btn-primary" onclick="goToProvider()">Create Business Account</button>
-        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-      </div>
-    </div>
-  `;
-  modal.classList.add('show');
-}
-
-async function showComposerModal(modal) {
-  console.log('Showing composer modal...');
-  console.log('Modal element:', modal);
-  
-  // Simply show the existing modal (no fetch needed)
-  openBulletinModal();
-  
-  console.log('Modal should now be visible');
-  
-  // Setup form handlers
-  setupComposerHandlers(modal);
-}
-
-function setupComposerHandlers(modal) {
-  // Character counter for description
-  const descTextarea = modal.querySelector('#bDesc');
-  const descCount = modal.querySelector('#descCount');
-  
-  if (descTextarea && descCount) {
-    descTextarea.addEventListener('input', () => {
-      descCount.textContent = descTextarea.value.length;
+// Setup event listeners
+function setupEventListeners() {
+  // FAB button
+  const fabBtn = qs('#fabAddBulletin');
+  if (fabBtn) {
+    fabBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      
+      const supabase = await getSupabase();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert('Please sign in to create bulletins.');
+        return;
+      }
+      
+      openBulletinModal();
     });
   }
 
-  // Close button (X in header)
-  const closeBtn = modal.querySelector('#bClose');
-  if (closeBtn) {
-    closeBtn.addEventListener('click', closeBulletinModal);
+  // Bulletin form submission
+  const form = qs('#bulletinForm');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await handleSubmit();
+    });
   }
 
-  // Cancel button
-  const cancelBtn = modal.querySelector('#bCancel');
-  if (cancelBtn) {
-    cancelBtn.addEventListener('click', closeBulletinModal);
-  }
-
-  // Draft button
-  const draftBtn = modal.querySelector('#bDraft');
-  if (draftBtn) {
-    draftBtn.addEventListener('click', () => handleSubmit('draft'));
-  }
-
-  // Publish button
-  const publishBtn = modal.querySelector('#bPublish');
+  // Publish button - use direct approach
+  const publishBtn = qs('#bPublish');
   if (publishBtn) {
-    publishBtn.addEventListener('click', () => handleSubmit('published'));
+    console.log('[bulletin] Publish button found, attaching click handler');
+    publishBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('[bulletin] Publish button clicked!');
+      await handleSubmit();
+    });
+  } else {
+    console.error('[bulletin] Publish button NOT found!');
+  }
+
+  // Close modal buttons
+  const closeBtn = qs('#bClose');
+  const cancelBtn = qs('#bCancel');
+  
+  if (closeBtn) closeBtn.addEventListener('click', closeBulletinModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeBulletinModal);
+
+  // Close on backdrop click
+  const modal = qs('#bulletinModal');
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeBulletinModal();
+    });
   }
 }
 
-async function handleSubmit(status) {
-  const form = document.getElementById('bulletinForm');
-  if (!form) {
-    console.error('Form not found');
-    return;
-  }
-
-  const formData = new FormData(form);
-  
-  // Validate required fields
-  const type = formData.get('type');
-  const title = formData.get('title')?.trim();
-  const description = formData.get('description')?.trim();
-
-  if (!type || !title || !description) {
-    alert('Please fill in all required fields (Type, Title, Description)');
-    return;
-  }
-
-  // Show loading state
-  const submitBtn = status === 'published' ? 
-    document.querySelector('#bPublish') : 
-    document.querySelector('#bDraft');
-  
-  if (submitBtn) {
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner"></span> Saving...';
-  }
-
+// Handle bulletin form submission
+async function handleSubmit() {
   try {
-    // Get current session and user ID for created_by field
-    const { data: { session } } = await supabase.auth.getSession();
-    const uid = session?.user?.id || null;
-    
-    if (!uid) {
-      throw new Error('User not authenticated');
+    console.log('[bulletin] Submit clicked');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      alert('You must be signed in.');
+      return;
     }
 
-    // Try to get business ID (optional - not required for bulletins)
-    let businessId = null;
-    try {
-      const { data: business, error: bizError } = await supabase
-        .from('businesses')
-        .select('id')
-        .eq('owner_id', currentUser.id)
-        .single();
-      
-      if (!bizError && business) {
-        businessId = business.id;
-      }
-    } catch (bizError) {
-      console.log('No business account found - proceeding without business_id');
+    const title = qs('#bTitle')?.value?.trim();
+    const description = qs('#bDesc')?.value?.trim();
+    const contact_phone = qs('#bPhone')?.value?.trim();
+    const contact_email = qs('#bEmail')?.value?.trim();
+    const governorate = qs('#bGovernorate')?.value?.trim();
+    const area = qs('#bArea')?.value?.trim();
+    const street = qs('#bStreet')?.value?.trim();
+    const block = qs('#bBlock')?.value?.trim();
+    const floor = qs('#bFloor')?.value?.trim();
+    const deadline = qs('#bDeadline')?.value || null;
+    const file = qs('#bFile')?.files?.[0];
+
+    console.log('[bulletin] Form data:', { title, description });
+
+    if (!title || !description) {
+      alert('Title and description are required.');
+      return;
     }
 
-    // Prepare bulletin data
-    const bulletinData = {
-      type: 'bulletin',
-      title: title,
-      description: description,
-      location: null,
-      start_at: new Date().toISOString(),
-      end_at: formData.get('deadline') || null,
-      contact_name: null,
-      contact_email: null,
-      contact_phone: null,
-      link: null,
-      status: status,
-      is_published: status === 'published',
-      cover_image_url: null,
-      business_id: businessId, // null is allowed
-      created_by: uid // 🔑 owner field required
-    };
-
-    // Handle file upload if provided
-    const file = formData.get('attachment');
-    if (file && file.size > 0) {
-      bulletinData.cover_image_url = await uploadAndGetUrl(file);
+    if (!contact_phone && !contact_email) {
+      alert("Please add a phone number or an email.");
+      return;
     }
 
-    // Insert bulletin
-    const { data, error } = await supabase
-      .from('activities_base')
-      .insert([bulletinData])
-      .select()
+    const { data: biz } = await supabase
+      .from('businesses')
+      .select('id')
+      .eq('owner_id', user.id)
       .single();
 
-    if (error) throw error;
+    if (!biz) throw new Error('No business found for this user.');
+    const businessId = biz.id;
 
-    // Success
-    const message = status === 'published' ? 'Bulletin published!' : 'Draft saved.';
-    alert(message);
+    let cover_url = null;
+    if (file) {
+      const up = await uploadBusinessImage({
+        supabase,
+        businessId,   // ✅ business id
+        file,
+        kind: 'bulletin',
+      });
+      cover_url = up.publicUrl;
+    }
+
+    const supabase = await getSupabase();
+    const { error } = await supabase.from('bulletins').insert({
+      business_id: biz.id,
+      title, body: description,
+      contact_phone, contact_email,
+      governorate, area, street, block, floor,
+      end_at: deadline ?? null,
+      cover_url,
+      status: 'published',
+      is_published: true
+    });
+
+    if (error) {
+      console.error('[bulletin] Insert error:', error);
+      throw error;
+    }
+    alert('✅ Bulletin created successfully!');
     
-    // Close modal
+    // Reset form and close modal
+    const form = qs('#bulletinForm');
+    if (form) form.reset();
     closeBulletinModal();
     
-    // Refresh bulletin list
-    try {
-      await reloadBulletinFeed();
-    } catch (refreshError) {
-      console.error('Error refreshing feed:', refreshError);
+    // Reload bulletins
+    await loadBulletins();
+    
+    // Refresh all displays
+    if (window.refreshEventsAndBulletins) {
+      window.refreshEventsAndBulletins();
     }
-
-  } catch (error) {
-    console.error('Error saving bulletin:', error);
-    alert('Failed to save bulletin. Please try again.');
-  } finally {
-    // Restore button state
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = status === 'published' ? 'Publish' : 'Save Draft';
-    }
+    
+  } catch (err) {
+    console.error('[bulletin] create failed:', err);
+    alert(`Bulletin creation failed: ${err.message}`);
   }
 }
 
-function closeModal() {
-  // Legacy function - now just calls closeBulletinModal
-  closeBulletinModal();
+// Open bulletin modal
+function openBulletinModal() {
+  const modal = qs('#bulletinModal');
+  const fabBtn = qs('#fabAddBulletin');
+  
+  console.log('[bulletin] Opening modal, fabBtn:', fabBtn);
+  
+  if (modal) {
+    modal.hidden = false;
+    modal.style.display = 'flex';
+    console.log('[bulletin] Modal opened');
+  } else {
+    console.error('[bulletin] Modal not found!');
+  }
+  
+  // Hide the FAB button when modal is open
+  if (fabBtn) {
+    console.log('[bulletin] Hiding FAB button');
+    fabBtn.style.display = 'none';
+    fabBtn.style.visibility = 'hidden';
+  } else {
+    console.error('[bulletin] FAB button not found!');
+  }
 }
 
-// Global functions for dialog buttons
-window.goToLogin = () => {
-  window.location.href = '/auth.html#login';
-};
+// Close bulletin modal
+function closeBulletinModal() {
+  const modal = qs('#bulletinModal');
+  const fabBtn = qs('#fabAddBulletin');
+  
+  console.log('[bulletin] Closing modal, fabBtn:', fabBtn);
+  
+  if (modal) {
+    modal.hidden = true;
+    modal.style.display = 'none';
+    console.log('[bulletin] Modal closed');
+  }
+  
+  // Show the FAB button when modal is closed
+  if (fabBtn) {
+    console.log('[bulletin] Showing FAB button');
+    fabBtn.style.display = 'inline-flex';
+    fabBtn.style.visibility = 'visible';
+  } else {
+    console.error('[bulletin] FAB button not found!');
+  }
+}
 
-window.goToSignup = () => {
-  window.location.href = '/auth.html#signup';
-};
+// Make functions available globally
+window.openBulletinModal = openBulletinModal;
+window.closeBulletinModal = closeBulletinModal;
+window.loadBulletins = loadBulletins;
 
-window.goToProvider = () => {
-  window.location.href = '/account-business.html';
-};
+// Auto-initialize when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeFAB);
+} else {
+  initializeFAB();
+}
 
-window.closeModal = closeModal;
+// Also attach a global click handler for the Publish button as a fallback
+document.addEventListener('click', async (e) => {
+  if (e.target && e.target.id === 'bPublish') {
+    console.log('[bulletin] Publish button clicked via event delegation');
+    e.preventDefault();
+    e.stopPropagation();
+    await handleSubmit();
+  }
+});
+    fabBtn.style.display = 'none';
+    fabBtn.style.visibility = 'hidden';
+  } else {
+    console.error('[bulletin] FAB button not found!');
+  }
+}
+
+// Close bulletin modal
+function closeBulletinModal() {
+  const modal = qs('#bulletinModal');
+  const fabBtn = qs('#fabAddBulletin');
+  
+  console.log('[bulletin] Closing modal, fabBtn:', fabBtn);
+  
+  if (modal) {
+    modal.hidden = true;
+    modal.style.display = 'none';
+    console.log('[bulletin] Modal closed');
+  }
+  
+  // Show the FAB button when modal is closed
+  if (fabBtn) {
+    console.log('[bulletin] Showing FAB button');
+    fabBtn.style.display = 'inline-flex';
+    fabBtn.style.visibility = 'visible';
+  } else {
+    console.error('[bulletin] FAB button not found!');
+  }
+}
+
+// Make functions available globally
+window.openBulletinModal = openBulletinModal;
+window.closeBulletinModal = closeBulletinModal;
+window.loadBulletins = loadBulletins;
+
+// Auto-initialize when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeFAB);
+} else {
+  initializeFAB();
+}
+
+// Also attach a global click handler for the Publish button as a fallback
+document.addEventListener('click', async (e) => {
+  if (e.target && e.target.id === 'bPublish') {
+    console.log('[bulletin] Publish button clicked via event delegation');
+    e.preventDefault();
+    e.stopPropagation();
+    await handleSubmit();
+  }
+});

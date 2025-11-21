@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test All Functionality - Chamber122</title>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <script type="module" src="/public/js/supabase-client.global.js?v=3"></script>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 20px; 
+      background: #1a1a1a; 
+      color: #fff; 
+      line-height: 1.6;
+    }
+    .test-section { 
+      margin: 30px 0; 
+      padding: 25px; 
+      background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%); 
+      border-radius: 16px; 
+      border: 1px solid #2a2a2a; 
+    }
+    .success { color: #51cf66; font-weight: bold; }
+    .error { color: #ff6b6b; font-weight: bold; }
+    .info { color: #74c0fc; }
+    .warning { color: #ffd43b; }
+    .test-card { 
+      background: #2a2a2a; 
+      padding: 20px; 
+      margin: 15px 0; 
+      border-radius: 12px; 
+      border-left: 4px solid #ffd166;
+    }
+    .test-button { 
+      padding: 12px 24px; 
+      background: linear-gradient(135deg, #ffd166, #ffed4e); 
+      color: #111; 
+      border: none; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      margin: 8px; 
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .test-button:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 4px 12px rgba(255, 209, 102, 0.3);
+    }
+    .grid { display: grid; gap: 20px; }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    .status-success { background: #51cf66; }
+    .status-error { background: #ff6b6b; }
+    .status-warning { background: #ffd43b; }
+    .status-info { background: #74c0fc; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Chamber122 - Complete Functionality Test</h1>
+  <p class="info">This page tests all major functionality of your Chamber122 website.</p>
+
+  <div class="test-section">
+    <h2>🔗 Navigation & Links Test</h2>
+    <div class="grid grid-2">
+      <div class="test-card">
+        <h3>Page Navigation</h3>
+        <a href="index.html" class="test-button">🏠 Home Page</a>
+        <a href="directory.html" class="test-button">📁 Directory</a>
+        <a href="events.html" class="test-button">📅 Events</a>
+        <a href="bulletin.html" class="test-button">📢 Bulletin</a>
+        <a href="owner.html" class="test-button">👤 Owner Panel</a>
+      </div>
+      <div class="test-card">
+        <h3>Profile Navigation</h3>
+        <button class="test-button" onclick="testProfileNavigation()">🔍 Test Visit Profile</button>
+        <div id="profile-test-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>📊 Database Connection Test</h2>
+    <div class="grid grid-3">
+      <div class="test-card">
+        <h3>Events Database</h3>
+        <button class="test-button" onclick="testEvents()">Test Events Query</button>
+        <div id="events-test-result"></div>
+      </div>
+      <div class="test-card">
+        <h3>Businesses Database</h3>
+        <button class="test-button" onclick="testBusinesses()">Test Businesses Query</button>
+        <div id="businesses-test-result"></div>
+      </div>
+      <div class="test-card">
+        <h3>Bulletins Database</h3>
+        <button class="test-button" onclick="testBulletins()">Test Bulletins Query</button>
+        <div id="bulletins-test-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>🎨 UI Components Test</h2>
+    <div class="grid grid-2">
+      <div class="test-card">
+        <h3>Featured Businesses</h3>
+        <button class="test-button" onclick="testFeaturedBusinesses()">Test Featured Loading</button>
+        <div id="featured-test-result"></div>
+      </div>
+      <div class="test-card">
+        <h3>Events Display</h3>
+        <button class="test-button" onclick="testEventsDisplay()">Test Events Display</button>
+        <div id="events-display-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>🔧 Functionality Test</h2>
+    <div class="grid grid-2">
+      <div class="test-card">
+        <h3>Bulletin Button</h3>
+        <button class="test-button" onclick="testBulletinButton()">Test Add Bulletin</button>
+        <div id="bulletin-button-result"></div>
+      </div>
+      <div class="test-card">
+        <h3>Authentication</h3>
+        <button class="test-button" onclick="testAuth()">Test Auth Status</button>
+        <div id="auth-test-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>📱 Live Preview</h2>
+    <div class="test-card">
+      <h3>Real-time Data Preview</h3>
+      <button class="test-button" onclick="loadLivePreview()">🔄 Load Live Data</button>
+      <div id="live-preview" class="grid grid-3" style="margin-top: 20px;"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from '/public/js/supabase-client.global.js?v=3';
+
+    // Test Profile Navigation
+    window.testProfileNavigation = function() {
+      const result = document.getElementById('profile-test-result');
+      result.innerHTML = '<span class="status-indicator status-info"></span>Testing profile navigation...';
+      
+      try {
+        // Test if openMSMEOverlay function exists
+        if (typeof window.openMSMEOverlay === 'function') {
+          result.innerHTML = '<span class="status-indicator status-success"></span><span class="success">✅ Visit Profile function is available</span>';
+        } else {
+          result.innerHTML = '<span class="status-indicator status-error"></span><span class="error">❌ Visit Profile function not found</span>';
+        }
+      } catch (err) {
+        result.innerHTML = `<span class="status-indicator status-error"></span><span class="error">❌ Error: ${err.message}</span>`;
+      }
+    };
+
+    // Test Events
+    window.testEvents = async function() {
+      const result = document.getElementById('events-test-result');
+      result.innerHTML = '<span class="status-indicator status-info"></span>Testing events...';
+      
+      try {
+        const { data, error } = await supabase
+          .from('events')
+          .select('id, title, status, is_published, start_at, created_at')
+          .eq('status', 'published')
+          .eq('is_published', true)
+          .limit(5);
+
+        if (error) {
+          result.innerHTML = `<span class="status-indicator status-error"></span><span class="error">❌ Events Error: ${error.message}</span>`;
+        } else {
+          result.innerHTML = `<span class="status-indicator status-success"></span><span class="success">✅ Found ${data.length} published events</span>`;
+        }
+      } catch (err) {
+        result.innerHTML = `<span class="status-indicator status-error"></span><span class="error">❌ Exception: ${err.message}</span>`;
+      }
+    };
+
+    // Test Businesses
+    window.testBusinesses = async function() {
+      const result = document.getElementById('businesses-test-result');
+      result.innerHTML = '<span class="status-indicator status-info"></span>Testing businesses...';
+      
+      try {
+        const { data, error } = await supabase
+          .from('businesses')
+          .select('id, name, category, logo_url, created_at')
+          .eq('status', 'approved')
+          .limit(5);
+
+        if (error) {
+          result.innerHTML = `<span class="status-indicator status-error"></span><span class="error">❌ Businesses Error: ${error.message}</span>`;
+        } else {
+          result.innerHTML = `<span class="status-indicator status-success"></span><span class="success">✅ Found ${data.length} approved businesses</span>`;
+        }
+      } catch (err) {
+        result.innerHTML = `<span class="status-indicator status-error"></span><span class="error">❌ Exception: ${err.message}</span>`;
+      }
+    };
+
+    // Test Bulletins
+    window.testBulletins = async function() {
+      const result = document.getElementById('bulletins-test-result');
+      result.innerHTML = '<span class="status-indicator status-info"></span>Testing bulletins...';
+      
+      try {
+        const { data, error } = await supabase
+          .from('bulletins')
+          .select('id, title, content, created_at')
+          .eq('status', 'published')
+          .limit(5);
+
+        if (error) {
+          result.innerHTML = `<span class="status-indicator status-error"></span><span class="error">❌ Bulletins Error: ${error.message}</span>`;
+        } else {
+          result.innerHTML = `<span class="status-indicator status-success"></span><span class="success">✅ Found ${data.length} published bulletins</span>`;
+        }
+      } catch (err) {
+        result.innerHTML = `<span class="status-indicator status-error"></span><span class="error">❌ Exception: ${err.message}</span>`;
+      }
+    };
+
+    // Test Featured Businesses
+    window.testFeaturedBusinesses = async function() {
+      const result = document.getElementById('featured-test-result');
+      result.innerHTML = '<span class="status-indicator status-info"></span>Testing featured businesses...';
+      
+      try {
+        const { data, error } = await supabase
+          .from('businesses')
+          .select('id, name, category, logo_url, created_at')
+          .eq('status', 'approved')
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        if (error) {
+          result.innerHTML = `<span class="status-indicator status-error"></span><span class="error">❌ Featured Error: ${error.message}</span>`;
+        } else {
+          result.innerHTML = `<span class="status-indicator status-success"></span><span class="success">✅ Featured businesses loaded: ${data.length}</span>`;
+        }
+      } catch (err) {
+        result.innerHTML = `<span class="status-indicator status-error"></span><span class="error">❌ Exception: ${err.message}</span>`;
+      }
+    };
+
+    // Test Events Display
+    window.testEventsDisplay = function() {
+      const result = document.getElementById('events-display-result');
+      result.innerHTML = '<span class="status-indicator status-info"></span>Testing events display...';
+      
+      try {
+        // Test if events fetch function exists
+        if (typeof window.fetchEventsWithBusiness === 'function') {
+          result.innerHTML = '<span class="status-indicator status-success"></span><span class="success">✅ Events display function available</span>';
+        } else {
+          result.innerHTML = '<span class="status-indicator status-warning"></span><span class="warning">⚠️ Events display function not found (may be loaded as module)</span>';
+        }
+      } catch (err) {
+        result.innerHTML = `<span class="status-indicator status-error"></span><span class="error">❌ Error: ${err.message}</span>`;
+      }
+    };
+
+    // Test Bulletin Button
+    window.testBulletinButton = function() {
+      const result = document.getElementById('bulletin-button-result');
+      result.innerHTML = '<span class="status-indicator status-info"></span>Testing bulletin button...';
+      
+      try {
+        // Check if FAB button exists
+        const fabButton = document.querySelector('#fabAddBulletin');
+        if (fabButton) {
+          result.innerHTML = '<span class="status-indicator status-success"></span><span class="success">✅ Bulletin FAB button found</span>';
+        } else {
+          result.innerHTML = '<span class="status-indicator status-warning"></span><span class="warning">⚠️ Bulletin FAB button not found (may be on bulletin page)</span>';
+        }
+      } catch (err) {
+        result.innerHTML = `<span class="status-indicator status-error"></span><span class="error">❌ Error: ${err.message}</span>`;
+      }
+    };
+
+    // Test Authentication
+    window.testAuth = async function() {
+      const result = document.getElementById('auth-test-result');
+      result.innerHTML = '<span class="status-indicator status-info"></span>Testing authentication...';
+      
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) {
+          result.innerHTML = `<span class="status-indicator status-warning"></span><span class="warning">⚠️ Auth Error: ${error.message}</span>`;
+        } else if (user) {
+          result.innerHTML = `<span class="status-indicator status-success"></span><span class="success">✅ Signed in as: ${user.email}</span>`;
+        } else {
+          result.innerHTML = '<span class="status-indicator status-info"></span><span class="info">ℹ️ Not signed in (guest mode)</span>';
+        }
+      } catch (err) {
+        result.innerHTML = `<span class="status-indicator status-error"></span><span class="error">❌ Exception: ${err.message}</span>`;
+      }
+    };
+
+    // Load Live Preview
+    window.loadLivePreview = async function() {
+      const container = document.getElementById('live-preview');
+      container.innerHTML = '<div class="col-span-full text-center py-8"><span class="status-indicator status-info"></span>Loading live data...</div>';
+      
+      try {
+        // Load events
+        const { data: events } = await supabase
+          .from('events')
+          .select('id, title, start_at, created_at')
+          .eq('status', 'published')
+          .eq('is_published', true)
+          .limit(3);
+
+        // Load businesses
+        const { data: businesses } = await supabase
+          .from('businesses')
+          .select('id, name, category, created_at')
+          .eq('status', 'approved')
+          .limit(3);
+
+        // Load bulletins
+        const { data: bulletins } = await supabase
+          .from('bulletins')
+          .select('id, title, created_at')
+          .eq('status', 'published')
+          .limit(3);
+
+        container.innerHTML = `
+          <div class="test-card">
+            <h4>📅 Recent Events</h4>
+            ${events?.map(e => `<p>• ${e.title || 'Untitled'}</p>`).join('') || '<p class="text-gray-400">No events found</p>'}
+          </div>
+          <div class="test-card">
+            <h4>🏢 Featured Businesses</h4>
+            ${businesses?.map(b => `<p>• ${b.name || 'Untitled'}</p>`).join('') || '<p class="text-gray-400">No businesses found</p>'}
+          </div>
+          <div class="test-card">
+            <h4>📢 Latest Bulletins</h4>
+            ${bulletins?.map(b => `<p>• ${b.title || 'Untitled'}</p>`).join('') || '<p class="text-gray-400">No bulletins found</p>'}
+          </div>
+        `;
+      } catch (err) {
+        container.innerHTML = `<div class="col-span-full text-center py-8"><span class="status-indicator status-error"></span><span class="error">Error loading live data: ${err.message}</span></div>`;
+      }
+    };
+
+    // Auto-run tests on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      testProfileNavigation();
+      testAuth();
+    });
+  </script>
+</body>
+</html>

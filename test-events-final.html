@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Events & Businesses</title>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <script type="module" src="/public/js/supabase-client.global.js?v=3"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+    .section { margin: 20px 0; padding: 20px; border: 1px solid #333; border-radius: 8px; }
+    .success { color: #51cf66; }
+    .error { color: #ff6b6b; }
+    .info { color: #74c0fc; }
+    .event-card, .business-card { background: #2a2a2a; padding: 15px; margin: 10px 0; border-radius: 8px; }
+    button { padding: 10px 20px; background: #ffd166; color: #111; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Test Events & Businesses</h1>
+  
+  <div class="section">
+    <h2>1. Test Events (Public)</h2>
+    <button onclick="testEvents()">Test Events Query</button>
+    <div id="events-result"></div>
+  </div>
+
+  <div class="section">
+    <h2>2. Test Businesses (Approved)</h2>
+    <button onclick="testBusinesses()">Test Businesses Query</button>
+    <div id="businesses-result"></div>
+  </div>
+
+  <div class="section">
+    <h2>3. Test Events with Business Info</h2>
+    <button onclick="testEventsWithBusiness()">Test Events with Business</button>
+    <div id="events-business-result"></div>
+  </div>
+
+  <script type="module">
+    import { supabase } from '/public/js/supabase-client.global.js?v=3';
+
+    window.testEvents = async function() {
+      const result = document.getElementById('events-result');
+      result.innerHTML = 'Testing...';
+      
+      try {
+        const { data, error } = await supabase
+          .from('events')
+          .select('id, title, status, is_published, start_at, created_at')
+          .eq('status', 'published')
+          .eq('is_published', true)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (error) {
+          result.innerHTML = `<div class="error">❌ Events Error: ${error.message}</div>`;
+        } else {
+          result.innerHTML = `
+            <div class="success">✅ Found ${data.length} published events</div>
+            ${data.map(event => `
+              <div class="event-card">
+                <strong>${event.title || 'Untitled'}</strong><br>
+                Status: ${event.status} | Published: ${event.is_published}<br>
+                Start: ${event.start_at ? new Date(event.start_at).toLocaleString() : 'TBA'}<br>
+                Created: ${new Date(event.created_at).toLocaleString()}
+              </div>
+            `).join('')}
+          `;
+        }
+      } catch (err) {
+        result.innerHTML = `<div class="error">Exception: ${err.message}</div>`;
+      }
+    };
+
+    window.testBusinesses = async function() {
+      const result = document.getElementById('businesses-result');
+      result.innerHTML = 'Testing...';
+      
+      try {
+        const { data, error } = await supabase
+          .from('businesses')
+          .select('id, name, category, logo_url, created_at')
+          .eq('status', 'approved')
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (error) {
+          result.innerHTML = `<div class="error">❌ Businesses Error: ${error.message}</div>`;
+        } else {
+          result.innerHTML = `
+            <div class="success">✅ Found ${data.length} approved businesses</div>
+            ${data.map(business => `
+              <div class="business-card">
+                <strong>${business.name || 'Untitled'}</strong><br>
+                Category: ${business.category || 'Business'}<br>
+                Created: ${new Date(business.created_at).toLocaleString()}
+              </div>
+            `).join('')}
+          `;
+        }
+      } catch (err) {
+        result.innerHTML = `<div class="error">Exception: ${err.message}</div>`;
+      }
+    };
+
+    window.testEventsWithBusiness = async function() {
+      const result = document.getElementById('events-business-result');
+      result.innerHTML = 'Testing...';
+      
+      try {
+        const { data, error } = await supabase
+          .from('events')
+          .select(`
+            id, title, status, is_published, start_at, created_at,
+            businesses!inner(name, logo_url)
+          `)
+          .eq('status', 'published')
+          .eq('is_published', true)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (error) {
+          result.innerHTML = `<div class="error">❌ Events with Business Error: ${error.message}</div>`;
+        } else {
+          result.innerHTML = `
+            <div class="success">✅ Found ${data.length} events with business info</div>
+            ${data.map(event => `
+              <div class="event-card">
+                <strong>${event.title || 'Untitled'}</strong><br>
+                Business: ${event.businesses?.name || 'Unknown'}<br>
+                Status: ${event.status} | Published: ${event.is_published}<br>
+                Start: ${event.start_at ? new Date(event.start_at).toLocaleString() : 'TBA'}
+              </div>
+            `).join('')}
+          `;
+        }
+      } catch (err) {
+        result.innerHTML = `<div class="error">Exception: ${err.message}</div>`;
+      }
+    };
+
+    // Auto-run tests on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      testEvents();
+      testBusinesses();
+      testEventsWithBusiness();
+    });
+  </script>
+</body>
+</html>

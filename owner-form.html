@@ -22,7 +22,8 @@
     
     /* Logo Preview */
     .logo-box{width:150px;height:150px;margin:16px 0;border:2px solid #2a2b31;border-radius:12px;overflow:hidden;background:#17181c;display:flex;align-items:center;justify-content:center}
-    .logo-box img{max-width:100%;max-height:100%;object-fit:contain}
+    .logo-box img{max-width:100%;max-height:100%;object-fit:contain;display:block;visibility:visible;opacity:1}
+    .logo-box:empty::before{content:"No logo";color:#6b7280;font-size:14px}
     
     /* Gallery Grid */
     .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-top:16px}
@@ -131,7 +132,9 @@
       <!-- Business Logo -->
       <div class="card">
         <h2 class="section-title">Business Logo</h2>
-        <div class="logo-box"><img id="logoPreview" alt="Logo preview"></div>
+        <div class="logo-box">
+          <img id="logoPreview" alt="Logo preview" style="display: block; max-width: 100%; max-height: 100%; object-fit: contain;">
+        </div>
         <label class="subhead">Business Logo</label>
         <input id="logo" type="file" accept="image/*">
         <small class="muted">Recommended: square (512×512)</small>
@@ -175,6 +178,9 @@
 
   <!-- Scripts -->
   <script type="module" src="/public/js/supabase-client.global.js?v=3"></script>
-  <script type="module" src="/public/js/owner-form.js?v=8"></script>
+  <script type="module" src="/public/js/owner-form.js?v=10"></script>
+</body>
+</html>
+
 </body>
 </html>

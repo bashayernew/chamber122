@@ -9,12 +9,10 @@ import { normalizeActivities } from './common-activities.js';
 window.refreshEventsPage = async function refreshEventsPage() {
   try {
     const { data, error } = await supabase
-      .from('activities')  // VIEW for reads (RLS enforced)
-      .select('*')
-      .eq('kind', 'event')  // VIEW uses 'kind' column
-      .eq('status', 'published')
-      .eq('is_published', true)
-      .order('start_at', { ascending: true });  // Valid column from VIEW
+      .from('activities_current')
+      .select('id,business_id,business_name,business_logo_url,title,description,location,cover_image_url,created_at,start_at,end_at,contact_phone,contact_email')
+      .eq('type', 'event')
+      .order('created_at', { ascending: false }); // Most recent first
     
     if (error) {
       console.error('[refreshEventsPage] Error:', error);
@@ -38,11 +36,9 @@ window.refreshEventsPage = async function refreshEventsPage() {
 window.refreshBulletinsPage = async function refreshBulletinsPage() {
   try {
     const { data, error } = await supabase
-      .from('activities')  // VIEW for reads (RLS enforced)
-      .select('*')
-      .eq('kind', 'bulletin')  // VIEW uses 'kind' column
-      .eq('status', 'published')
-      .eq('is_published', true)
+      .from('activities_current')
+      .select('id,business_id,business_name,business_logo_url,title,description,location,cover_image_url,created_at,contact_phone,contact_email')
+      .eq('type', 'bulletin')
       .order('created_at', { ascending: false });
     
     if (error) {
@@ -51,7 +47,33 @@ window.refreshBulletinsPage = async function refreshBulletinsPage() {
       return;
     }
     
-    const normalized = normalizeActivities(data);
+    // Filter out fake/test bulletins before normalizing
+    const filtered = (data || []).filter(b => {
+      // Check for valid title and description
+      if (!b.title || !b.description) return false;
+      const title = b.title.trim();
+      const description = (b.description || '').trim();
+      if (!title || !description) return false;
+      
+      // Filter out test/fake bulletins
+      const titleLower = title.toLowerCase();
+      if (titleLower.includes('test') || 
+          titleLower.includes('fake') || 
+          titleLower.includes('dummy') ||
+          titleLower.includes('sample')) {
+        return false;
+      }
+      
+      // Require minimum length for meaningful content
+      if (title.length < 3 || description.length < 10) return false;
+      
+      // Must have a valid business_id
+      if (!b.business_id) return false;
+      
+      return true;
+    });
+    
+    const normalized = normalizeActivities(filtered);
     renderBulletins(normalized);
   } catch (err) {
     console.error('[refreshBulletinsPage] Exception:', err);
@@ -204,6 +226,32 @@ function createBulletinCard(bulletin) {
           ${bulletin.link ? `
             <a href="${bulletin.link}" target="_blank" class="bulletin-link">
               <i class="fas fa-external-link-alt"></i> Learn More
+            </a>
+          ` : ''}
+          ${bulletin.contact_email ? `
+            <a href="mailto:${bulletin.contact_email}" class="bulletin-contact-btn">
+              <i class="fas fa-envelope"></i> Contact
+            </a>
+          ` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Auto-initialize on DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+  // Check which page we're on and load appropriate data
+  if (window.location.pathname.includes('events.html')) {
+    window.refreshEventsPage?.();
+  } else if (window.location.pathname.includes('bulletin')) {
+    window.refreshBulletinsPage?.();
+  }
+});
+
+console.info('[activities-list.js] Loaded. refreshEventsPage and refreshBulletinsPage available');
+
+
             </a>
           ` : ''}
           ${bulletin.contact_email ? `

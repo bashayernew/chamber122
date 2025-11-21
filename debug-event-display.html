@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Event Display - Chamber122</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f0f0f;
+            color: #e5e7eb;
+        }
+        .container {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #333;
+        }
+        h1 {
+            color: #f59e0b;
+            margin-bottom: 20px;
+        }
+        .section {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+        }
+        .button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: background 0.2s;
+        }
+        .button:hover {
+            background: #047857;
+        }
+        .log {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #065f46;
+            color: #d1fae5;
+            border: 1px solid #10b981;
+        }
+        .status.error {
+            background: #7f1d1d;
+            color: #fecaca;
+            border: 1px solid #ef4444;
+        }
+        .status.info {
+            background: #1e3a8a;
+            color: #dbeafe;
+            border: 1px solid #3b82f6;
+        }
+        .event-card {
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Event Display</h1>
+        
+        <div class="section">
+            <h3>Test Event Queries</h3>
+            <p>Let's check if your event was created and why it's not showing up:</p>
+            
+            <button id="checkEventsTable" class="button">Check Events Table</button>
+            <button id="checkActivitiesCurrent" class="button">Check Activities Current View</button>
+            <button id="checkActivitiesBase" class="button">Check Activities Base View</button>
+            <button id="refreshEvents" class="button">Refresh Events Page</button>
+        </div>
+
+        <div class="section">
+            <h3>Status</h3>
+            <div id="status"></div>
+        </div>
+
+        <div class="section">
+            <h3>Query Results</h3>
+            <div id="results"></div>
+        </div>
+
+        <div class="section">
+            <h3>Log</h3>
+            <div id="log" class="log"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js@2';
+
+        // Supabase configuration
+        const SUPABASE_URL = 'https://gidbvemmqffogakcepka.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dhY2Vwa2EiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcyNTk0NTQ4MCwiZXhwIjoyMDQxNTIxNDgwfQ.xpMI1i5czqv5hpO-vaLD5xKWsBmAdEryq9IA_jOi3J0';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const logEl = document.getElementById('log');
+        const statusEl = document.getElementById('status');
+        const resultsEl = document.getElementById('results');
+        const checkEventsBtn = document.getElementById('checkEventsTable');
+        const checkActivitiesCurrentBtn = document.getElementById('checkActivitiesCurrent');
+        const checkActivitiesBaseBtn = document.getElementById('checkActivitiesBase');
+        const refreshEventsBtn = document.getElementById('refreshEvents');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.textContent += `[${timestamp}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function setStatus(message, type = 'info') {
+            statusEl.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function displayResults(title, data, error = null) {
+            let html = `<h4>${title}</h4>`;
+            
+            if (error) {
+                html += `<div class="status error">Error: ${error.message}</div>`;
+            } else if (data && data.length > 0) {
+                html += `<div class="status success">Found ${data.length} events</div>`;
+                data.forEach((event, index) => {
+                    html += `
+                    <div class="event-card">
+                        <strong>Event ${index + 1}:</strong><br>
+                        <strong>ID:</strong> ${event.id}<br>
+                        <strong>Title:</strong> ${event.title || 'No title'}<br>
+                        <strong>Status:</strong> ${event.status || 'No status'}<br>
+                        <strong>Is Published:</strong> ${event.is_published || 'No is_published'}<br>
+                        <strong>Created:</strong> ${event.created_at || 'No created_at'}<br>
+                        <strong>Start:</strong> ${event.start_at || 'No start_at'}<br>
+                        <strong>Business ID:</strong> ${event.business_id || 'No business_id'}<br>
+                        <strong>Type:</strong> ${event.type || 'No type'}<br>
+                        <strong>Description:</strong> ${event.description ? event.description.substring(0, 100) + '...' : 'No description'}
+                    </div>`;
+                });
+            } else {
+                html += `<div class="status info">No events found</div>`;
+            }
+            
+            resultsEl.innerHTML = html;
+        }
+
+        checkEventsBtn.addEventListener('click', async () => {
+            log('Checking events table directly...');
+            setStatus('Checking events table...', 'info');
+
+            try {
+                const { data, error } = await supabase
+                    .from('events')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+
+                log(`Found ${data?.length || 0} events in events table`);
+                displayResults('Events Table (Direct)', data, error);
+
+            } catch (error) {
+                log(`Error checking events table: ${error.message}`);
+                displayResults('Events Table (Direct)', null, error);
+            }
+        });
+
+        checkActivitiesCurrentBtn.addEventListener('click', async () => {
+            log('Checking activities_current view...');
+            setStatus('Checking activities_current view...', 'info');
+
+            try {
+                const { data, error } = await supabase
+                    .from('activities_current')
+                    .select('id,business_id,business_name,title,description,status,is_published,created_at,start_at,type')
+                    .eq('type', 'event')
+                    .order('start_at', { ascending: true });
+
+                if (error) throw error;
+
+                log(`Found ${data?.length || 0} events in activities_current view`);
+                displayResults('Activities Current View', data, error);
+
+            } catch (error) {
+                log(`Error checking activities_current: ${error.message}`);
+                displayResults('Activities Current View', null, error);
+            }
+        });
+
+        checkActivitiesBaseBtn.addEventListener('click', async () => {
+            log('Checking activities_base view...');
+            setStatus('Checking activities_base view...', 'info');
+
+            try {
+                const { data, error } = await supabase
+                    .from('activities_base')
+                    .select('id,business_id,title,description,status,is_published,created_at,start_at,type')
+                    .eq('type', 'event')
+                    .order('start_at', { ascending: true });
+
+                if (error) throw error;
+
+                log(`Found ${data?.length || 0} events in activities_base view`);
+                displayResults('Activities Base View', data, error);
+
+            } catch (error) {
+                log(`Error checking activities_base: ${error.message}`);
+                displayResults('Activities Base View', null, error);
+            }
+        });
+
+        refreshEventsBtn.addEventListener('click', () => {
+            log('Opening events page...');
+            window.open('/events.html', '_blank');
+        });
+
+        // Auto-run initial check
+        log('Event Display Debug Tool Ready');
+        log('Click the buttons above to check different data sources');
+        
+        // Auto-check events table on load
+        setTimeout(() => {
+            checkEventsBtn.click();
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -24,16 +24,26 @@ export async function getOwnerBusinessId() {
     if (userError) throw userError;
     if (!user) return null;
 
+    // Use maybeSingle to handle "no rows" gracefully (prevents 406 errors)
     const { data: business, error: bizError } = await supabase
       .from('businesses')
       .select('id')
       .eq('owner_id', user.id)
-      .single();
+      .maybeSingle();
     
-    if (bizError && bizError.code !== 'PGRST116') throw bizError; // PGRST116 = no rows found
+    // Only throw if it's a real error (not "no rows")
+    if (bizError && bizError.code !== 'PGRST116') {
+      console.error('Error getting owner business ID:', bizError);
+      throw bizError;
+    }
+    
     return business ? business.id : null;
   } catch (error) {
     console.error('Error getting owner business ID:', error);
+    // Don't throw for "no business" case - just return null
+    if (error.code === 'PGRST116' || error.message?.includes('406')) {
+      return null;
+    }
     throw new Error(error.message);
   }
 }
@@ -44,19 +54,14 @@ export async function getOwnerBusinessId() {
  */
 export async function listEventsPublic() {
   try {
-    const select = "*,businesses:business_id(name,logo_url)";
     const { data, error } = await supabase
-      .from('activities')  // VIEW for reads
-      .select(select)
-      .eq('kind', 'event')  // VIEW uses 'kind' column
-      .eq('status', 'published')
-      .eq('is_published', true)
-      .order('start_at', { ascending: true });  // Valid column
+      .from('activities_current')
+      .select('id,business_id,business_name,business_logo_url,title,description,location,cover_image_url,created_at,start_at,end_at,contact_phone,contact_email')
+      .eq('type', 'event')
+      .order('start_at', { ascending: true });
     
     if (error) throw error;
-    // Normalize type field
-    const normalized = (data || []).map(r => ({ ...r, type: r.type ?? r.kind }));
-    return normalized;
+    return data || [];
   } catch (error) {
     console.error('Error listing public events:', error);
     throw new Error(error.message);
@@ -71,7 +76,7 @@ export async function listEventsPublic() {
 export async function createEvent(input) {
   try {
     const { data, error } = await supabase
-      .from('activities_base')
+      .from('events')
       .insert(input)
       .select('id')
       .single();
@@ -92,19 +97,16 @@ export async function createEvent(input) {
 export async function listActivitiesForBusiness(businessId) {
   try {
     console.log('[api] listActivitiesForBusiness called with businessId:', businessId);
-    const select = "*,businesses:business_id(name,logo_url)";
-    console.log('[api] Querying activities_base table with select:', select);
+    if (window.DEBUG) console.log('[api] Querying activities_base table');
     const { data, error } = await supabase
-      .from('activities_base')  // Use activities_base table directly
-      .select(select)
+      .from('activities_base')
+      .select('id,business_id,business_name,business_logo_url,title,description,location,cover_image_url,created_at,start_at,end_at,contact_phone,contact_email,type')
       .eq('business_id', businessId)
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    // Normalize: activities_base uses 'type', ensure it's consistent
-    const normalized = (data || []).map(r => ({ ...r, type: r.type }));
-    console.log('[api] listActivitiesForBusiness result:', normalized.length, 'activities');
-    return normalized;
+    if (window.DEBUG) console.log('[api] listActivitiesForBusiness result:', (data || []).length, 'activities');
+    return data || [];
   } catch (error) {
     console.error('Error listing activities for business:', error);
     throw new Error(error.message);
@@ -118,18 +120,15 @@ export async function listActivitiesForBusiness(businessId) {
  */
 export async function listDraftsForBusiness(businessId) {
   try {
-    const select = "*,businesses:business_id(name,logo_url)";
     const { data, error } = await supabase
-      .from('activities')  // VIEW for reads
-      .select(select)
+      .from('activities_base')
+      .select('id,business_id,business_name,business_logo_url,title,description,location,cover_image_url,created_at,start_at,end_at,contact_phone,contact_email,type')
       .eq('business_id', businessId)
       .eq('status', 'draft')  // Only drafts
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    // Normalize: VIEW exposes 'kind', we normalize to 'type'
-    const normalized = (data || []).map(r => ({ ...r, type: r.type ?? r.kind }));
-    return normalized;
+    return data || [];
   } catch (error) {
     console.error('Error listing drafts for business:', error);
     throw new Error(error.message);
@@ -144,7 +143,7 @@ export async function listDraftsForBusiness(businessId) {
 export async function createBulletin(input) {
   try {
     const { data, error } = await supabase
-      .from('activities_base')
+      .from('bulletins')
       .insert(input)
       .select('id')
       .single();
@@ -259,6 +258,16 @@ export function toast(message, type = 'info') {
   
   // Animate in
   setTimeout(() => {
+    toastEl.classList.remove('translate-x-full');
+  }, 100);
+  
+  // Auto remove after 5 seconds
+  setTimeout(() => {
+    toastEl.classList.add('translate-x-full');
+    setTimeout(() => toastEl.remove(), 300);
+  }, 5000);
+}
+
     toastEl.classList.remove('translate-x-full');
   }, 100);
   

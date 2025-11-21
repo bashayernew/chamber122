@@ -46,10 +46,10 @@
       const { data, error } = await sb
         .from('activities')               // VIEW (RLS-friendly)
         .select('*')
-        .eq('kind', 'event')              // Use 'kind' from VIEW
+        .eq('type', 'event')              // Use 'type' from VIEW
         .eq('status', 'published')
         .eq('is_published', true)
-        .order('start_at', { ascending: true }); // Valid column
+        .order('created_at', { ascending: false }); // Most recent first
 
       if (error) {
         console.error('Error loading events:', error);

@@ -102,7 +102,7 @@
       .range(from, from + limit - 1);
 
     if (kind) {
-      query = query.eq('kind', kind);  // Use 'kind' from VIEW
+      query = query.eq('type', kind);  // Use 'type' from VIEW
     }
 
     if (businessId) {
@@ -297,11 +297,11 @@
     const coverUrl = activity.cover_url || 'images/logo.png';
     
     // Determine card type based on kind
-    const cardType = activity.kind === 'bulletin' ? 'bulletin-card' : 'event-card';
+    const cardType = activity.type === 'bulletin' ? 'bulletin-card' : 'event-card';
     card.className = cardType;
     
     // Create appropriate card HTML based on type
-    if (activity.kind === 'bulletin') {
+    if (activity.type === 'bulletin') {
       card.innerHTML = createBulletinCardHTML(activity);
     } else {
       card.innerHTML = createEventCardHTML(activity);

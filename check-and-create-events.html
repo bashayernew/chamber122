@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check and Create Events - Chamber122</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f0f0f;
+            color: #e5e7eb;
+        }
+        .container {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #333;
+        }
+        h1 { color: #f59e0b; }
+        .button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover { background: #047857; }
+        .button.danger {
+            background: #dc2626;
+        }
+        .button.danger:hover {
+            background: #b91c1c;
+        }
+        .section {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #444;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .status.success { background: #065f46; color: #d1fae5; }
+        .status.error { background: #7f1d1d; color: #fecaca; }
+        .status.info { background: #1e3a8a; color: #dbeafe; }
+        .status.warning { background: #92400e; color: #fef3c7; }
+        .event-item {
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .log {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Check and Create Events</h1>
+        
+        <div class="section">
+            <h3>Step 1: Check Current Events</h3>
+            <button id="checkEvents" class="button">Check Existing Events</button>
+            <button id="checkBusinesses" class="button">Check Businesses</button>
+        </div>
+
+        <div class="section">
+            <h3>Step 2: Create Test Events</h3>
+            <p>Create some test events to verify the system works:</p>
+            <button id="createTestEvents" class="button">Create Test Events</button>
+            <button id="createTestBusiness" class="button">Create Test Business</button>
+        </div>
+
+        <div class="section">
+            <h3>Step 3: Clean Up</h3>
+            <p>Remove test data:</p>
+            <button id="deleteTestEvents" class="button danger">Delete Test Events</button>
+            <button id="deleteTestBusiness" class="button danger">Delete Test Business</button>
+        </div>
+
+        <div class="section">
+            <h3>Step 4: Test Pages</h3>
+            <p>Test that events show up on pages:</p>
+            <button id="testEventsPage" class="button">Test Events Page</button>
+            <button id="testDirectoryPage" class="button">Test Directory Page</button>
+            <button id="testHomePage" class="button">Test Home Page</button>
+        </div>
+
+        <div class="section">
+            <h3>Results</h3>
+            <div id="results"></div>
+        </div>
+
+        <div class="section">
+            <h3>Events Found</h3>
+            <div id="events-display"></div>
+        </div>
+
+        <div class="section">
+            <h3>Console Log</h3>
+            <div id="console-log" class="log"></div>
+        </div>
+    </div>
+
+    <!-- Load Supabase client -->
+    <script src="/assets/js/supabase-client.global.js"></script>
+    
+    <script>
+        // Capture console logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const originalDebug = console.debug;
+
+        function captureLog(type, ...args) {
+            const logEl = document.getElementById('console-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            logEl.textContent += `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+            
+            // Call original function
+            if (type === 'log') originalLog(...args);
+            else if (type === 'error') originalError(...args);
+            else if (type === 'warn') originalWarn(...args);
+            else if (type === 'debug') originalDebug(...args);
+        }
+
+        console.log = (...args) => captureLog('log', ...args);
+        console.error = (...args) => captureLog('error', ...args);
+        console.warn = (...args) => captureLog('warn', ...args);
+        console.debug = (...args) => captureLog('debug', ...args);
+
+        const resultsEl = document.getElementById('results');
+        const eventsDisplayEl = document.getElementById('events-display');
+
+        function addResult(title, content, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${title}:</strong> ${content}`;
+            resultsEl.appendChild(div);
+        }
+
+        function clearResults() {
+            resultsEl.innerHTML = '';
+            eventsDisplayEl.innerHTML = '';
+        }
+
+        function displayEvents(events) {
+            eventsDisplayEl.innerHTML = '';
+            
+            if (!events || events.length === 0) {
+                eventsDisplayEl.innerHTML = '<div class="status info">No events found</div>';
+                return;
+            }
+
+            events.forEach((event, index) => {
+                const div = document.createElement('div');
+                div.className = 'event-item';
+                div.innerHTML = `
+                    <strong>Event ${index + 1}:</strong><br>
+                    <strong>ID:</strong> ${event.id}<br>
+                    <strong>Title:</strong> ${event.title || 'No title'}<br>
+                    <strong>Status:</strong> ${event.status}<br>
+                    <strong>Published:</strong> ${event.is_published}<br>
+                    <strong>Kind:</strong> ${event.kind || 'general'}<br>
+                    <strong>Created:</strong> ${new Date(event.created_at).toLocaleString()}<br>
+                    <strong>Start:</strong> ${event.start_at ? new Date(event.start_at).toLocaleString() : 'No start date'}<br>
+                    <strong>Business ID:</strong> ${event.business_id}<br>
+                    <strong>Description:</strong> ${event.description ? event.description.substring(0, 100) + '...' : 'No description'}
+                `;
+                eventsDisplayEl.appendChild(div);
+            });
+        }
+
+        // Wait for Supabase to load
+        function waitForSupabase() {
+            return new Promise((resolve) => {
+                if (window.supabase) {
+                    resolve();
+                } else {
+                    const checkSupabase = () => {
+                        if (window.supabase) {
+                            resolve();
+                        } else {
+                            setTimeout(checkSupabase, 100);
+                        }
+                    };
+                    checkSupabase();
+                }
+            });
+        }
+
+        // Check existing events
+        document.getElementById('checkEvents').addEventListener('click', async () => {
+            clearResults();
+            addResult('Check Events', 'Checking existing events...', 'info');
+            
+            try {
+                await waitForSupabase();
+                
+                const { data, error } = await window.supabase
+                    .from('events')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    addResult('Check Events', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('Check Events', `Found ${data?.length || 0} events in database`, 'success');
+                    displayEvents(data);
+                }
+            } catch (err) {
+                addResult('Check Events', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Check businesses
+        document.getElementById('checkBusinesses').addEventListener('click', async () => {
+            clearResults();
+            addResult('Check Businesses', 'Checking existing businesses...', 'info');
+            
+            try {
+                await waitForSupabase();
+                
+                const { data, error } = await window.supabase
+                    .from('businesses')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    addResult('Check Businesses', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('Check Businesses', `Found ${data?.length || 0} businesses in database`, 'success');
+                    
+                    if (data && data.length > 0) {
+                        const businessList = data.map(b => `${b.name} (${b.id})`).join('<br>');
+                        addResult('Businesses', businessList, 'info');
+                    }
+                }
+            } catch (err) {
+                addResult('Check Businesses', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Create test business
+        document.getElementById('createTestBusiness').addEventListener('click', async () => {
+            clearResults();
+            addResult('Create Test Business', 'Creating test business...', 'info');
+            
+            try {
+                await waitForSupabase();
+                
+                const { data: { session } } = await window.supabase.auth.getSession();
+                if (!session) {
+                    addResult('Create Test Business', 'Please sign in first', 'error');
+                    return;
+                }
+
+                const testBusiness = {
+                    name: 'Test Business for Events',
+                    description: 'A test business to create events',
+                    owner_id: session.user.id,
+                    status: 'active',
+                    created_at: new Date().toISOString()
+                };
+
+                const { data, error } = await window.supabase
+                    .from('businesses')
+                    .insert(testBusiness)
+                    .select()
+                    .single();
+
+                if (error) {
+                    addResult('Create Test Business', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('Create Test Business', `Created business: ${data.name} (${data.id})`, 'success');
+                }
+            } catch (err) {
+                addResult('Create Test Business', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Create test events
+        document.getElementById('createTestEvents').addEventListener('click', async () => {
+            clearResults();
+            addResult('Create Test Events', 'Creating test events...', 'info');
+            
+            try {
+                await waitForSupabase();
+                
+                const { data: { session } } = await window.supabase.auth.getSession();
+                if (!session) {
+                    addResult('Create Test Events', 'Please sign in first', 'error');
+                    return;
+                }
+
+                // Get a business ID
+                const { data: businesses, error: bizError } = await window.supabase
+                    .from('businesses')
+                    .select('id')
+                    .eq('owner_id', session.user.id)
+                    .limit(1);
+
+                if (bizError || !businesses || businesses.length === 0) {
+                    addResult('Create Test Events', 'No business found. Create a business first.', 'error');
+                    return;
+                }
+
+                const businessId = businesses[0].id;
+                const now = new Date();
+                const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+                const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+                const testEvents = [
+                    {
+                        title: 'Test Event 1 - Today',
+                        description: 'This is a test event happening today',
+                        business_id: businessId,
+                        status: 'published',
+                        is_published: true,
+                        kind: 'general',
+                        start_at: now.toISOString(),
+                        end_at: tomorrow.toISOString(),
+                        created_at: now.toISOString()
+                    },
+                    {
+                        title: 'Test Event 2 - Tomorrow',
+                        description: 'This is a test event happening tomorrow',
+                        business_id: businessId,
+                        status: 'published',
+                        is_published: true,
+                        kind: 'general',
+                        start_at: tomorrow.toISOString(),
+                        end_at: nextWeek.toISOString(),
+                        created_at: now.toISOString()
+                    },
+                    {
+                        title: 'Test Event 3 - Next Week',
+                        description: 'This is a test event happening next week',
+                        business_id: businessId,
+                        status: 'published',
+                        is_published: true,
+                        kind: 'general',
+                        start_at: nextWeek.toISOString(),
+                        end_at: new Date(nextWeek.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+                        created_at: now.toISOString()
+                    }
+                ];
+
+                const { data, error } = await window.supabase
+                    .from('events')
+                    .insert(testEvents)
+                    .select();
+
+                if (error) {
+                    addResult('Create Test Events', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('Create Test Events', `Created ${data?.length || 0} test events`, 'success');
+                    displayEvents(data);
+                }
+            } catch (err) {
+                addResult('Create Test Events', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Delete test events
+        document.getElementById('deleteTestEvents').addEventListener('click', async () => {
+            clearResults();
+            addResult('Delete Test Events', 'Deleting test events...', 'warning');
+            
+            try {
+                await waitForSupabase();
+                
+                const { data, error } = await window.supabase
+                    .from('events')
+                    .delete()
+                    .like('title', 'Test Event%');
+
+                if (error) {
+                    addResult('Delete Test Events', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('Delete Test Events', 'Test events deleted', 'success');
+                }
+            } catch (err) {
+                addResult('Delete Test Events', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Delete test business
+        document.getElementById('deleteTestBusiness').addEventListener('click', async () => {
+            clearResults();
+            addResult('Delete Test Business', 'Deleting test business...', 'warning');
+            
+            try {
+                await waitForSupabase();
+                
+                const { data, error } = await window.supabase
+                    .from('businesses')
+                    .delete()
+                    .like('name', 'Test Business%');
+
+                if (error) {
+                    addResult('Delete Test Business', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('Delete Test Business', 'Test business deleted', 'success');
+                }
+            } catch (err) {
+                addResult('Delete Test Business', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Test pages
+        document.getElementById('testEventsPage').addEventListener('click', () => {
+            window.open('/events.html', '_blank');
+            addResult('Events Page', 'Opened in new tab', 'info');
+        });
+
+        document.getElementById('testDirectoryPage').addEventListener('click', () => {
+            window.open('/directory.html', '_blank');
+            addResult('Directory Page', 'Opened in new tab', 'info');
+        });
+
+        document.getElementById('testHomePage').addEventListener('click', () => {
+            window.open('/index.html', '_blank');
+            addResult('Home Page', 'Opened in new tab', 'info');
+        });
+
+        // Initialize
+        addResult('Test Tool', 'Ready! Click the buttons above to check and create test data.', 'info');
+    </script>
+</body>
+</html>

@@ -1,81 +1,186 @@
-// auth-signup.js
-import {
-  initSignupPage,
-  onCreateAccount,
-  onCompleteSignup,
-} from './signup-with-documents.js';
+// js/auth-signup.js - Simplified signup handler
+import { createBusiness } from './businesses.api.js';
+
+console.log('[auth-signup] Module loaded');
+
+// Helper to wait for Supabase to be ready
+async function waitForSupabase() {
+  if (window.__supabase || window.__supabaseClient) {
+    return window.__supabase || window.__supabaseClient;
+  }
+  
+  // Wait for initialization
+  await new Promise(r => {
+    const i = setInterval(() => {
+      if (window.__supabase || window.__supabaseClient) {
+        clearInterval(i);
+        r();
+      }
+    }, 50);
+  });
+  
+  return window.__supabase || window.__supabaseClient;
+}
 
 document.addEventListener('DOMContentLoaded', () => {
-  initSignupPage();
-
-  // Check if user is returning from email confirmation
-  const urlParams = new URLSearchParams(window.location.search);
-  const step = urlParams.get('step');
-  if (step === 'complete') {
-    // User is returning from email confirmation, show complete button
-    document.querySelector('#btnCreateAccount')?.style.setProperty('display', 'none');
-    document.querySelector('#btnCompleteSignup')?.style.setProperty('display', 'block');
+  const form = document.querySelector('#signup-form');
+  if (!form) {
+    console.warn('[auth-signup] No #signup-form found');
+    return;
   }
 
-  // Create account (requires email/password and that all required docs were uploaded)
-  document.querySelector('#btnCreateAccount')?.addEventListener('click', async (e) => {
+  // Find the create account button
+  const createBtn = document.querySelector('#btnCreateAccount');
+  if (!createBtn) {
+    console.warn('[auth-signup] No #btnCreateAccount button found');
+    return;
+  }
+
+  createBtn.addEventListener('click', async (e) => {
     e.preventDefault();
+    
+    const supabase = await waitForSupabase();
+    if (!supabase) {
+      console.error('[auth-signup] Supabase not ready');
+      alert('System not ready. Please refresh the page.');
+      return;
+    }
+
+    const email = form.querySelector('#signup-email')?.value?.trim();
+    const password = form.querySelector('#signup-password')?.value;
+
+    if (!email || !password) {
+      alert('Email and password are required');
+      return;
+    }
+
+    // Collect all business fields
+    const fields = {
+      business_name: form.querySelector('#signup-name')?.value?.trim() || null,
+      description: form.querySelector('#signup-desc')?.value?.trim() || null,
+      story: form.querySelector('#signup-story')?.value?.trim() || null,
+      city: form.querySelector('#signup-city')?.value?.trim() || null,
+      area: form.querySelector('#signup-area')?.value?.trim() || null,
+      block: form.querySelector('#signup-block')?.value?.trim() || null,
+      street: form.querySelector('#signup-street')?.value?.trim() || null,
+      floor: form.querySelector('#signup-floor')?.value?.trim() || null,
+      office_no: form.querySelector('#signup-office-no')?.value?.trim() || null,
+      industry: form.querySelector('#signup-category')?.value?.trim() || 'general',
+      phone: form.querySelector('#signup-phone')?.value?.trim() || null,
+      whatsapp: form.querySelector('#signup-whatsapp')?.value?.trim() || null,
+      website: form.querySelector('#signup-website')?.value?.trim() || null,
+      instagram: form.querySelector('#signup-instagram')?.value?.trim() || null,
+    };
+
+    console.log('[auth-signup] Collected fields:', fields);
+
+    // 1) Sign up user
+    const { data: signedUp, error: signErr } = await supabase.auth.signUp({ 
+      email, 
+      password 
+    });
+
+    if (signErr) {
+      console.error('[auth-signup] signUp error:', signErr);
+      alert('Sign up failed: ' + signErr.message);
+      return;
+    }
+
+    const userId = signedUp.user?.id;
+    if (!userId) {
+      console.error('[auth-signup] No user ID returned');
+      alert('Sign up failed: No user ID received');
+      return;
+    }
+
+    console.log('[auth-signup] Signed up user:', userId);
+
+    // 2) Create business row connected to this user
     try {
-      const result = await onCreateAccount('#signup-email', '#signup-password');
+      const payload = {
+        owner_id: userId,
+        name: fields.business_name || 'My Business',
+        description: fields.description || null,
+        story: fields.story || null,
+        country: 'Kuwait',
+        city: fields.city || null,
+        area: fields.area || null,
+        block: fields.block || null,
+        street: fields.street || null,
+        floor: fields.floor || null,
+        office_no: fields.office_no || null,
+        industry: fields.industry || 'general',
+        category: fields.industry || 'general',
+        phone: fields.phone || null,
+        whatsapp: fields.whatsapp || null,
+        website: fields.website || null,
+        instagram: fields.instagram || null,
+        logo_url: null,
+        is_active: true
+      };
+
+      const created = await createBusiness(payload);
+      console.log('[auth-signup] Business created:', created);
       
-      // TODO: Re-enable email confirmation in production
-      if (!result.requiresConfirm) {
-        console.log('Auto-completing signup process...');
-        
-        // Immediately complete the signup with business data
-        const fields = {
-          business_name: document.querySelector('#signup-name')?.value?.trim(),
-          industry: document.querySelector('#signup-category')?.value?.trim() || null,
-          country: document.querySelector('#signup-country')?.value?.trim() || null,
-          city: document.querySelector('#signup-city')?.value?.trim() || null,
-          short_description: document.querySelector('#signup-desc')?.value?.trim() || null,
-          description: document.querySelector('#signup-desc')?.value?.trim() || null,
-          whatsapp: document.querySelector('#signup-whatsapp')?.value?.trim() || null,
-          // logo_url will be auto-filled from uploaded state if not provided
-        };
-        
-        const businessRow = await onCompleteSignup(fields);
-        console.log('Business created:', businessRow);
-        alert('Account created and business profile completed! You are now signed in.');
-        
-        // Redirect to owner activities dashboard
-        window.location.href = '/owner-activities.html';
-        return;
-      }
-      
-      // Email confirmation required
-      alert('Account created. Check your email and click the confirmation link, then return here to complete signup.');
-    } catch (err) {
-      console.error(err);
-      alert(err.message || 'Signup failed');
+      // 3) Redirect to owner page
+      alert('Account created successfully! Redirecting to your profile...');
+      window.location.href = '/owner.html?businessId=' + created.id;
+    } catch (e2) {
+      console.error('[auth-signup] createBusiness error:', e2);
+      alert('Could not create your business profile: ' + (e2.message || e2));
     }
   });
+});
 
-  // Complete signup (requires user to be signed in)
-  document.querySelector('#btnCompleteSignup')?.addEventListener('click', async (e) => {
-    e.preventDefault();
+
+    if (signErr) {
+      console.error('[auth-signup] signUp error:', signErr);
+      alert('Sign up failed: ' + signErr.message);
+      return;
+    }
+
+    const userId = signedUp.user?.id;
+    if (!userId) {
+      console.error('[auth-signup] No user ID returned');
+      alert('Sign up failed: No user ID received');
+      return;
+    }
+
+    console.log('[auth-signup] Signed up user:', userId);
+
+    // 2) Create business row connected to this user
     try {
-      const fields = {
-        business_name: document.querySelector('#signup-name')?.value?.trim(),
-        industry: document.querySelector('#signup-category')?.value?.trim() || null,
-        country: document.querySelector('#signup-country')?.value?.trim() || null,
-        city: document.querySelector('#signup-city')?.value?.trim() || null,
-        short_description: document.querySelector('#signup-desc')?.value?.trim() || null,
-        description: document.querySelector('#signup-desc')?.value?.trim() || null,
-        whatsapp: document.querySelector('#signup-whatsapp')?.value?.trim() || null,
-        // logo_url will be auto-filled from uploaded state if not provided
+      const payload = {
+        owner_id: userId,
+        name: fields.business_name || 'My Business',
+        description: fields.description || null,
+        story: fields.story || null,
+        country: 'Kuwait',
+        city: fields.city || null,
+        area: fields.area || null,
+        block: fields.block || null,
+        street: fields.street || null,
+        floor: fields.floor || null,
+        office_no: fields.office_no || null,
+        industry: fields.industry || 'general',
+        category: fields.industry || 'general',
+        phone: fields.phone || null,
+        whatsapp: fields.whatsapp || null,
+        website: fields.website || null,
+        instagram: fields.instagram || null,
+        logo_url: null,
+        is_active: true
       };
-      const row = await onCompleteSignup(fields);
-      console.log('Business created:', row);
-      // TODO: redirect to dashboard/profile
-    } catch (err) {
-      console.error(err);
-      alert(err.message || 'Could not complete signup');
+
+      const created = await createBusiness(payload);
+      console.log('[auth-signup] Business created:', created);
+      
+      // 3) Redirect to owner page
+      alert('Account created successfully! Redirecting to your profile...');
+      window.location.href = '/owner.html?businessId=' + created.id;
+    } catch (e2) {
+      console.error('[auth-signup] createBusiness error:', e2);
+      alert('Could not create your business profile: ' + (e2.message || e2));
     }
   });
 });

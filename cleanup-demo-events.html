@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cleanup Demo Events - Chamber122</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f0f0f;
+            color: #e5e7eb;
+        }
+        .container {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #333;
+        }
+        h1 { color: #f59e0b; }
+        .button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover { background: #047857; }
+        .button.danger {
+            background: #dc2626;
+        }
+        .button.danger:hover {
+            background: #b91c1c;
+        }
+        .section {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #444;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .status.success { background: #065f46; color: #d1fae5; }
+        .status.error { background: #7f1d1d; color: #fecaca; }
+        .status.info { background: #1e3a8a; color: #dbeafe; }
+        .event-card {
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Cleanup Demo Events</h1>
+        
+        <div class="section">
+            <h3>Step 1: Check Current Events</h3>
+            <p>First, let's see what events are currently in the database:</p>
+            <button id="checkEvents" class="button">Check All Events</button>
+        </div>
+
+        <div class="section">
+            <h3>Step 2: Clean Up Demo Events</h3>
+            <p>Remove any demo/test events from the database:</p>
+            <button id="cleanupDemo" class="button danger">Clean Up Demo Events</button>
+        </div>
+
+        <div class="section">
+            <h3>Step 3: Verify Cleanup</h3>
+            <p>Check that events are properly cleaned up:</p>
+            <button id="verifyCleanup" class="button">Verify Cleanup</button>
+        </div>
+
+        <div class="section">
+            <h3>Step 4: Test Directory Page</h3>
+            <p>Test that the directory page shows empty sections:</p>
+            <button id="testDirectory" class="button">Test Directory Page</button>
+        </div>
+
+        <div class="section">
+            <h3>Results</h3>
+            <div id="results"></div>
+        </div>
+
+        <div class="section">
+            <h3>Events Found</h3>
+            <div id="events-list"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js@2';
+
+        const SUPABASE_URL = 'https://gidbvemmqffogakcepka.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dhY2Vwa2EiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcyNTk0NTQ4MCwiZXhwIjoyMDQxNTIxNDgwfQ.xpMI1i5czqv5hpO-vaLD5xKWsBmAdEryq9IA_jOi3J0';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const resultsEl = document.getElementById('results');
+        const eventsListEl = document.getElementById('events-list');
+
+        function addResult(title, content, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${title}:</strong> ${content}`;
+            resultsEl.appendChild(div);
+        }
+
+        function clearResults() {
+            resultsEl.innerHTML = '';
+            eventsListEl.innerHTML = '';
+        }
+
+        function displayEvents(events) {
+            eventsListEl.innerHTML = '';
+            
+            if (!events || events.length === 0) {
+                eventsListEl.innerHTML = '<div class="status info">No events found</div>';
+                return;
+            }
+
+            events.forEach((event, index) => {
+                const div = document.createElement('div');
+                div.className = 'event-card';
+                div.innerHTML = `
+                    <strong>Event ${index + 1}:</strong><br>
+                    <strong>ID:</strong> ${event.id}<br>
+                    <strong>Title:</strong> ${event.title || 'No title'}<br>
+                    <strong>Status:</strong> ${event.status}<br>
+                    <strong>Published:</strong> ${event.is_published}<br>
+                    <strong>Created:</strong> ${new Date(event.created_at).toLocaleString()}<br>
+                    <strong>Start:</strong> ${event.start_at ? new Date(event.start_at).toLocaleString() : 'No start date'}<br>
+                    <strong>Description:</strong> ${event.description ? event.description.substring(0, 100) + '...' : 'No description'}
+                `;
+                eventsListEl.appendChild(div);
+            });
+        }
+
+        document.getElementById('checkEvents').addEventListener('click', async () => {
+            clearResults();
+            addResult('Checking Events', 'Fetching all events from database...', 'info');
+            
+            try {
+                // Check if user is authenticated
+                const { data: { session } } = await supabase.auth.getSession();
+                
+                if (!session) {
+                    addResult('Check Events', 'Not authenticated. Only published events are visible to public users.', 'info');
+                    
+                    // Try to fetch only published events (public access)
+                    const { data, error } = await supabase
+                        .from('events')
+                        .select('*')
+                        .eq('status', 'published')
+                        .eq('is_published', true)
+                        .order('created_at', { ascending: false });
+
+                    if (error) {
+                        addResult('Check Events', `Error: ${error.message}`, 'error');
+                    } else {
+                        addResult('Check Events', `Found ${data?.length || 0} published events (public view)`, 'success');
+                        displayEvents(data);
+                    }
+                } else {
+                    // User is authenticated, can see all events
+                    const { data, error } = await supabase
+                        .from('events')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+
+                    if (error) {
+                        addResult('Check Events', `Error: ${error.message}`, 'error');
+                    } else {
+                        addResult('Check Events', `Found ${data?.length || 0} events (authenticated view)`, 'success');
+                        displayEvents(data);
+                    }
+                }
+            } catch (err) {
+                addResult('Check Events', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        document.getElementById('cleanupDemo').addEventListener('click', async () => {
+            clearResults();
+            addResult('Cleaning Up', 'Removing demo events...', 'info');
+            
+            try {
+                // Check if user is authenticated
+                const { data: { session } } = await supabase.auth.getSession();
+                
+                if (!session) {
+                    addResult('Cleanup', 'Authentication required to delete events. Please sign in first.', 'error');
+                    return;
+                }
+
+                // Delete events that look like demo/test data
+                const { data, error } = await supabase
+                    .from('events')
+                    .delete()
+                    .or(`
+                        title.ilike.%demo%,
+                        title.ilike.%test%,
+                        title.ilike.%sample%,
+                        description.ilike.%demo%,
+                        description.ilike.%test%,
+                        description.ilike.%sample%,
+                        title.eq.Demo Event,
+                        title.eq.Test Event,
+                        title.eq.Sample Event
+                    `);
+
+                if (error) {
+                    addResult('Cleanup', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('Cleanup', 'Demo events cleaned up successfully', 'success');
+                }
+            } catch (err) {
+                addResult('Cleanup', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        document.getElementById('verifyCleanup').addEventListener('click', async () => {
+            clearResults();
+            addResult('Verifying', 'Checking remaining events...', 'info');
+            
+            try {
+                // Check if user is authenticated
+                const { data: { session } } = await supabase.auth.getSession();
+                
+                if (!session) {
+                    addResult('Verify', 'Not authenticated. Only published events are visible to public users.', 'info');
+                    
+                    // Try to fetch only published events (public access)
+                    const { data, error } = await supabase
+                        .from('events')
+                        .select('*')
+                        .eq('status', 'published')
+                        .eq('is_published', true)
+                        .order('created_at', { ascending: false });
+
+                    if (error) {
+                        addResult('Verify', `Error: ${error.message}`, 'error');
+                    } else {
+                        addResult('Verify', `Remaining published events: ${data?.length || 0}`, 'success');
+                        displayEvents(data);
+                    }
+                } else {
+                    // User is authenticated, can see all events
+                    const { data, error } = await supabase
+                        .from('events')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+
+                    if (error) {
+                        addResult('Verify', `Error: ${error.message}`, 'error');
+                    } else {
+                        addResult('Verify', `Remaining events: ${data?.length || 0}`, 'success');
+                        displayEvents(data);
+                    }
+                }
+            } catch (err) {
+                addResult('Verify', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        document.getElementById('testDirectory').addEventListener('click', () => {
+            window.open('/directory.html', '_blank');
+            addResult('Directory Test', 'Opened directory page in new tab', 'info');
+        });
+
+        // Auto-run initial check
+        addResult('Cleanup Tool', 'Ready! Click "Check All Events" to see what\'s in the database.', 'info');
+    </script>
+</body>
+</html>

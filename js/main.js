@@ -1,84 +1,5 @@
-// Sample MSME data
-const msmeData = [
-  {
-    id: 1,
-    name: "Al Kuwaiti Kitchen",
-    category: "Food & Beverage",
-    location: "Kuwait City",
-    status: "verified",
-    image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=200&fit=crop",
-    description: "Authentic Kuwaiti cuisine with a modern twist. We specialize in traditional dishes made with fresh, local ingredients.",
-    story: "Started as a family recipe passed down through generations, we wanted to share the authentic taste of Kuwait with the world.",
-    email: "info@alkuwaitikitchen.com",
-    whatsapp: "+965-12345678",
-    website: "https://alkuwaitikitchen.com"
-  },
-  {
-    id: 2,
-    name: "Desert Rose Boutique",
-    category: "Fashion & Beauty",
-    location: "Hawally",
-    status: "available",
-    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=200&fit=crop",
-    description: "Luxury fashion boutique offering unique pieces that blend traditional Middle Eastern aesthetics with contemporary design.",
-    story: "Our founder's passion for fashion and culture inspired us to create a space where tradition meets modern elegance.",
-    email: "hello@desertroseboutique.com",
-    whatsapp: "+965-87654321",
-    website: "https://desertroseboutique.com"
-  },
-  {
-    id: 3,
-    name: "QuickFix Solutions",
-    category: "Home Services",
-    location: "Farwaniya",
-    status: "verified",
-    image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&h=200&fit=crop",
-    description: "Professional home repair and maintenance services. From plumbing to electrical, we fix it fast and right.",
-    story: "Started by a group of skilled technicians who wanted to provide reliable, honest home services to Kuwaiti families.",
-    email: "service@quickfixkw.com",
-    whatsapp: "+965-11223344",
-    website: "https://quickfixkw.com"
-  },
-  {
-    id: 4,
-    name: "Sparkle Pro Cleaning",
-    category: "Cleaning Services",
-    location: "Kuwait City",
-    status: "available",
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=200&fit=crop",
-    description: "Professional cleaning services for homes and offices. Eco-friendly products and thorough attention to detail.",
-    story: "We believe every space deserves to sparkle. Our team of trained professionals ensures your environment is always pristine.",
-    email: "clean@sparklepro.com",
-    whatsapp: "+965-55667788",
-    website: "https://sparklepro.com"
-  },
-  {
-    id: 5,
-    name: "TechFlow Kuwait",
-    category: "Technology",
-    location: "Hawally",
-    status: "verified",
-    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=200&fit=crop",
-    description: "Digital transformation solutions for businesses. Web development, mobile apps, and IT consulting services.",
-    story: "Founded by tech enthusiasts who wanted to help Kuwaiti businesses embrace digital innovation and grow in the modern economy.",
-    email: "hello@techflowkw.com",
-    whatsapp: "+965-99887766",
-    website: "https://techflowkw.com"
-  },
-  {
-    id: 6,
-    name: "Green Thumb Garden",
-    category: "Home Services",
-    location: "Farwaniya",
-    status: "available",
-    image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=200&fit=crop",
-    description: "Landscaping and garden design services. We create beautiful outdoor spaces that thrive in Kuwait's climate.",
-    story: "Our love for nature and Kuwait's unique environment drives us to create sustainable, beautiful gardens for every home.",
-    email: "garden@greenthumbkw.com",
-    whatsapp: "+965-33445566",
-    website: "https://greenthumbkw.com"
-  }
-];
+// Real MSME data will be loaded from Supabase
+const msmeData = [];
 
 // DOM elements
 const directoryGrid = document.getElementById('directory-grid');
@@ -309,9 +230,9 @@ function displayNewestMSMEs() {
 
 // Quick search functionality for home page
 function performQuickSearch() {
-  const businessName = document.getElementById('quick-business-name').value;
-  const category = document.getElementById('quick-category').value;
-  const area = document.getElementById('quick-area').value;
+  const businessName = document.getElementById('quick-business-name')?.value?.trim();
+  const category = document.getElementById('quick-category')?.value?.trim();
+  const area = document.getElementById('quick-area')?.value?.trim();
   
   // Build query string
   const params = new URLSearchParams();
@@ -320,7 +241,8 @@ function performQuickSearch() {
   if (area) params.set('location', area);
   
   // Redirect to directory page with filters
-  window.location.href = `directory.html?${params.toString()}`;
+  const queryString = params.toString();
+  window.location.href = queryString ? `directory.html?${queryString}` : 'directory.html';
 }
 
 // Mobile menu toggle
@@ -330,6 +252,195 @@ function toggleMobileMenu() {
     mobileMenu.classList.toggle('active');
   }
 }
+
+// Initialize global search bar
+function initGlobalSearch() {
+  // Find all navbar containers
+  const navContainers = document.querySelectorAll('.nav-container');
+  
+  navContainers.forEach(container => {
+    // Check if search bar already exists
+    if (container.querySelector('#global-search-bar')) {
+      return;
+    }
+
+    // Create search bar wrapper
+    const searchWrapper = document.createElement('div');
+    searchWrapper.id = 'global-search-bar';
+    searchWrapper.className = 'global-search-wrapper';
+    searchWrapper.innerHTML = `
+      <div class="global-search-container">
+        <input 
+          type="text" 
+          id="global-search-input" 
+          class="global-search-input" 
+          placeholder="Search businesses..." 
+          autocomplete="off"
+        />
+        <button 
+          type="button" 
+          id="global-search-btn" 
+          class="global-search-btn"
+          aria-label="Search"
+        >
+          <i class="fas fa-search"></i>
+        </button>
+      </div>
+    `;
+
+    // Insert before nav-actions or at the end
+    const navActions = container.querySelector('.nav-actions');
+    if (navActions) {
+      container.insertBefore(searchWrapper, navActions);
+    } else {
+      container.appendChild(searchWrapper);
+    }
+  });
+
+  // Setup event listeners
+  setupGlobalSearchListeners();
+}
+
+function setupGlobalSearchListeners() {
+  // Handle Enter key on search input
+  document.querySelectorAll('#global-search-input').forEach(input => {
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        performGlobalSearch(input.value);
+      }
+    });
+
+    // Handle search button click
+    const searchBtn = input.closest('.global-search-container')?.querySelector('#global-search-btn');
+    if (searchBtn) {
+      searchBtn.addEventListener('click', () => {
+        performGlobalSearch(input.value);
+      });
+    }
+  });
+}
+
+function performGlobalSearch(searchTerm) {
+  const term = searchTerm?.trim() || '';
+  
+  if (!term) {
+    // If empty, just go to directory
+    window.location.href = 'directory.html';
+    return;
+  }
+
+  // Redirect to directory with search parameter
+  const params = new URLSearchParams();
+  params.set('name', term);
+  window.location.href = `directory.html?${params.toString()}`;
+}
+
+// Initialize global search on DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initGlobalSearch);
+} else {
+  initGlobalSearch();
+}
+
+// Make functions available globally
+window.initGlobalSearch = initGlobalSearch;
+window.performGlobalSearch = performGlobalSearch;
+
+// User dropdown toggle
+function toggleUserMenu() {
+  const userDropdownContainer = document.querySelector('.user-dropdown');
+  if (userDropdownContainer) {
+    userDropdownContainer.classList.toggle('active');
+  }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+  const userDropdownContainer = document.querySelector('.user-dropdown');
+  const userMenuBtn = document.querySelector('.user-menu-btn');
+  
+  if (userDropdownContainer && userMenuBtn && !userMenuBtn.contains(event.target) && !userDropdownContainer.contains(event.target)) {
+    userDropdownContainer.classList.remove('active');
+  }
+});
+
+// Enhanced modal functionality
+function openBusinessModal(businessId) {
+  const business = msmeData.find(b => 
+    b.id == businessId || 
+    b.name.toLowerCase().replace(/\s+/g, '-') === businessId
+  );
+  if (business) {
+    openModal(business);
+  }
+}
+
+// Export functions for global access
+window.searchBusinesses = searchBusinesses;
+window.closeModal = closeModal;
+window.performQuickSearch = performQuickSearch;
+window.toggleMobileMenu = toggleMobileMenu;
+window.toggleUserMenu = toggleUserMenu;
+window.openBusinessModal = openBusinessModal;
+
+    const navActions = container.querySelector('.nav-actions');
+    if (navActions) {
+      container.insertBefore(searchWrapper, navActions);
+    } else {
+      container.appendChild(searchWrapper);
+    }
+  });
+
+  // Setup event listeners
+  setupGlobalSearchListeners();
+}
+
+function setupGlobalSearchListeners() {
+  // Handle Enter key on search input
+  document.querySelectorAll('#global-search-input').forEach(input => {
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        performGlobalSearch(input.value);
+      }
+    });
+
+    // Handle search button click
+    const searchBtn = input.closest('.global-search-container')?.querySelector('#global-search-btn');
+    if (searchBtn) {
+      searchBtn.addEventListener('click', () => {
+        performGlobalSearch(input.value);
+      });
+    }
+  });
+}
+
+function performGlobalSearch(searchTerm) {
+  const term = searchTerm?.trim() || '';
+  
+  if (!term) {
+    // If empty, just go to directory
+    window.location.href = 'directory.html';
+    return;
+  }
+
+  // Redirect to directory with search parameter
+  const params = new URLSearchParams();
+  params.set('name', term);
+  window.location.href = `directory.html?${params.toString()}`;
+}
+
+// Initialize global search on DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initGlobalSearch);
+} else {
+  initGlobalSearch();
+}
+
+// Make functions available globally
+window.initGlobalSearch = initGlobalSearch;
+window.performGlobalSearch = performGlobalSearch;
 
 // User dropdown toggle
 function toggleUserMenu() {

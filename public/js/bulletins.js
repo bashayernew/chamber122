@@ -184,7 +184,7 @@ async function onSubmit(e) {
       cover_image_url: null,
       business_id: businessId
     };
-    const { data: row, error: insErr } = await supabase.from('activities_base').insert(insert).select().single();
+    const { data: row, error: insErr } = await supabase.from('bulletins').insert(insert).select().single();
     if (insErr) { 
       console.warn('[bulletins] insert error', insErr); 
       alert(insErr.message || 'Insert failed'); 

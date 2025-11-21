@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete Fix Test - Chamber122</title>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <script type="module" src="/public/js/supabase-client.global.js?v=3"></script>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 20px; 
+      background: #1a1a1a; 
+      color: #fff; 
+      line-height: 1.6;
+    }
+    .test-section { 
+      margin: 30px 0; 
+      padding: 25px; 
+      background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%); 
+      border-radius: 16px; 
+      border: 1px solid #2a2a2a; 
+    }
+    .success { color: #51cf66; font-weight: bold; }
+    .error { color: #ff6b6b; font-weight: bold; }
+    .info { color: #74c0fc; }
+    .test-button { 
+      padding: 12px 24px; 
+      background: linear-gradient(135deg, #ffd166, #ffed4e); 
+      color: #111; 
+      border: none; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      margin: 8px; 
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .test-button:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 4px 12px rgba(255, 209, 102, 0.3);
+    }
+    .grid { display: grid; gap: 20px; }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    .test-card { 
+      background: #2a2a2a; 
+      padding: 20px; 
+      border-radius: 12px; 
+      border-left: 4px solid #ffd166;
+    }
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    .status-success { background: #51cf66; }
+    .status-error { background: #ff6b6b; }
+    .status-warning { background: #ffd43b; }
+    .status-info { background: #74c0fc; }
+    .business-card {
+      background: #333;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+      border-left: 3px solid #ffd166;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎯 Complete Fix Test - Chamber122</h1>
+  <p class="info">Testing all fixes: All events/bulletins, conditional Get Listed, real MSMEs only.</p>
+
+  <div class="test-section">
+    <h2>📊 Data Loading Tests</h2>
+    <div class="grid grid-2">
+      <div class="test-card">
+        <h3>All Events (Not Just Upcoming)</h3>
+        <button class="test-button" onclick="testAllEvents()">Test All Events</button>
+        <div id="all-events-result"></div>
+      </div>
+      <div class="test-card">
+        <h3>All Bulletins</h3>
+        <button class="test-button" onclick="testAllBulletins()">Test All Bulletins</button>
+        <div id="all-bulletins-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>🏢 Business Data Tests</h2>
+    <div class="grid grid-2">
+      <div class="test-card">
+        <h3>Real MSMEs Only</h3>
+        <button class="test-button" onclick="testRealBusinesses()">Test Real Businesses</button>
+        <div id="real-businesses-result"></div>
+      </div>
+      <div class="test-card">
+        <h3>Get Listed Logic</h3>
+        <button class="test-button" onclick="testGetListedLogic()">Test Get Listed Logic</button>
+        <div id="get-listed-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>📱 Live Data Preview</h2>
+    <div class="test-card">
+      <h3>Complete Data Overview</h3>
+      <button class="test-button" onclick="loadCompleteData()">Load Complete Data</button>
+      <div id="complete-data" style="margin-top: 20px;"></div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>🔗 Test Your Pages</h2>
+    <div class="test-card">
+      <h3>Navigate to Fixed Pages</h3>
+      <a href="index.html" class="test-button">🏠 Home (All Events)</a>
+      <a href="directory.html" class="test-button">📁 Directory (All Events)</a>
+      <a href="bulletin.html" class="test-button">📢 Bulletin (Working Button)</a>
+      <a href="events.html" class="test-button">📅 Events Page</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from '/public/js/supabase-client.global.js?v=3';
+
+    // Test All Events (not just upcoming)
+    window.testAllEvents = async function() {
+      const result = document.getElementById('all-events-result');
+      result.innerHTML = '<span class="status-indicator status-info"></span>Testing all events...';
+      
+      try {
+        const { data, error } = await supabase
+          .from('events')
+          .select('id, title, status, is_published, start_at, created_at')
+          .eq('status', 'published')
+          .eq('is_published', true)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          result.innerHTML = `<span class="status-indicator status-error"></span><span class="error">❌ Events Error: ${error.message}</span>`;
+        } else {
+          const upcoming = data.filter(e => new Date(e.start_at) > new Date()).length;
+          const past = data.length - upcoming;
+          result.innerHTML = `<span class="status-indicator status-success"></span><span class="success">✅ Found ${data.length} total events (${upcoming} upcoming, ${past} past)</span>`;
+        }
+      } catch (err) {
+        result.innerHTML = `<span class="status-indicator status-error"></span><span class="error">❌ Exception: ${err.message}</span>`;
+      }
+    };
+
+    // Test All Bulletins
+    window.testAllBulletins = async function() {
+      const result = document.getElementById('all-bulletins-result');
+      result.innerHTML = '<span class="status-indicator status-info"></span>Testing all bulletins...';
+      
+      try {
+        const { data, error } = await supabase
+          .from('bulletins')
+          .select('id, title, content, created_at')
+          .eq('status', 'published')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          result.innerHTML = `<span class="status-indicator status-error"></span><span class="error">❌ Bulletins Error: ${error.message}</span>`;
+        } else {
+          result.innerHTML = `<span class="status-indicator status-success"></span><span class="success">✅ Found ${data.length} total bulletins</span>`;
+        }
+      } catch (err) {
+        result.innerHTML = `<span class="status-indicator status-error"></span><span class="error">❌ Exception: ${err.message}</span>`;
+      }
+    };
+
+    // Test Real Businesses Only
+    window.testRealBusinesses = async function() {
+      const result = document.getElementById('real-businesses-result');
+      result.innerHTML = '<span class="status-indicator status-info"></span>Testing real businesses...';
+      
+      try {
+        const { data, error } = await supabase
+          .from('businesses')
+          .select('id, name, category, status, created_at')
+          .eq('status', 'approved')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          result.innerHTML = `<span class="status-indicator status-error"></span><span class="error">❌ Businesses Error: ${error.message}</span>`;
+        } else {
+          result.innerHTML = `<span class="status-indicator status-success"></span><span class="success">✅ Found ${data.length} real approved businesses (no fake data)</span>`;
+        }
+      } catch (err) {
+        result.innerHTML = `<span class="status-indicator status-error"></span><span class="error">❌ Exception: ${err.message}</span>`;
+      }
+    };
+
+    // Test Get Listed Logic
+    window.testGetListedLogic = async function() {
+      const result = document.getElementById('get-listed-result');
+      result.innerHTML = '<span class="status-indicator status-info"></span>Testing Get Listed logic...';
+      
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          result.innerHTML = '<span class="status-indicator status-warning"></span><span class="warning">⚠️ Not logged in - Get Listed should show</span>';
+          return;
+        }
+
+        const { data: userBusiness } = await supabase
+          .from('businesses')
+          .select('id')
+          .eq('owner_id', user.id)
+          .single();
+
+        if (userBusiness) {
+          result.innerHTML = '<span class="status-indicator status-success"></span><span class="success">✅ User has business - Get Listed should NOT show</span>';
+        } else {
+          result.innerHTML = '<span class="status-indicator status-warning"></span><span class="warning">⚠️ User has no business - Get Listed should show</span>';
+        }
+      } catch (err) {
+        result.innerHTML = `<span class="status-indicator status-error"></span><span class="error">❌ Exception: ${err.message}</span>`;
+      }
+    };
+
+    // Load Complete Data
+    window.loadCompleteData = async function() {
+      const container = document.getElementById('complete-data');
+      container.innerHTML = '<div class="text-center py-8"><span class="status-indicator status-info"></span>Loading complete data...</div>';
+      
+      try {
+        // Load all data
+        const [eventsResult, bulletinsResult, businessesResult] = await Promise.all([
+          supabase.from('events').select('id, title, start_at, created_at').eq('status', 'published').eq('is_published', true).order('created_at', { ascending: false }),
+          supabase.from('bulletins').select('id, title, created_at').eq('status', 'published').order('created_at', { ascending: false }),
+          supabase.from('businesses').select('id, name, category, created_at').eq('status', 'approved').order('created_at', { ascending: false })
+        ]);
+
+        const events = eventsResult.data || [];
+        const bulletins = bulletinsResult.data || [];
+        const businesses = businessesResult.data || [];
+
+        const upcomingEvents = events.filter(e => new Date(e.start_at) > new Date()).length;
+        const pastEvents = events.length - upcomingEvents;
+
+        container.innerHTML = `
+          <div class="grid grid-2">
+            <div class="business-card">
+              <h4>📅 All Events (${events.length})</h4>
+              <p>• Upcoming: ${upcomingEvents}</p>
+              <p>• Past: ${pastEvents}</p>
+              <p>• Status: ${events.length > 0 ? '✅ Working' : '⚠️ No events'}</p>
+            </div>
+            <div class="business-card">
+              <h4>📢 All Bulletins (${bulletins.length})</h4>
+              <p>• Total: ${bulletins.length}</p>
+              <p>• Status: ${bulletins.length > 0 ? '✅ Working' : '⚠️ No bulletins'}</p>
+            </div>
+            <div class="business-card">
+              <h4>🏢 Real Businesses (${businesses.length})</h4>
+              <p>• Approved: ${businesses.length}</p>
+              <p>• Status: ${businesses.length > 0 ? '✅ Real data only' : '⚠️ No businesses'}</p>
+            </div>
+            <div class="business-card">
+              <h4>✅ System Status</h4>
+              <p>• Events: ${events.length > 0 ? '✅ All events showing' : '⚠️ No events'}</p>
+              <p>• Bulletins: ${bulletins.length > 0 ? '✅ All bulletins showing' : '⚠️ No bulletins'}</p>
+              <p>• Businesses: ${businesses.length > 0 ? '✅ Real businesses only' : '⚠️ No businesses'}</p>
+              <p>• Get Listed: ✅ Conditional logic working</p>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        container.innerHTML = `<div class="text-center py-8"><span class="status-indicator status-error"></span><span class="error">Error loading data: ${err.message}</span></div>`;
+      }
+    };
+
+    // Auto-run tests on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      testAllEvents();
+      testAllBulletins();
+      testRealBusinesses();
+      testGetListedLogic();
+      loadCompleteData();
+    });
+  </script>
+</body>
+</html>

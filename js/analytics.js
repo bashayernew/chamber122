@@ -1,6 +1,10 @@
 // Analytics tracking and management with RTL support
 import { supabase } from './supabase-client.js';
-import { getCurrentLanguage } from './i18n.js';
+
+// Get current language from global I18N object
+function getCurrentLanguage() {
+  return window.I18N ? window.I18N.getLang() : 'en';
+}
 
 // Track content view in Supabase
 async function trackContentView(contentType, contentId, accountId) {

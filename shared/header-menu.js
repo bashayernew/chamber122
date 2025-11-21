@@ -14,7 +14,6 @@ function dropdownAuthed({ full_name, email, role }) {
     li('/index.html', 'Dashboard'),
     li('/owner.html', 'My Business'),
     ...(isProv ? [
-      li('/owner-activities.html', 'Activities'),
       li('/owner-bulletins.html', 'My Bulletins'),
       li('/admin-dashboard.html', 'Admin'),
     ] : [

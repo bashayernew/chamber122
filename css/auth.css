@@ -5,20 +5,27 @@
 
 /* Ensure page is scrollable */
 html, body {
-  height: 100%;
+  min-height: 100vh;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* Auth Page Layout */
+body[data-page="auth"] {
+  min-height: 100vh;
+  overflow-y: auto;
+  padding-bottom: 2rem;
+}
 
 .auth-container {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  min-height: 100vh;
-  padding: 4rem 1rem 2rem 1rem;
+  min-height: calc(100vh - 80px);
+  padding: 4rem 1rem 4rem 1rem;
   background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
-  overflow-y: auto;
+  overflow-y: visible;
+  overflow-x: hidden;
 }
 
 .auth-card {
@@ -32,10 +39,11 @@ html, body {
   color: var(--white, #ffffff);
   overflow: visible;
   position: relative;
-  margin: 0;
+  margin: 0 0 2rem 0;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  min-height: auto;
+  max-height: none;
 }
 
 /* Tab Navigation */
@@ -169,6 +177,19 @@ html, body {
 .auth-card {
   max-height: none;
   overflow-y: visible;
+  height: auto;
+}
+
+/* Ensure signup form can expand fully */
+#panel-signup {
+  min-height: auto;
+  height: auto;
+  overflow: visible;
+}
+
+#panel-signup .auth-form {
+  overflow: visible;
+  height: auto;
 }
 
 /* Ensure tabs are always visible */
@@ -326,6 +347,9 @@ html, body {
 
 .signup-step {
   display: none;
+  overflow: visible;
+  min-height: auto;
+  height: auto;
 }
 
 .signup-step.active {

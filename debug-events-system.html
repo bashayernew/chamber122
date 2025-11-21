@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Events System - Chamber122</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f0f0f;
+            color: #e5e7eb;
+        }
+        .container {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #333;
+        }
+        h1 { color: #f59e0b; }
+        .button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover { background: #047857; }
+        .section {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #444;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .status.success { background: #065f46; color: #d1fae5; }
+        .status.error { background: #7f1d1d; color: #fecaca; }
+        .status.info { background: #1e3a8a; color: #dbeafe; }
+        .event-card {
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .log {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Events System</h1>
+        
+        <div class="section">
+            <h3>Step 1: Test Direct Database Query</h3>
+            <p>Test direct access to events table:</p>
+            <button id="testDirectQuery" class="button">Test Direct Query</button>
+            <button id="testPublicQuery" class="button">Test Public Query</button>
+            <button id="testOwnerQuery" class="button">Test Owner Query</button>
+        </div>
+
+        <div class="section">
+            <h3>Step 2: Test Unified Fetch System</h3>
+            <p>Test the unified fetch functions:</p>
+            <button id="testFetchEvents" class="button">Test fetchEvents</button>
+            <button id="testFetchWithBusiness" class="button">Test fetchEventsWithBusiness</button>
+        </div>
+
+        <div class="section">
+            <h3>Step 3: Test Pages</h3>
+            <p>Test the actual pages:</p>
+            <button id="testEventsPage" class="button">Test Events Page</button>
+            <button id="testDirectoryPage" class="button">Test Directory Page</button>
+            <button id="testHomePage" class="button">Test Home Page</button>
+            <button id="testProfilePage" class="button">Test Profile Page</button>
+        </div>
+
+        <div class="section">
+            <h3>Step 4: Check RLS Policies</h3>
+            <p>Verify RLS policies are working:</p>
+            <button id="checkRLS" class="button">Check RLS Policies</button>
+        </div>
+
+        <div class="section">
+            <h3>Results</h3>
+            <div id="results"></div>
+        </div>
+
+        <div class="section">
+            <h3>Events Found</h3>
+            <div id="events-display"></div>
+        </div>
+
+        <div class="section">
+            <h3>Console Log</h3>
+            <div id="console-log" class="log"></div>
+        </div>
+    </div>
+
+    <!-- Load Supabase client first -->
+    <script src="/assets/js/supabase-client.global.js"></script>
+    
+    <script type="module">
+        // Wait for Supabase to be available
+        function waitForSupabase() {
+            return new Promise((resolve) => {
+                if (window.supabase) {
+                    resolve();
+                } else {
+                    const checkSupabase = () => {
+                        if (window.supabase) {
+                            resolve();
+                        } else {
+                            setTimeout(checkSupabase, 100);
+                        }
+                    };
+                    checkSupabase();
+                }
+            });
+        }
+
+        // Import modules after Supabase is ready
+        let fetchEvents, fetchEventsWithBusiness, renderEventsList, renderEventsGrid;
+        
+        async function loadModules() {
+            try {
+                const eventsFetch = await import('/js/lib/events.fetch.js');
+                const eventsRender = await import('/js/lib/events.render.js');
+                
+                fetchEvents = eventsFetch.fetchEvents;
+                fetchEventsWithBusiness = eventsFetch.fetchEventsWithBusiness;
+                renderEventsList = eventsRender.renderEventsList;
+                renderEventsGrid = eventsRender.renderEventsGrid;
+                
+                console.log('Modules loaded successfully');
+            } catch (err) {
+                console.error('Failed to load modules:', err);
+            }
+        }
+
+        // Capture console logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const originalDebug = console.debug;
+
+        function captureLog(type, ...args) {
+            const logEl = document.getElementById('console-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            logEl.textContent += `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+            
+            // Call original function
+            if (type === 'log') originalLog(...args);
+            else if (type === 'error') originalError(...args);
+            else if (type === 'warn') originalWarn(...args);
+            else if (type === 'debug') originalDebug(...args);
+        }
+
+        console.log = (...args) => captureLog('log', ...args);
+        console.error = (...args) => captureLog('error', ...args);
+        console.warn = (...args) => captureLog('warn', ...args);
+        console.debug = (...args) => captureLog('debug', ...args);
+
+        const resultsEl = document.getElementById('results');
+        const eventsDisplayEl = document.getElementById('events-display');
+
+        function addResult(title, content, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${title}:</strong> ${content}`;
+            resultsEl.appendChild(div);
+        }
+
+        function clearResults() {
+            resultsEl.innerHTML = '';
+            eventsDisplayEl.innerHTML = '';
+        }
+
+        function displayEvents(events) {
+            eventsDisplayEl.innerHTML = '';
+            
+            if (!events || events.length === 0) {
+                eventsDisplayEl.innerHTML = '<div class="status info">No events found</div>';
+                return;
+            }
+
+            events.forEach((event, index) => {
+                const div = document.createElement('div');
+                div.className = 'event-card';
+                div.innerHTML = `
+                    <strong>Event ${index + 1}:</strong><br>
+                    <strong>ID:</strong> ${event.id}<br>
+                    <strong>Title:</strong> ${event.title || 'No title'}<br>
+                    <strong>Status:</strong> ${event.status}<br>
+                    <strong>Published:</strong> ${event.is_published}<br>
+                    <strong>Kind:</strong> ${event.kind || 'general'}<br>
+                    <strong>Created:</strong> ${new Date(event.created_at).toLocaleString()}<br>
+                    <strong>Start:</strong> ${event.start_at ? new Date(event.start_at).toLocaleString() : 'No start date'}<br>
+                    <strong>Business ID:</strong> ${event.business_id}<br>
+                    <strong>Description:</strong> ${event.description ? event.description.substring(0, 100) + '...' : 'No description'}
+                `;
+                eventsDisplayEl.appendChild(div);
+            });
+        }
+
+        // Test direct database query
+        document.getElementById('testDirectQuery').addEventListener('click', async () => {
+            clearResults();
+            addResult('Direct Query Test', 'Testing direct database access...', 'info');
+            
+            try {
+                const { data, error } = await window.supabase
+                    .from('events')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) {
+                    addResult('Direct Query', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('Direct Query', `Found ${data?.length || 0} events (direct access)`, 'success');
+                    displayEvents(data);
+                }
+            } catch (err) {
+                addResult('Direct Query', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Test public query
+        document.getElementById('testPublicQuery').addEventListener('click', async () => {
+            clearResults();
+            addResult('Public Query Test', 'Testing public events query...', 'info');
+            
+            try {
+                const { data, error } = await window.supabase
+                    .from('events')
+                    .select('*')
+                    .eq('status', 'published')
+                    .eq('is_published', true)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) {
+                    addResult('Public Query', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('Public Query', `Found ${data?.length || 0} published events`, 'success');
+                    displayEvents(data);
+                }
+            } catch (err) {
+                addResult('Public Query', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Test owner query
+        document.getElementById('testOwnerQuery').addEventListener('click', async () => {
+            clearResults();
+            addResult('Owner Query Test', 'Testing owner events query...', 'info');
+            
+            try {
+                const { data, error } = await window.supabase
+                    .from('events')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) {
+                    addResult('Owner Query', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('Owner Query', `Found ${data?.length || 0} events (owner view)`, 'success');
+                    displayEvents(data);
+                }
+            } catch (err) {
+                addResult('Owner Query', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Test unified fetch
+        document.getElementById('testFetchEvents').addEventListener('click', async () => {
+            clearResults();
+            addResult('Fetch Events Test', 'Testing unified fetchEvents...', 'info');
+            
+            try {
+                await waitForSupabase();
+                await loadModules();
+                
+                if (!fetchEvents) {
+                    addResult('Fetch Events', 'Modules not loaded yet', 'error');
+                    return;
+                }
+                
+                const { data, error } = await fetchEvents({ 
+                    scope: 'public', 
+                    kind: 'all', 
+                    upcomingOnly: false 
+                });
+
+                if (error) {
+                    addResult('Fetch Events', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('Fetch Events', `Found ${data?.length || 0} events (unified fetch)`, 'success');
+                    displayEvents(data);
+                }
+            } catch (err) {
+                addResult('Fetch Events', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Test fetch with business
+        document.getElementById('testFetchWithBusiness').addEventListener('click', async () => {
+            clearResults();
+            addResult('Fetch With Business Test', 'Testing fetchEventsWithBusiness...', 'info');
+            
+            try {
+                await waitForSupabase();
+                await loadModules();
+                
+                if (!fetchEventsWithBusiness) {
+                    addResult('Fetch With Business', 'Modules not loaded yet', 'error');
+                    return;
+                }
+                
+                const { data, error } = await fetchEventsWithBusiness({ 
+                    scope: 'public', 
+                    kind: 'all', 
+                    upcomingOnly: false 
+                });
+
+                if (error) {
+                    addResult('Fetch With Business', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('Fetch With Business', `Found ${data?.length || 0} events (with business info)`, 'success');
+                    displayEvents(data);
+                }
+            } catch (err) {
+                addResult('Fetch With Business', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Test pages
+        document.getElementById('testEventsPage').addEventListener('click', () => {
+            window.open('/events.html', '_blank');
+            addResult('Events Page', 'Opened in new tab', 'info');
+        });
+
+        document.getElementById('testDirectoryPage').addEventListener('click', () => {
+            window.open('/directory.html', '_blank');
+            addResult('Directory Page', 'Opened in new tab', 'info');
+        });
+
+        document.getElementById('testHomePage').addEventListener('click', () => {
+            window.open('/index.html', '_blank');
+            addResult('Home Page', 'Opened in new tab', 'info');
+        });
+
+        document.getElementById('testProfilePage').addEventListener('click', () => {
+            window.open('/owner.html', '_blank');
+            addResult('Profile Page', 'Opened in new tab', 'info');
+        });
+
+        // Check RLS
+        document.getElementById('checkRLS').addEventListener('click', async () => {
+            clearResults();
+            addResult('RLS Check', 'Checking RLS policies...', 'info');
+            
+            try {
+                // Test public access
+                const { data: publicData, error: publicError } = await window.supabase
+                    .from('events')
+                    .select('count')
+                    .eq('status', 'published')
+                    .eq('is_published', true);
+
+                if (publicError) {
+                    addResult('RLS Public', `Error: ${publicError.message}`, 'error');
+                } else {
+                    addResult('RLS Public', `Public access working: ${publicData?.[0]?.count || 0} published events`, 'success');
+                }
+
+                // Test authenticated access
+                const { data: { session } } = await window.supabase.auth.getSession();
+                if (session) {
+                    const { data: authData, error: authError } = await window.supabase
+                        .from('events')
+                        .select('count');
+
+                    if (authError) {
+                        addResult('RLS Auth', `Error: ${authError.message}`, 'error');
+                    } else {
+                        addResult('RLS Auth', `Authenticated access working: ${authData?.[0]?.count || 0} total events`, 'success');
+                    }
+                } else {
+                    addResult('RLS Auth', 'Not authenticated - cannot test authenticated access', 'info');
+                }
+            } catch (err) {
+                addResult('RLS Check', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Initialize on page load
+        async function initialize() {
+            addResult('Debug Tool', 'Initializing...', 'info');
+            await waitForSupabase();
+            await loadModules();
+            addResult('Debug Tool', 'Ready! Click the buttons above to test the events system.', 'success');
+        }
+
+        // Auto-run initial test
+        initialize();
+    </script>
+</body>
+</html>

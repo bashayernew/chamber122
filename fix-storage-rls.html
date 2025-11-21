@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fix Storage RLS Policy</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Wait for Supabase to load
+        window.addEventListener('load', () => {
+            if (typeof createClient === 'undefined') {
+                console.error('Supabase not loaded, retrying...');
+                setTimeout(() => {
+                    if (typeof createClient !== 'undefined') {
+                        initializeApp();
+                    } else {
+                        document.getElementById('log').textContent = 'Error: Supabase failed to load. Please refresh the page.';
+                    }
+                }, 1000);
+            } else {
+                initializeApp();
+            }
+        });
+        
+        function initializeApp() {
+            const SUPABASE_URL = 'https://gidbvemmqffogakcepka.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dhY2Vwa2EiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcyNTk0MjQ3MCwiZXhwIjoyMDQxNTE4NDcwfQ.Ukhzltf0upnwvuEOgiws6amFoNJu6--chR7YGdJNk6c';
+            
+            window.supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            const log = document.getElementById('log');
+            
+            function addLog(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+                log.textContent += `[${timestamp}] ${icon} ${message}\n`;
+                log.scrollTop = log.scrollHeight;
+            }
+            
+            document.getElementById('test-upload').addEventListener('click', async () => {
+                addLog('Testing upload after RLS fix...');
+                try {
+                    // Create a test file
+                    const testContent = 'test file content for RLS test';
+                    const testFile = new Blob([testContent], { type: 'text/plain' });
+                    const key = 'test/rls-test-' + Date.now() + '.txt';
+                    
+                    addLog('Uploading to: business-media/' + key);
+                    
+                    const { data, error } = await window.supabase.storage
+                        .from('business-media')
+                        .upload(key, testFile, { 
+                            upsert: true,
+                            contentType: 'text/plain'
+                        });
+                        
+                    if (error) {
+                        addLog('Upload failed: ' + error.message, 'error');
+                        if (error.message.includes('row-level security')) {
+                            addLog('RLS policy still blocking upload. Run the SQL above first.', 'warning');
+                        }
+                    } else {
+                        addLog('Upload successful! RLS policies are working ✓', 'success');
+                        addLog('File uploaded to: ' + key);
+                    }
+                } catch (err) {
+                    addLog('Upload exception: ' + err.message, 'error');
+                }
+            });
+            
+            document.getElementById('test-event').addEventListener('click', () => {
+                addLog('Opening events page to test event creation...');
+                window.open('events.html?v=' + Date.now(), '_blank');
+            });
+            
+            // Auto-run on load
+            addLog('🔒 Storage RLS Policy Fix Tool');
+            addLog('1. Copy the SQL above and run it in Supabase SQL Editor');
+            addLog('2. Click "Test Upload After RLS Fix" to verify');
+            addLog('3. Click "Test Event Creation" to test full flow');
+        }
+    </script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        button { margin: 5px; padding: 10px 15px; }
+        #log { background: #f8f9fa; padding: 10px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+        .sql-code { background: #f0f0f0; padding: 10px; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🔒 Fix Storage RLS Policy</h1>
+    
+    <div class="section warning">
+        <h3>⚠️ Issue Identified</h3>
+        <p><strong>Error:</strong> <code>new row violates row-level security policy</code></p>
+        <p>The <code>business-media</code> bucket exists but has RLS policies blocking uploads.</p>
+    </div>
+    
+    <div class="section">
+        <h3>🔧 Solution: Update RLS Policies</h3>
+        <p>Run this SQL in your Supabase SQL Editor:</p>
+        <div class="sql-code">
+-- 1. First, check current policies
+SELECT * FROM storage.policies WHERE bucket_id = 'business-media';
+
+-- 2. Drop existing restrictive policies
+DROP POLICY IF EXISTS "Users can upload their own business files" ON storage.objects;
+DROP POLICY IF EXISTS "Users can view their own business files" ON storage.objects;
+
+-- 3. Create permissive policies for business-media bucket
+CREATE POLICY "Allow authenticated users to upload to business-media"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'business-media');
+
+CREATE POLICY "Allow public access to business-media files"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'business-media');
+
+CREATE POLICY "Allow authenticated users to update their business-media files"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING (bucket_id = 'business-media');
+
+CREATE POLICY "Allow authenticated users to delete their business-media files"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (bucket_id = 'business-media');
+        </div>
+    </div>
+    
+    <div class="section">
+        <h3>🧪 Test After Fix</h3>
+        <button id="test-upload">Test Upload After RLS Fix</button>
+        <button id="test-event">Test Event Creation</button>
+    </div>
+    
+    <div id="log"></div>
+</body>
+</html>

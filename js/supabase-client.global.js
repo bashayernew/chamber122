@@ -1,33 +1,47 @@
-// Global Supabase Client - Classic Script
-// This file sets up the global Supabase client for classic scripts
+// js/supabase-client.global.js - Singleton client with loader support
+// No direct import here. We rely on the bootstrap loader that sets window.__supabaseMod.
 
-(function() {
-  'use strict';
-  
-  // Check if already loaded
-  if (window.__supabase_global_loaded__) return;
-  window.__supabase_global_loaded__ = true;
-  
-  // Get Supabase configuration
-  const SUPABASE_URL = window.SUPABASE_URL || 
-    document.querySelector('meta[name="supabase-url"]')?.content ||
-    'https://gidbvemmqffogakcepka.supabase.co';
+const SUPABASE_URL = 'https://gidbvemmqffogakcepka.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w';
 
-  const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 
-    document.querySelector('meta[name="supabase-anon-key"]')?.content ||
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w';
-
-  // Create and export the Supabase client
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  window.supabase = supabase;
+;(async function init() {
+  if (window.__supabase) {
+    console.log('[supabase-client.global] already initialized, reusing');
+    return;
+  }
   
-  // Also set legacy globals for backward compatibility
-  window.supabaseClient = supabase;
-  window.supa = supabase;
-  window.sb = supabase;
+  // Wait for loader with timeout
+  if (!window.__supabaseReady) {
+    const maxWait = 5000; // 5 seconds max
+    const start = Date.now();
+    await new Promise(r => {
+      const i = setInterval(() => {
+        if ((window.__supabaseReady && window.__supabaseMod) || (Date.now() - start) > maxWait) {
+          clearInterval(i);
+          r();
+        }
+      }, 25);
+    });
+  }
   
-  console.log('[supabase-client.global.js] Supabase client initialized');
+  const { createClient } = window.__supabaseMod || {};
+  if (!createClient) {
+    console.error('[supabase-client.global] missing createClient export');
+    return;
+  }
   
-  // Dispatch ready event
-  window.dispatchEvent(new CustomEvent('supabaseReady'));
+  console.log('[supabase-client.global] initialized once');
+  window.__supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: true,
+      storage: window.localStorage,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  });
+  
+  // Also set the export for modules that import this
+  window.__supabaseClient = window.__supabase;
 })();
+
+export const supabase = window.__supabase || window.__supabaseClient;

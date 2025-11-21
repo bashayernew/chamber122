@@ -42,12 +42,12 @@ async function gateAndRoute(kind) {
         return openEventForm();
       } else if (kind === 'bulletin') {
         // For bulletin, redirect to owner activities for now
-        return go('owner-activities.html?tab=bulletins');
+        return go('owner.html');
       }
     }
     
     // Authenticated but not fully logged in - go to profile completion
-    return go('owner-activities.html?tab=profile&needs=complete');
+    return go('owner.html');
     
   } catch (error) {
     console.error('Gating error:', error);

@@ -88,20 +88,20 @@ async function loadProfileEvents(businessId) {
     
     const now = new Date().toISOString();
 
-    // Get all events for this business with business embeds
-    const { data: allEvents, error: eventsError } = await supabase
+    // Get all events for this business
+    const { data: allEvents = [], error: eventsError } = await supabase
       .from('events')
-      .select('id,title,start_at,end_at,cover_image_url,status,is_published,deleted_at,business_id,businesses:business_id(name,logo_url)')
+      .select('id,title,start_at,end_at,cover_image_url,status,is_published,deleted_at,business_id')
       .eq('business_id', businessId)
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
     if (eventsError) {
-      console.error('[profile-events] Error loading events:', eventsError);
+      if (window.DEBUG) console.error('[profile-events] Error loading events:', eventsError);
       return;
     }
 
-    console.log('[profile-events] Loaded events:', allEvents?.length || 0);
+    if (window.DEBUG) console.log('[profile-events] Loaded events:', allEvents.length);
     
     // Separate into ongoing, past, and drafts
     const ongoingEvents = [];

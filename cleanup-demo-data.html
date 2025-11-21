@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clean Demo Data - Chamber122</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f0f0f;
+            color: #e5e7eb;
+        }
+        .container {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #333;
+        }
+        h1 {
+            color: #f59e0b;
+            margin-bottom: 20px;
+        }
+        .warning {
+            background: #dc2626;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #b91c1c;
+        }
+        .section {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+        }
+        .button {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: background 0.2s;
+        }
+        .button:hover {
+            background: #b91c1c;
+        }
+        .button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .button.success {
+            background: #059669;
+        }
+        .button.success:hover {
+            background: #047857;
+        }
+        .log {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #065f46;
+            color: #d1fae5;
+            border: 1px solid #10b981;
+        }
+        .status.error {
+            background: #7f1d1d;
+            color: #fecaca;
+            border: 1px solid #ef4444;
+        }
+        .status.info {
+            background: #1e3a8a;
+            color: #dbeafe;
+            border: 1px solid #3b82f6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Clean Demo Data</h1>
+        
+        <div class="warning">
+            <strong>⚠️ WARNING:</strong> This will permanently delete all demo data including:
+            <ul>
+                <li>Demo users (admin@demo.com, pending@demo.com, approved@demo.com)</li>
+                <li>Demo business accounts</li>
+                <li>Demo events and bulletins</li>
+                <li>Demo guest submissions</li>
+                <li>All associated data and files</li>
+            </ul>
+            <strong>This action cannot be undone!</strong>
+        </div>
+
+        <div class="section">
+            <h3>Demo Data Cleanup</h3>
+            <p>This will remove all demo/test data from your database to give you a clean slate.</p>
+            
+            <button id="checkDemoData" class="button">Check Demo Data</button>
+            <button id="cleanDemoData" class="button" disabled>Clean All Demo Data</button>
+            <button id="cleanEvents" class="button">Clean Events Only</button>
+            <button id="cleanBulletins" class="button">Clean Bulletins Only</button>
+            <button id="cleanUsers" class="button">Clean Demo Users Only</button>
+        </div>
+
+        <div class="section">
+            <h3>Status</h3>
+            <div id="status"></div>
+        </div>
+
+        <div class="section">
+            <h3>Log</h3>
+            <div id="log" class="log"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js@2';
+
+        // Supabase configuration
+        const SUPABASE_URL = 'https://gidbvemmqffogakcepka.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dhY2Vwa2EiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcyNTk0NTQ4MCwiZXhwIjoyMDQxNTIxNDgwfQ.xpMI1i5czqv5hpO-vaLD5xKWsBmAdEryq9IA_jOi3J0';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const logEl = document.getElementById('log');
+        const statusEl = document.getElementById('status');
+        const checkBtn = document.getElementById('checkDemoData');
+        const cleanBtn = document.getElementById('cleanDemoData');
+        const cleanEventsBtn = document.getElementById('cleanEvents');
+        const cleanBulletinsBtn = document.getElementById('cleanBulletins');
+        const cleanUsersBtn = document.getElementById('cleanUsers');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.textContent += `[${timestamp}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function setStatus(message, type = 'info') {
+            statusEl.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        async function checkDemoData() {
+            log('🔍 Checking for demo data...');
+            setStatus('Checking demo data...', 'info');
+
+            try {
+                // Check demo users
+                const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
+                if (usersError) {
+                    log(`❌ Error checking users: ${usersError.message}`);
+                    return;
+                }
+
+                const demoUsers = users.users.filter(user => 
+                    user.email === 'admin@demo.com' || 
+                    user.email === 'pending@demo.com' || 
+                    user.email === 'approved@demo.com'
+                );
+
+                log(`👥 Found ${demoUsers.length} demo users`);
+                demoUsers.forEach(user => log(`   - ${user.email} (${user.id})`));
+
+                // Check demo businesses
+                const { data: businesses, error: bizError } = await supabase
+                    .from('businesses')
+                    .select('id, name, owner_id')
+                    .in('owner_id', demoUsers.map(u => u.id));
+
+                if (bizError) {
+                    log(`❌ Error checking businesses: ${bizError.message}`);
+                } else {
+                    log(`🏢 Found ${businesses?.length || 0} demo businesses`);
+                    businesses?.forEach(biz => log(`   - ${biz.name} (${biz.id})`));
+                }
+
+                // Check demo events
+                const { data: events, error: eventsError } = await supabase
+                    .from('events')
+                    .select('id, title, business_id')
+                    .in('business_id', businesses?.map(b => b.id) || []);
+
+                if (eventsError) {
+                    log(`❌ Error checking events: ${eventsError.message}`);
+                } else {
+                    log(`📅 Found ${events?.length || 0} demo events`);
+                    events?.forEach(event => log(`   - ${event.title} (${event.id})`));
+                }
+
+                // Check demo bulletins
+                const { data: bulletins, error: bulletinsError } = await supabase
+                    .from('bulletins')
+                    .select('id, title, business_id')
+                    .in('business_id', businesses?.map(b => b.id) || []);
+
+                if (bulletinsError) {
+                    log(`❌ Error checking bulletins: ${bulletinsError.message}`);
+                } else {
+                    log(`📢 Found ${bulletins?.length || 0} demo bulletins`);
+                    bulletins?.forEach(bulletin => log(`   - ${bulletin.title} (${bulletin.id})`));
+                }
+
+                const totalItems = demoUsers.length + (businesses?.length || 0) + (events?.length || 0) + (bulletins?.length || 0);
+                
+                if (totalItems > 0) {
+                    setStatus(`Found ${totalItems} demo items. Click "Clean All Demo Data" to remove them.`, 'info');
+                    cleanBtn.disabled = false;
+                } else {
+                    setStatus('No demo data found. Database is clean!', 'success');
+                }
+
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+                setStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function cleanDemoData() {
+            if (!confirm('Are you sure you want to delete ALL demo data? This cannot be undone!')) {
+                return;
+            }
+
+            log('🧹 Starting complete demo data cleanup...');
+            setStatus('Cleaning demo data...', 'info');
+            cleanBtn.disabled = true;
+
+            try {
+                // Get demo users first
+                const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
+                if (usersError) throw usersError;
+
+                const demoUsers = users.users.filter(user => 
+                    user.email === 'admin@demo.com' || 
+                    user.email === 'pending@demo.com' || 
+                    user.email === 'approved@demo.com'
+                );
+
+                if (demoUsers.length === 0) {
+                    log('✅ No demo users found');
+                    setStatus('No demo data to clean', 'success');
+                    return;
+                }
+
+                const userIds = demoUsers.map(u => u.id);
+                log(`🗑️ Deleting ${demoUsers.length} demo users...`);
+
+                // Delete demo users (this will cascade delete their data)
+                for (const user of demoUsers) {
+                    const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
+                    if (deleteError) {
+                        log(`❌ Error deleting user ${user.email}: ${deleteError.message}`);
+                    } else {
+                        log(`✅ Deleted user: ${user.email}`);
+                    }
+                }
+
+                // Clean up any remaining data
+                log('🧹 Cleaning up remaining data...');
+
+                // Delete events
+                const { error: eventsError } = await supabase
+                    .from('events')
+                    .delete()
+                    .in('business_id', userIds);
+                if (eventsError) log(`⚠️ Events cleanup: ${eventsError.message}`);
+
+                // Delete bulletins
+                const { error: bulletinsError } = await supabase
+                    .from('bulletins')
+                    .delete()
+                    .in('business_id', userIds);
+                if (bulletinsError) log(`⚠️ Bulletins cleanup: ${bulletinsError.message}`);
+
+                // Delete businesses
+                const { error: businessesError } = await supabase
+                    .from('businesses')
+                    .delete()
+                    .in('owner_id', userIds);
+                if (businessesError) log(`⚠️ Businesses cleanup: ${businessesError.message}`);
+
+                log('✅ Demo data cleanup completed!');
+                setStatus('Demo data cleaned successfully!', 'success');
+                cleanBtn.disabled = false;
+
+            } catch (error) {
+                log(`❌ Error during cleanup: ${error.message}`);
+                setStatus(`Error: ${error.message}`, 'error');
+                cleanBtn.disabled = false;
+            }
+        }
+
+        async function cleanEvents() {
+            if (!confirm('Delete all events? This cannot be undone!')) return;
+            
+            log('🗑️ Deleting all events...');
+            const { error } = await supabase.from('events').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            if (error) {
+                log(`❌ Error: ${error.message}`);
+            } else {
+                log('✅ All events deleted');
+            }
+        }
+
+        async function cleanBulletins() {
+            if (!confirm('Delete all bulletins? This cannot be undone!')) return;
+            
+            log('🗑️ Deleting all bulletins...');
+            const { error } = await supabase.from('bulletins').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            if (error) {
+                log(`❌ Error: ${error.message}`);
+            } else {
+                log('✅ All bulletins deleted');
+            }
+        }
+
+        async function cleanUsers() {
+            if (!confirm('Delete all demo users? This cannot be undone!')) return;
+            
+            log('🗑️ Deleting demo users...');
+            const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
+            if (usersError) {
+                log(`❌ Error: ${usersError.message}`);
+                return;
+            }
+
+            const demoUsers = users.users.filter(user => 
+                user.email === 'admin@demo.com' || 
+                user.email === 'pending@demo.com' || 
+                user.email === 'approved@demo.com'
+            );
+
+            for (const user of demoUsers) {
+                const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
+                if (deleteError) {
+                    log(`❌ Error deleting ${user.email}: ${deleteError.message}`);
+                } else {
+                    log(`✅ Deleted user: ${user.email}`);
+                }
+            }
+        }
+
+        // Event listeners
+        checkBtn.addEventListener('click', checkDemoData);
+        cleanBtn.addEventListener('click', cleanDemoData);
+        cleanEventsBtn.addEventListener('click', cleanEvents);
+        cleanBulletinsBtn.addEventListener('click', cleanBulletins);
+        cleanUsersBtn.addEventListener('click', cleanUsers);
+
+        // Auto-check on load
+        checkDemoData();
+    </script>
+</body>
+</html>

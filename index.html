@@ -41,7 +41,7 @@
         </span>
         <!-- Auth slot for session-aware header -->
         <span id="auth-slot">
-          <a class="btn" href="/auth.html">Login</a>
+          <a class="btn" href="/auth.html#login">Login</a>
           <a class="btn primary" href="/auth.html#signup">Sign Up & Get Listed</a>
         </span>
       </div>
@@ -61,7 +61,7 @@
         <i class="fas fa-building"></i>
         <span data-i18n="common.myBusiness">My Business</span>
       </a>
-      <a href="owner-activities.html" class="mobile-link">
+      <a href="owner.html" class="mobile-link">
         <i class="fas fa-calendar-alt"></i>
         <span data-i18n="common.myActivities">My Activities</span>
       </a>
@@ -100,11 +100,16 @@
           <div class="search-group">
             <select id="quick-category" class="search-input">
               <option value="" data-i18n="search.allCategories">All Categories</option>
-              <option value="food" data-i18n="search.categories.food">Food & Beverage</option>
-              <option value="fashion" data-i18n="search.categories.fashion">Fashion & Beauty</option>
-              <option value="cleaning" data-i18n="search.categories.cleaning">Cleaning Services</option>
-              <option value="tech" data-i18n="search.categories.tech">Technology</option>
-              <option value="home" data-i18n="search.categories.home">Home Services</option>
+              <option value="Food & Beverage" data-i18n="search.categories.food">Food & Beverage</option>
+              <option value="Fashion & Beauty" data-i18n="search.categories.fashion">Fashion & Beauty</option>
+              <option value="Cleaning Services" data-i18n="search.categories.cleaning">Cleaning Services</option>
+              <option value="Technology" data-i18n="search.categories.tech">Technology</option>
+              <option value="Home Services" data-i18n="search.categories.home">Home Services</option>
+              <option value="Health & Wellness" data-i18n="search.categories.health">Health & Wellness</option>
+              <option value="Education" data-i18n="search.categories.education">Education</option>
+              <option value="Retail" data-i18n="search.categories.retail">Retail</option>
+              <option value="Automotive" data-i18n="search.categories.automotive">Automotive</option>
+              <option value="Other" data-i18n="search.categories.other">Other</option>
             </select>
           </div>
           <div class="search-group">
@@ -126,78 +131,79 @@
     </div>
   </section>
 
-  <!-- Featured MSMEs Section -->
-  <section class="featured-section">
+  <!-- New Listings Section -->
+  <section class="featured-section" style="margin: 40px 0;">
     <div class="section-header">
-      <h2 class="section-title" data-i18n="sections.featured">Featured This Week</h2>
+      <h2 class="section-title" data-i18n="sections.newListings">New Listings</h2>
       <p class="section-subtitle" data-i18n="sections.featuredSubtitle">New businesses joining our community</p>
     </div>
     
-    <div class="featured-carousel">
-      <a href="get-listed.html" class="featured-card">
-        <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=200&fit=crop" alt="The Kuwaiti Chef">
-        <h3>The Kuwaiti Chef</h3>
-        <div class="category">Food & Beverage</div>
-        <div class="tag">New</div>
-        <div class="explore-btn">Get Listed</div>
-      </a>
-      
-      <a href="get-listed.html" class="featured-card">
-        <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=200&fit=crop" alt="Desert Blossoms">
-        <h3>Desert Blossoms</h3>
-        <div class="category">Fashion & Beauty</div>
-        <div class="tag">New</div>
-        <div class="explore-btn">Get Listed</div>
-      </a>
-      
-      <a href="get-listed.html" class="featured-card">
-        <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&h=200&fit=crop" alt="FixIt Fast">
-        <h3>FixIt Fast</h3>
-        <div class="category">Home Services</div>
-        <div class="tag">New</div>
-        <div class="explore-btn">Get Listed</div>
-      </a>
-      
-      <a href="get-listed.html" class="featured-card">
-        <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=200&fit=crop" alt="Sparkle Clean">
-        <h3>Sparkle Clean</h3>
-        <div class="category">Cleaning Services</div>
-        <div class="tag">New</div>
-        <div class="explore-btn">Get Listed</div>
-      </a>
-      
-      <a href="get-listed.html" class="featured-card">
-        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=200&fit=crop" alt="Tech Solutions KW">
-        <h3>Tech Solutions KW</h3>
-        <div class="category">Technology</div>
-        <div class="tag">New</div>
-        <div class="explore-btn">Get Listed</div>
-      </a>
+    <div class="new-listings-container" id="featured-businesses-home" style="overflow-x: auto; padding: 20px 0; scroll-behavior: smooth;">
+      <div class="featured-carousel" style="display: flex; gap: 24px; min-width: fit-content;">
+        <!-- Real businesses will be loaded here by JavaScript -->
+        <div style="text-align: center; padding: 40px; color: #aaa; min-width: 300px;">
+          <i class="fas fa-building" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+          <h3>Loading new listings...</h3>
+          <p>Please wait while we fetch the latest businesses.</p>
+        </div>
+      </div>
     </div>
   </section>
 
   <!-- Upcoming Events Section -->
-  <section class="event-highlight">
+  <section class="event-highlight" style="background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%); border-radius: 16px; padding: 40px; margin: 40px 0; border: 1px solid #2a2a2a;">
     <div class="section-header">
-      <h2 class="section-title" data-i18n="sections.thisWeekEvent">Upcoming Events</h2>
-      <p class="section-subtitle" data-i18n="sections.thisWeekEventSubtitle">Don't miss out on the latest community happenings</p>
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-1 h-8 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-full"></div>
+          <h2 class="section-title text-2xl font-bold" data-i18n="sections.thisWeekEvent">All Events</h2>
+      </div>
+      <p class="section-subtitle text-gray-300" data-i18n="sections.thisWeekEventSubtitle">Don't miss out on the latest community happenings</p>
     </div>
     
-    <div id="upcoming-events-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px;">
+    <div id="upcoming-events-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 2rem;">
       <!-- Dynamic events will be loaded here -->
-      <div style="text-align: center; padding: 40px; color: #aaa; grid-column: 1 / -1;">
-        <i class="fas fa-calendar-alt" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+      <div class="col-span-full text-center py-12 text-gray-400">
+        <i class="fas fa-calendar-alt text-4xl mb-4 block"></i>
         <h3>Loading upcoming events...</h3>
         <p>Please wait while we fetch the latest events.</p>
       </div>
     </div>
     
-    <div style="text-align: center; margin-top: 30px;">
-      <a href="events.html" class="btn primary" style="display: inline-block; padding: 12px 24px; background: #ffd166; color: #111; text-decoration: none; border-radius: 8px; font-weight: 600;">
-        View All Events
-      </a>
+    <div class="text-center mt-8">
+      <button onclick="window.location.href='events.html'" 
+              onmouseover="this.style.background='linear-gradient(135deg, #ffed4e, #ffd166)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(255, 209, 102, 0.6)';"
+              onmouseout="this.style.background='linear-gradient(135deg, #ffd166, #ffed4e)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(255, 209, 102, 0.4)';"
+              style="background: linear-gradient(135deg, #ffd166, #ffed4e); color: #111; padding: 16px 32px; font-size: 18px; font-weight: 700; border-radius: 12px; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 209, 102, 0.4); transition: all 0.3s ease; position: relative; overflow: hidden;">
+        <i class="fas fa-calendar-alt" style="margin-right: 8px;"></i>View All Events
+      </button>
     </div>
   </section>
+
+
+        <section id="bulletins-section" class="mt-10 space-y-6" style="background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%); border-radius: 16px; padding: 40px; margin: 40px 0; border: 1px solid #2a2a2a;">
+          <div class="section-header">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-1 h-8 bg-gradient-to-b from-blue-400 to-blue-600 rounded-full"></div>
+              <h2 class="section-title text-2xl font-bold">Community Bulletins</h2>
+            </div>
+            <p class="section-subtitle text-gray-300">Stay updated with announcements, job postings, and opportunities</p>
+          </div>
+          <div id="bulletins-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 2rem;">
+            <div class="col-span-full text-center py-12 text-gray-400">
+              <i class="fas fa-bullhorn text-4xl mb-4 block"></i>
+              <p>Loading bulletins...</p>
+            </div>
+          </div>
+          
+          <div class="text-center mt-8">
+            <button onclick="window.location.href='bulletin.html'" 
+                    onmouseover="this.style.background='linear-gradient(135deg, #ffed4e, #ffd166)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(255, 209, 102, 0.6)';"
+                    onmouseout="this.style.background='linear-gradient(135deg, #ffd166, #ffed4e)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(255, 209, 102, 0.4)';"
+                    style="background: linear-gradient(135deg, #ffd166, #ffed4e); color: #111; padding: 16px 32px; font-size: 18px; font-weight: 700; border-radius: 12px; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 209, 102, 0.4); transition: all 0.3s ease; position: relative; overflow: hidden;">
+              <i class="fas fa-bullhorn" style="margin-right: 8px;"></i>View All Bulletins
+            </button>
+          </div>
+        </section>
 
   <!-- Newest Listings Section -->
   <section class="newest-listings">
@@ -210,7 +216,7 @@
       <!-- Newest MSME cards will be populated by JavaScript -->
     </div>
     
-    <div class="cta-section">
+    <div class="cta-section" id="home-cta-section" style="display: block;">
       <h3 data-i18n="cta.readyToJoin">Ready to Join Our Community?</h3>
       <p data-i18n="cta.listBusiness">List your business today and connect with customers across Kuwait</p>
       <a href="/get-listed.html" class="cta-btn-large cta-primary">
@@ -300,86 +306,184 @@
   <script type="module" src="js/compliance-banner.js"></script>
   <script type="module" src="js/notification-system.js"></script>
   
-  <!-- Load Featured Event -->
+
   <script type="module">
-    import { supabase } from '/public/js/supabase-client.global.js?v=3';
-    
-    async function loadUpcomingEvents() {
+    import { fetchEventsWithBusiness } from '/assets/js/lib/events.fetch.js';
+    import { loadPublicBulletins } from '/assets/js/bulletins-public.js';
+    import { renderList, eventCard, bulletinCard } from '/assets/js/ui-cards.js';
+    import { eventCardPretty, bulletinCardPretty } from '/assets/js/ui-cards-extended.js';
+    import '/assets/js/registration-modal.js';
+    import '/assets/js/refresh-displays.js';
+
+    const eC = document.getElementById('upcoming-events-grid');
+    const bG = document.getElementById('bulletins-grid');
+
+    // Hide CTA section if user is logged in
+    async function hideCTAIfLoggedIn() {
       try {
-        const { data: events, error } = await supabase
-          .from('activities_base')
-          .select('id,business_id,title,description,location,start_at,end_at,cover_image_url,status,is_published,deleted_at,created_at')
-          .eq('type', 'event')
-          .eq('is_published', true)
-          .is('deleted_at', null)
-          .gte('end_at', new Date().toISOString())   // still running or future
-          .order('start_at', { ascending: true })
-          .limit(6);
+        const { data: { session } } = await window.supabase.auth.getSession();
+        const ctaSection = document.getElementById('home-cta-section');
+        if (ctaSection && session?.user) {
+          ctaSection.style.display = 'none';
+          console.log('CTA section hidden - user is logged in');
+        }
+      } catch (err) {
+        console.error('Error checking auth state:', err);
+      }
+    }
+    
+    // Load featured businesses for home page
+    async function loadFeaturedBusinessesHome() {
+      try {
+        console.log('[home] Loading all MSME businesses...');
+        const { data: businesses, error } = await window.supabase
+          .from('businesses')
+          .select('id, name, category, logo_url, created_at, status')
+          .order('created_at', { ascending: false });
+        
+        console.log('[home] Loaded', businesses?.length || 0, 'businesses');
+        if (businesses && businesses.length > 0) {
+          console.log('[home] First business:', businesses[0]);
+          console.log('[home] All business statuses:', businesses.map(b => ({ name: b.name, status: b.status })));
+        }
 
         if (error) {
-          console.error('Error loading upcoming events:', error);
+          console.error('Error loading featured businesses:', error);
           return;
         }
 
-        const eventsGrid = document.getElementById('upcoming-events-grid');
-        if (!eventsGrid) return;
+        const featuredContainer = document.getElementById('featured-businesses-home');
+        if (!featuredContainer) return;
 
-        if (!events || events.length === 0) {
-          eventsGrid.innerHTML = `
-            <div style="text-align: center; padding: 40px; color: #aaa; grid-column: 1 / -1;">
-              <i class="fas fa-calendar-alt" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
-              <h3>No upcoming events</h3>
-              <p>Check back soon for new community events!</p>
-            </div>
-          `;
-          return;
-        }
-
-        eventsGrid.innerHTML = events.map(event => {
-          const startDate = event.start_at ? new Date(event.start_at) : null;
-          const endDate = event.end_at ? new Date(event.end_at) : null;
+        if (!businesses || businesses.length === 0) {
+          // Check if current user has a business
+          const { data: { user } } = await window.supabase.auth.getUser();
+          let getListedButton = '';
           
-          return `
-            <div class="event-card" style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; overflow: hidden; transition: transform 0.2s;">
-              <div style="height: 200px; background: linear-gradient(135deg, #ffd166, #ff6b6b); position: relative;">
-                ${event.cover_image_url ? 
-                  `<img src="${event.cover_image_url}" alt="${event.title}" style="width: 100%; height: 100%; object-fit: cover;">` :
-                  `<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #111; font-size: 48px;"><i class="fas fa-calendar-alt"></i></div>`
-                }
-                <div style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.7); color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">
-                  ${event.type || 'Event'}
-                </div>
+          if (user) {
+            // Check if user has a business
+            const { data: userBusiness } = await window.supabase
+              .from('businesses')
+              .select('id')
+              .eq('owner_id', user.id)
+              .single();
+            
+            if (!userBusiness) {
+              getListedButton = '<a href="get-listed.html" class="btn primary" style="margin-top: 16px; display: inline-block; padding: 16px 32px; font-size: 18px; font-weight: 600; background: linear-gradient(135deg, #ffd166, #ffed4e); color: #111; text-decoration: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(255, 209, 102, 0.3); transition: all 0.3s ease;">Get Listed</a>';
+            }
+          } else {
+            getListedButton = '<a href="get-listed.html" class="btn primary" style="margin-top: 16px; display: inline-block; padding: 16px 32px; font-size: 18px; font-weight: 600; background: linear-gradient(135deg, #ffd166, #ffed4e); color: #111; text-decoration: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(255, 209, 102, 0.3); transition: all 0.3s ease;">Get Listed</a>';
+          }
+          
+          const cardsContainer = featuredContainer.querySelector('.featured-carousel');
+          if (cardsContainer) {
+            cardsContainer.innerHTML = `
+              <div style="text-align: center; padding: 60px 40px; color: #aaa; background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); border-radius: 16px; border: 2px dashed #444; min-width: 300px;">
+                <i class="fas fa-building" style="font-size: 64px; margin-bottom: 24px; display: block; color: #ffd166;"></i>
+                <h3 style="font-size: 24px; margin-bottom: 12px; color: #fff;">No businesses yet</h3>
+                <p style="font-size: 16px; margin-bottom: 32px; color: #ccc;">Be the first to join our community!</p>
+                ${getListedButton}
               </div>
-              <div style="padding: 20px;">
-                <h3 style="margin: 0 0 12px; color: #fff; font-size: 18px; font-weight: 600; line-height: 1.3;">${event.title || 'Untitled Event'}</h3>
-                <div style="margin-bottom: 12px; color: #ffd166; font-size: 14px;">
-                  <i class="fas fa-clock" style="margin-right: 6px;"></i>
-                  ${startDate ? startDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : 'TBA'}
-                  ${startDate ? ` at ${startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''}
-                </div>
-                ${event.location ? `
-                  <div style="margin-bottom: 12px; color: #aaa; font-size: 14px;">
-                    <i class="fas fa-map-marker-alt" style="margin-right: 6px;"></i>
-                    ${event.location}
-                  </div>
-                ` : ''}
-                <p style="color: #ccc; font-size: 14px; line-height: 1.4; margin-bottom: 15px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                  ${event.description || 'Join us for this exciting community event!'}
-                </p>
-                <a href="/event.html?id=${event.id}" style="display: block; text-align: center; background: #ffd166; color: #111; padding: 10px 16px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 600;">
-                  Learn More
-                </a>
+            `;
+          } else {
+            featuredContainer.innerHTML = `
+              <div style="text-align: center; padding: 60px 40px; color: #aaa; background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); border-radius: 16px; border: 2px dashed #444;">
+                <i class="fas fa-building" style="font-size: 64px; margin-bottom: 24px; display: block; color: #ffd166;"></i>
+                <h3 style="font-size: 24px; margin-bottom: 12px; color: #fff;">No businesses yet</h3>
+                <p style="font-size: 16px; margin-bottom: 32px; color: #ccc;">Be the first to join our community!</p>
+                ${getListedButton}
               </div>
+            `;
+          }
+          return;
+        }
+
+        // Create horizontal scrollable cards
+        const cardsContainer = featuredContainer.querySelector('.featured-carousel');
+        console.log('[home] Rendering', businesses.length, 'business cards');
+        
+        if (!cardsContainer) {
+          console.error('[home] cardsContainer not found!', featuredContainer);
+        }
+        
+        cardsContainer.innerHTML = businesses.map(business => `
+          <div class="featured-card" onclick="window.location.href='owner.html?businessId=${business.id}'" style="background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); border-radius: 16px; padding: 24px; border: 1px solid #333; transition: all 0.3s ease; cursor: pointer; position: relative; overflow: hidden; min-width: 300px; flex-shrink: 0;">
+            <div style="position: relative; margin-bottom: 16px;">
+              <img src="${business.logo_url || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=200&fit=crop'}" alt="${business.name}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px;">
+              <div class="tag" style="position: absolute; top: 12px; right: 12px; background: linear-gradient(135deg, #4ade80, #22c55e); color: #111; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">New</div>
             </div>
-          `;
-        }).join('');
-      } catch (error) {
-        console.error('Error loading upcoming events:', error);
+            <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px; color: #fff;">${business.name}</h3>
+            <div class="category" style="color: #ffd166; font-size: 14px; margin-bottom: 16px; font-weight: 500;">${business.category || 'Business'}</div>
+            <div class="explore-btn" style="background: linear-gradient(135deg, #ffd166, #ffed4e); color: #111; padding: 12px 20px; border-radius: 8px; text-align: center; font-weight: 600; transition: all 0.3s ease; border: none; cursor: pointer; width: 100%;">Visit Profile</div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Error loading featured businesses:', err);
       }
     }
 
-    // Load upcoming events when page loads
-    document.addEventListener('DOMContentLoaded', loadUpcomingEvents);
+    (async () => {
+      try {
+        // Hide CTA section if logged in
+        await hideCTAIfLoggedIn();
+        
+        // Load featured businesses
+        await loadFeaturedBusinessesHome();
+
+        // Load events using unified fetch system - limit to 6 most recent
+        try {
+          const { data: events, error } = await fetchEventsWithBusiness({ 
+            scope: 'public', 
+            kind: 'all', 
+            upcomingOnly: false,
+            limit: 6 // Show only 6 most recent events
+          });
+
+          if (error) {
+            console.error('Error loading events:', error);
+            eC.innerHTML = '<div class="text-center py-12 text-gray-400"><i class="fas fa-exclamation-triangle text-4xl mb-4 block"></i><h3>Error loading events</h3><p>Please try refreshing the page.</p></div>';
+          } else {
+            console.log('Loaded events for home:', events?.length || 0);
+            if (events && events.length > 0) {
+              eC.innerHTML = events.map(event => eventCardPretty(event)).join('');
+            } else {
+              eC.innerHTML = '<div class="text-center py-12 text-gray-400"><i class="fas fa-calendar-alt text-4xl mb-4 block"></i><h3>No events yet</h3><p>Check back later for new events!</p></div>';
+            }
+          }
+        } catch (err) {
+          console.error('Error loading events:', err);
+          eC.innerHTML = '<div class="text-center py-12 text-gray-400"><i class="fas fa-exclamation-triangle text-4xl mb-4 block"></i><h3>Error loading events</h3><p>Please try refreshing the page.</p></div>';
+        }
+
+        // Load bulletins - limit to 6 most recent
+        try {
+          const bu = await loadPublicBulletins(6);
+          if (bu && bu.current && bu.current.length > 0) {
+            bG.innerHTML = bu.current.map(bulletin => bulletinCardPretty(bulletin)).join('');
+          } else {
+            bG.innerHTML = '<div class="text-center py-12 text-gray-400"><i class="fas fa-bullhorn text-4xl mb-4 block"></i><h3>No bulletins</h3><p>Check back later for new announcements!</p></div>';
+          }
+        } catch (err) {
+          console.error('Error loading bulletins:', err);
+          bG.innerHTML = '<div class="text-center py-12 text-gray-400"><i class="fas fa-exclamation-triangle text-4xl mb-4 block"></i><h3>Error loading bulletins</h3><p>Please try refreshing the page.</p></div>';
+        }
+      } catch (err) {
+        console.error('Error loading home content:', err);
+        renderList(eC, [], eventCardPretty, 'Error loading events.');
+      }
+    })();
+  </script>
+</body>
+</html>
+
+
+          bG.innerHTML = '<div class="text-center py-12 text-gray-400"><i class="fas fa-exclamation-triangle text-4xl mb-4 block"></i><h3>Error loading bulletins</h3><p>Please try refreshing the page.</p></div>';
+        }
+      } catch (err) {
+        console.error('Error loading home content:', err);
+        renderList(eC, [], eventCardPretty, 'Error loading events.');
+      }
+    })();
   </script>
 </body>
 </html>

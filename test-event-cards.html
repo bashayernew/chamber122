@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Event Cards</title>
+    <style>
+        body {
+            background: #0f0f0f;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Event Cards Test</h1>
+        <p>Testing if event cards match the events page styling...</p>
+        
+        <div id="test-events" class="grid">
+            <div>Loading test events...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { fetchEventsWithBusiness } from '/assets/js/lib/events.fetch.js';
+        import { eventCardPretty } from '/assets/js/ui-cards-extended.js';
+        
+        async function testEventCards() {
+            try {
+                console.log('Testing event cards...');
+                
+                const { data: events, error } = await fetchEventsWithBusiness({ 
+                    scope: 'public', 
+                    kind: 'all', 
+                    upcomingOnly: false 
+                });
+                
+                console.log('Events loaded:', events?.length || 0);
+                console.log('First event:', events?.[0]);
+                
+                const container = document.getElementById('test-events');
+                
+                if (!events || events.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; padding: 40px; color: #aaa;">No events found for testing</div>';
+                    return;
+                }
+                
+                // Test with first few events
+                const testEvents = events.slice(0, 3);
+                container.innerHTML = testEvents.map(event => eventCardPretty(event)).join('');
+                
+                console.log('Event cards rendered successfully');
+                
+            } catch (error) {
+                console.error('Error testing event cards:', error);
+                document.getElementById('test-events').innerHTML = '<div style="color: red;">Error: ' + error.message + '</div>';
+            }
+        }
+        
+        // Run test when page loads
+        document.addEventListener('DOMContentLoaded', testEventCards);
+    </script>
+</body>
+</html>

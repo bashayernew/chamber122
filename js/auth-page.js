@@ -29,7 +29,7 @@ btnIn?.addEventListener("click", async () => {
     statusEl.textContent = "Signed in successfully! Redirecting...";
     // Redirect to owner activities dashboard
     setTimeout(() => {
-      window.location.href = '/owner-activities.html';
+      window.location.href = '/owner.html';
     }, 1000);
   }
   refresh();

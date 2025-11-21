@@ -14,15 +14,13 @@ export function toIso(dateStr, timeStr) {
 
 export async function listEventsPublic(supabase) {
   try {
-    const select = "*,businesses:business_id(name,logo_url)";
+    const select = "*";
     const nowIso = new Date().toISOString();
     
     const { data, error } = await supabase
-      .from('activities_base')
+      .from('activities_current')
       .select(select)
       .eq('type', 'event')
-      .or('status.eq.published,is_published.is.true')
-      .or(`end_at.is.null,end_at.gte.${nowIso}`)
       .order('created_at', { ascending: false });
     
     if (error) throw error;
@@ -35,13 +33,12 @@ export async function listEventsPublic(supabase) {
 
 export async function listBulletinsPublic(supabase) {
   try {
-    const select = "*,businesses:business_id(name,logo_url)";
+    const select = "*";
     
     const { data, error } = await supabase
-      .from('activities_base')
+      .from('activities_current')
       .select(select)
       .eq('type', 'bulletin')
-      .or('status.eq.published,is_published.is.true')
       .order('created_at', { ascending: false });
     
     if (error) throw error;
@@ -74,7 +71,7 @@ export async function getOwnerBusinessId(supabase) {
 
 export async function listActivitiesForBusiness(supabase, businessId) {
   try {
-    const select = "*,businesses:business_id(name,logo_url)";
+    const select = "*";
     const { data, error } = await supabase
       .from('activities_base')
       .select(select)
@@ -91,7 +88,7 @@ export async function listActivitiesForBusiness(supabase, businessId) {
 
 export async function listDraftsForBusiness(supabase, businessId) {
   try {
-    const select = "*,businesses:business_id(name,logo_url)";
+    const select = "*";
     const { data, error } = await supabase
       .from('activities_base')
       .select(select)

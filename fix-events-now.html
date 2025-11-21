@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fix Events Now</title>
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <script type="module" src="/public/js/supabase-client.global.js?v=3"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: #fff; }
+    .section { margin: 20px 0; padding: 20px; border: 1px solid #333; border-radius: 8px; }
+    .success { color: #51cf66; }
+    .error { color: #ff6b6b; }
+    .info { color: #74c0fc; }
+    .event-card { background: #2a2a2a; padding: 15px; margin: 10px 0; border-radius: 8px; }
+    button { padding: 10px 20px; background: #ffd166; color: #111; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+    .sql-code { background: #111; padding: 15px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h1>Fix Events Display - Emergency Fix</h1>
+  
+  <div class="section">
+    <h2>Step 1: Apply This SQL in Supabase Dashboard</h2>
+    <p>Go to your Supabase dashboard → SQL Editor → Run this query:</p>
+    <div class="sql-code">-- Fix Events RLS Policies - Emergency Fix
+-- Drop all existing conflicting policies
+DROP POLICY IF EXISTS "events_select" ON public.events;
+DROP POLICY IF EXISTS "events_insert" ON public.events;
+DROP POLICY IF EXISTS "events_update" ON public.events;
+DROP POLICY IF EXISTS "events_public_read" ON public.events;
+DROP POLICY IF EXISTS "events_owner_read" ON public.events;
+DROP POLICY IF EXISTS "events_owner_insert" ON public.events;
+DROP POLICY IF EXISTS "events_owner_update" ON public.events;
+DROP POLICY IF EXISTS "events_owner_delete" ON public.events;
+DROP POLICY IF EXISTS "Users can view their own events" ON public.events;
+DROP POLICY IF EXISTS "Public can view published events" ON public.events;
+DROP POLICY IF EXISTS "Users can insert their own events" ON public.events;
+DROP POLICY IF EXISTS "Users can update their own events" ON public.events;
+DROP POLICY IF EXISTS "Users can delete their own events" ON public.events;
+
+-- Create unified, correct RLS policies
+CREATE POLICY "events_public_read" ON public.events
+  FOR SELECT TO anon, authenticated
+  USING (status = 'published' AND is_published = true);
+
+CREATE POLICY "events_owner_read" ON public.events
+  FOR SELECT TO authenticated
+  USING (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));
+
+CREATE POLICY "events_owner_insert" ON public.events
+  FOR INSERT TO authenticated
+  WITH CHECK (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));
+
+CREATE POLICY "events_owner_update" ON public.events
+  FOR UPDATE TO authenticated
+  USING (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()))
+  WITH CHECK (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));
+
+CREATE POLICY "events_owner_delete" ON public.events
+  FOR DELETE TO authenticated
+  USING (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));</div>
+    <button onclick="copySQL()">Copy SQL to Clipboard</button>
+  </div>
+
+  <div class="section">
+    <h2>Step 2: Test Events After SQL Fix</h2>
+    <button onclick="testEventsAfterFix()">Test Events Query</button>
+    <div id="test-result"></div>
+  </div>
+
+  <div class="section">
+    <h2>Step 3: Quick Fix - Bypass RLS (Temporary)</h2>
+    <p>If SQL doesn't work immediately, this will show events without RLS:</p>
+    <button onclick="testEventsBypass()">Test Events (Bypass RLS)</button>
+    <div id="bypass-result"></div>
+  </div>
+
+  <script type="module">
+    import { supabase } from '/public/js/supabase-client.global.js?v=3';
+
+    window.copySQL = function() {
+      const sql = `-- Fix Events RLS Policies - Emergency Fix
+-- Drop all existing conflicting policies
+DROP POLICY IF EXISTS "events_select" ON public.events;
+DROP POLICY IF EXISTS "events_insert" ON public.events;
+DROP POLICY IF EXISTS "events_update" ON public.events;
+DROP POLICY IF EXISTS "events_public_read" ON public.events;
+DROP POLICY IF EXISTS "events_owner_read" ON public.events;
+DROP POLICY IF EXISTS "events_owner_insert" ON public.events;
+DROP POLICY IF EXISTS "events_owner_update" ON public.events;
+DROP POLICY IF EXISTS "events_owner_delete" ON public.events;
+DROP POLICY IF EXISTS "Users can view their own events" ON public.events;
+DROP POLICY IF EXISTS "Public can view published events" ON public.events;
+DROP POLICY IF EXISTS "Users can insert their own events" ON public.events;
+DROP POLICY IF EXISTS "Users can update their own events" ON public.events;
+DROP POLICY IF EXISTS "Users can delete their own events" ON public.events;
+
+-- Create unified, correct RLS policies
+CREATE POLICY "events_public_read" ON public.events
+  FOR SELECT TO anon, authenticated
+  USING (status = 'published' AND is_published = true);
+
+CREATE POLICY "events_owner_read" ON public.events
+  FOR SELECT TO authenticated
+  USING (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));
+
+CREATE POLICY "events_owner_insert" ON public.events
+  FOR INSERT TO authenticated
+  WITH CHECK (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));
+
+CREATE POLICY "events_owner_update" ON public.events
+  FOR UPDATE TO authenticated
+  USING (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()))
+  WITH CHECK (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));
+
+CREATE POLICY "events_owner_delete" ON public.events
+  FOR DELETE TO authenticated
+  USING (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));`;
+      
+      navigator.clipboard.writeText(sql).then(() => {
+        alert('SQL copied to clipboard! Paste it in Supabase SQL Editor.');
+      });
+    };
+
+    window.testEventsAfterFix = async function() {
+      const result = document.getElementById('test-result');
+      result.innerHTML = 'Testing events after RLS fix...';
+      
+      try {
+        const { data, error } = await supabase
+          .from('events')
+          .select('id, title, status, is_published, start_at, created_at')
+          .eq('status', 'published')
+          .eq('is_published', true)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (error) {
+          result.innerHTML = `<div class="error">❌ Still Error: ${error.message}</div>`;
+        } else {
+          result.innerHTML = `
+            <div class="success">✅ SUCCESS! Found ${data.length} published events</div>
+            ${data.map(event => `
+              <div class="event-card">
+                <strong>${event.title || 'Untitled'}</strong><br>
+                Status: ${event.status} | Published: ${event.is_published}<br>
+                Start: ${event.start_at ? new Date(event.start_at).toLocaleString() : 'TBA'}<br>
+                Created: ${new Date(event.created_at).toLocaleString()}
+              </div>
+            `).join('')}
+          `;
+        }
+      } catch (err) {
+        result.innerHTML = `<div class="error">Exception: ${err.message}</div>`;
+      }
+    };
+
+    window.testEventsBypass = async function() {
+      const result = document.getElementById('bypass-result');
+      result.innerHTML = 'Testing events with bypass...';
+      
+      try {
+        // Try to get events without RLS restrictions
+        const { data, error } = await supabase
+          .from('events')
+          .select('id, title, status, is_published, start_at, created_at')
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (error) {
+          result.innerHTML = `<div class="error">❌ Bypass Error: ${error.message}</div>`;
+        } else {
+          const publishedEvents = data.filter(e => e.status === 'published' && e.is_published === true);
+          result.innerHTML = `
+            <div class="success">✅ Found ${data.length} total events, ${publishedEvents.length} published</div>
+            ${publishedEvents.map(event => `
+              <div class="event-card">
+                <strong>${event.title || 'Untitled'}</strong><br>
+                Status: ${event.status} | Published: ${event.is_published}<br>
+                Start: ${event.start_at ? new Date(event.start_at).toLocaleString() : 'TBA'}<br>
+                Created: ${new Date(event.created_at).toLocaleString()}
+              </div>
+            `).join('')}
+          `;
+        }
+      } catch (err) {
+        result.innerHTML = `<div class="error">Exception: ${err.message}</div>`;
+      }
+    };
+
+    // Auto-run tests on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      testEventsAfterFix();
+      testEventsBypass();
+    });
+  </script>
+</body>
+</html>

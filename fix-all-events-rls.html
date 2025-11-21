@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix All Events RLS - Chamber122</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f0f0f;
+            color: #e5e7eb;
+        }
+        .container {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #333;
+        }
+        h1 { color: #f59e0b; }
+        .button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .sql-code {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .warning {
+            background: #dc2626;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #b91c1c;
+        }
+        .success {
+            background: #065f46;
+            color: #d1fae5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #10b981;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Fix All Events RLS Policies</h1>
+        
+        <div class="warning">
+            <strong>🚨 CRITICAL:</strong> Events aren't showing up because RLS policies are blocking access. This will fix ALL event display issues across the site.
+        </div>
+
+        <h3>Step 1: Copy and Run This SQL</h3>
+        <p>Go to your Supabase Dashboard → SQL Editor and run this:</p>
+        
+        <div class="sql-code">
+-- ========================================
+-- COMPREHENSIVE EVENTS RLS FIX
+-- ========================================
+
+-- Drop existing policies to avoid conflicts
+DROP POLICY IF EXISTS "Allow public read access to published events" ON events;
+DROP POLICY IF EXISTS "Allow authenticated users to insert events" ON events;
+DROP POLICY IF EXISTS "Allow users to update their own events" ON events;
+DROP POLICY IF EXISTS "Allow users to delete their own events" ON events;
+
+-- 1. Allow public read access to published events
+CREATE POLICY "Public can read published events" ON events
+FOR SELECT USING (
+  status = 'published' 
+  AND is_published = true
+);
+
+-- 2. Allow authenticated users to insert events
+CREATE POLICY "Authenticated users can insert events" ON events
+FOR INSERT WITH CHECK (
+  auth.role() = 'authenticated'
+);
+
+-- 3. Allow users to update their own events
+CREATE POLICY "Users can update their own events" ON events
+FOR UPDATE USING (
+  auth.role() = 'authenticated' 
+  AND business_id IN (
+    SELECT id FROM businesses WHERE owner_id = auth.uid()
+  )
+);
+
+-- 4. Allow users to delete their own events
+CREATE POLICY "Users can delete their own events" ON events
+FOR DELETE USING (
+  auth.role() = 'authenticated' 
+  AND business_id IN (
+    SELECT id FROM businesses WHERE owner_id = auth.uid()
+  )
+);
+
+-- ========================================
+-- FIX BULLETINS RLS (if needed)
+-- ========================================
+
+-- Drop existing bulletin policies
+DROP POLICY IF EXISTS "Public can read published bulletins" ON bulletins;
+DROP POLICY IF EXISTS "Authenticated users can insert bulletins" ON bulletins;
+DROP POLICY IF EXISTS "Users can update their own bulletins" ON bulletins;
+DROP POLICY IF EXISTS "Users can delete their own bulletins" ON bulletins;
+
+-- Allow public read access to published bulletins
+CREATE POLICY "Public can read published bulletins" ON bulletins
+FOR SELECT USING (
+  status = 'published' 
+  AND is_published = true
+);
+
+-- Allow authenticated users to insert bulletins
+CREATE POLICY "Authenticated users can insert bulletins" ON bulletins
+FOR INSERT WITH CHECK (
+  auth.role() = 'authenticated'
+);
+
+-- Allow users to update their own bulletins
+CREATE POLICY "Users can update their own bulletins" ON bulletins
+FOR UPDATE USING (
+  auth.role() = 'authenticated' 
+  AND business_id IN (
+    SELECT id FROM businesses WHERE owner_id = auth.uid()
+  )
+);
+
+-- Allow users to delete their own bulletins
+CREATE POLICY "Users can delete their own bulletins" ON bulletins
+FOR DELETE USING (
+  auth.role() = 'authenticated' 
+  AND business_id IN (
+    SELECT id FROM businesses WHERE owner_id = auth.uid()
+  )
+);
+
+-- ========================================
+-- VERIFY POLICIES
+-- ========================================
+
+-- Check that policies were created
+SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual 
+FROM pg_policies 
+WHERE tablename IN ('events', 'bulletins')
+ORDER BY tablename, policyname;
+        </div>
+        
+        <button id="copySql" class="button">Copy SQL to Clipboard</button>
+        
+        <h3>Step 2: Alternative - Disable RLS Temporarily</h3>
+        <p>If the above doesn't work, temporarily disable RLS:</p>
+        
+        <div class="sql-code">
+-- TEMPORARY: Disable RLS on events and bulletins tables
+ALTER TABLE events DISABLE ROW LEVEL SECURITY;
+ALTER TABLE bulletins DISABLE ROW LEVEL SECURITY;
+        </div>
+        
+        <button id="copyDisable" class="button">Copy Disable RLS SQL</button>
+        
+        <h3>Step 3: Test All Pages</h3>
+        <p>After running the SQL, test all pages:</p>
+        
+        <button id="testEvents" class="button">Test Events Page</button>
+        <button id="testDirectory" class="button">Test Directory Page</button>
+        <button id="testHome" class="button">Test Home Page</button>
+        <button id="testProfile" class="button">Test Profile Page</button>
+        
+        <div class="success">
+            <strong>✅ Expected Results:</strong><br>
+            • Events page: Shows all published events<br>
+            • Directory page: Shows upcoming events<br>
+            • Home page: Shows upcoming events<br>
+            • Profile page: Shows ongoing and past events
+        </div>
+    </div>
+
+    <script>
+        const sqlCode = `-- ========================================
+-- COMPREHENSIVE EVENTS RLS FIX
+-- ========================================
+
+-- Drop existing policies to avoid conflicts
+DROP POLICY IF EXISTS "Allow public read access to published events" ON events;
+DROP POLICY IF EXISTS "Allow authenticated users to insert events" ON events;
+DROP POLICY IF EXISTS "Allow users to update their own events" ON events;
+DROP POLICY IF EXISTS "Allow users to delete their own events" ON events;
+
+-- 1. Allow public read access to published events
+CREATE POLICY "Public can read published events" ON events
+FOR SELECT USING (
+  status = 'published' 
+  AND is_published = true
+);
+
+-- 2. Allow authenticated users to insert events
+CREATE POLICY "Authenticated users can insert events" ON events
+FOR INSERT WITH CHECK (
+  auth.role() = 'authenticated'
+);
+
+-- 3. Allow users to update their own events
+CREATE POLICY "Users can update their own events" ON events
+FOR UPDATE USING (
+  auth.role() = 'authenticated' 
+  AND business_id IN (
+    SELECT id FROM businesses WHERE owner_id = auth.uid()
+  )
+);
+
+-- 4. Allow users to delete their own events
+CREATE POLICY "Users can delete their own events" ON events
+FOR DELETE USING (
+  auth.role() = 'authenticated' 
+  AND business_id IN (
+    SELECT id FROM businesses WHERE owner_id = auth.uid()
+  )
+);
+
+-- ========================================
+-- FIX BULLETINS RLS (if needed)
+-- ========================================
+
+-- Drop existing bulletin policies
+DROP POLICY IF EXISTS "Public can read published bulletins" ON bulletins;
+DROP POLICY IF EXISTS "Authenticated users can insert bulletins" ON bulletins;
+DROP POLICY IF EXISTS "Users can update their own bulletins" ON bulletins;
+DROP POLICY IF EXISTS "Users can delete their own bulletins" ON bulletins;
+
+-- Allow public read access to published bulletins
+CREATE POLICY "Public can read published bulletins" ON bulletins
+FOR SELECT USING (
+  status = 'published' 
+  AND is_published = true
+);
+
+-- Allow authenticated users to insert bulletins
+CREATE POLICY "Authenticated users can insert bulletins" ON bulletins
+FOR INSERT WITH CHECK (
+  auth.role() = 'authenticated'
+);
+
+-- Allow users to update their own bulletins
+CREATE POLICY "Users can update their own bulletins" ON bulletins
+FOR UPDATE USING (
+  auth.role() = 'authenticated' 
+  AND business_id IN (
+    SELECT id FROM businesses WHERE owner_id = auth.uid()
+  )
+);
+
+-- Allow users to delete their own bulletins
+CREATE POLICY "Users can delete their own bulletins" ON bulletins
+FOR DELETE USING (
+  auth.role() = 'authenticated' 
+  AND business_id IN (
+    SELECT id FROM businesses WHERE owner_id = auth.uid()
+  )
+);
+
+-- ========================================
+-- VERIFY POLICIES
+-- ========================================
+
+-- Check that policies were created
+SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual 
+FROM pg_policies 
+WHERE tablename IN ('events', 'bulletins')
+ORDER BY tablename, policyname;`;
+
+        const disableCode = `-- TEMPORARY: Disable RLS on events and bulletins tables
+ALTER TABLE events DISABLE ROW LEVEL SECURITY;
+ALTER TABLE bulletins DISABLE ROW LEVEL SECURITY;`;
+
+        document.getElementById('copySql').addEventListener('click', () => {
+            navigator.clipboard.writeText(sqlCode).then(() => {
+                alert('✅ SQL copied to clipboard! Paste it in Supabase SQL Editor.');
+            });
+        });
+
+        document.getElementById('copyDisable').addEventListener('click', () => {
+            navigator.clipboard.writeText(disableCode).then(() => {
+                alert('✅ Disable RLS SQL copied to clipboard!');
+            });
+        });
+
+        document.getElementById('testEvents').addEventListener('click', () => {
+            window.open('/events.html', '_blank');
+        });
+
+        document.getElementById('testDirectory').addEventListener('click', () => {
+            window.open('/directory.html', '_blank');
+        });
+
+        document.getElementById('testHome').addEventListener('click', () => {
+            window.open('/index.html', '_blank');
+        });
+
+        document.getElementById('testProfile').addEventListener('click', () => {
+            window.open('/owner.html', '_blank');
+        });
+    </script>
+</body>
+</html>

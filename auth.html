@@ -15,8 +15,36 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   
+  <!-- Supabase Bootstrap Loader with multiple fallbacks -->
+  <script type="module" id="supabase-loader">
+    (async () => {
+      const sources = [
+        'https://esm.sh/@supabase/supabase-js@2',
+        'https://unpkg.com/@supabase/supabase-js@2.45.3/dist/module/index.js',
+        'https://cdn.skypack.dev/@supabase/supabase-js@2'
+      ];
+      
+      for (const src of sources) {
+        try {
+          console.log('[bootstrap] Trying to load Supabase from:', src);
+          window.__supabaseMod = await import(src);
+          console.log('[bootstrap] Successfully loaded from:', src);
+          window.__supabaseReady = true;
+          return;
+        } catch (e) {
+          console.warn('[bootstrap] Failed to load from', src, e);
+        }
+      }
+      
+      console.error('[bootstrap] All Supabase sources failed. Network may be down.');
+      window.__supabaseReady = true; // Set ready anyway to prevent infinite wait
+    })();
+  </script>
+  
+  <!-- Supabase client initialization -->
+  <script type="module" src="/js/supabase-client.global.js"></script>
+  
   <!-- Auth login handler loaded separately for immediate execution -->
-  <script type="module" src="/public/js/supabase-client.global.js?v=3"></script>
   <script type="module" src="/public/js/auth-login.js?v=2"></script>
 </head>
 <body data-page="auth">
@@ -56,7 +84,7 @@
             <svg class="h-4 w-4 opacity-70" viewBox="0 0 20 20"><path d="M5 7l5 6 5-6"/></svg>
           </button>
           <div id="account-dropdown" class="menu hidden">
-            <a href="owner-activities.html" data-testid="menu-my-activities" data-i18n="nav.myActivities">My Activities</a>
+            <a href="owner.html" data-testid="menu-my-business" data-i18n="nav.myBusiness">My Business</a>
             <a href="admin-dashboard.html" id="menu-admin" class="hidden" data-testid="menu-admin" data-i18n="nav.admin">Admin Panel</a>
             <a href="#" id="btn-logout" data-testid="logout" data-i18n="nav.logout">Logout</a>
           </div>
@@ -78,7 +106,7 @@
         <i class="fas fa-building"></i>
         My Business
       </a>
-      <a href="owner-activities.html" class="mobile-link">
+      <a href="owner.html" class="mobile-link">
         <i class="fas fa-calendar-alt"></i>
         My Activities
       </a>
@@ -87,7 +115,7 @@
         Admin Panel
       </a>
       <div class="mobile-divider"></div>
-      <a href="auth.html" class="mobile-link">
+      <a href="auth.html#login" class="mobile-link">
         <i class="fas fa-sign-in-alt"></i>
         Login
       </a>
@@ -103,12 +131,12 @@
     <div class="auth-card">
       <!-- Sticky Tab Navigation -->
       <div class="auth-tabs" role="tablist" data-testid="auth-tabs">
-        <button class="auth-tab" id="tab-login" role="tab" aria-controls="panel-login" data-target="login" data-i18n="auth.loginTab">Login</button>
-        <button class="auth-tab" id="tab-signup" role="tab" aria-controls="panel-signup" data-target="signup" data-i18n="auth.signupTab">Sign Up & Get Listed</button>
+        <button class="auth-tab" id="tab-login" role="tab" aria-controls="panel-login" aria-selected="false" data-target="login" data-i18n="auth.loginTab">Login</button>
+        <button class="auth-tab active" id="tab-signup" role="tab" aria-controls="panel-signup" aria-selected="true" data-target="signup" data-i18n="auth.signupTab">Sign Up & Get Listed</button>
       </div>
 
       <!-- Login Panel -->
-      <section id="panel-login" role="tabpanel" aria-labelledby="tab-login">
+      <section id="panel-login" role="tabpanel" aria-labelledby="tab-login" class="hidden" style="display: none;">
         <div class="auth-form">
           <h3 class="form-title" data-i18n="auth.loginTitle">Login to Your Account</h3>
           
@@ -233,9 +261,14 @@
           </div>
           
           <div class="form-group">
-            <label for="signup-desc" class="form-label" data-i18n="auth.description">Short Description *</label>
-            <textarea id="signup-desc" class="form-input form-textarea" data-testid="signup-desc" data-label="Short Description" data-validate="min:10" placeholder="Describe your business in 50-140 characters" required maxlength="140"></textarea>
-            <div id="desc-counter" class="char-counter">0/140</div>
+            <label for="signup-desc" class="form-label" data-i18n="auth.description">Business Description *</label>
+            <textarea id="signup-desc" class="form-input form-textarea" data-testid="signup-desc" data-label="Business Description" data-validate="min:10" placeholder="Describe what you offer, what makes you unique, and how you help customers..." required rows="4"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="signup-story" class="form-label">Our Story (Optional)</label>
+            <textarea id="signup-story" class="form-input form-textarea" data-label="Our Story" placeholder="Share your journey, inspiration, and what drives you..." rows="4"></textarea>
+            <small style="color: #9ca3af; font-size: 0.875rem;">This helps customers connect with your brand and understand your mission.</small>
           </div>
           
         </div>
@@ -244,9 +277,55 @@
           <h3 class="step-title" data-i18n="auth.step2Title">Business Details</h3>
           <p class="step-subtitle" data-i18n="auth.step2Subtitle">Additional business information</p>
           
-          <div class="form-group">
-            <label for="signup-whatsapp" class="form-label" data-i18n="auth.whatsapp">WhatsApp/Phone *</label>
-            <input type="tel" id="signup-whatsapp" class="form-input" data-testid="signup-whatsapp" data-label="WhatsApp/Phone" data-validate="phone" placeholder="+965-12345678" required>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="signup-phone" class="form-label">Phone</label>
+              <input type="tel" id="signup-phone" class="form-input" data-label="Phone" placeholder="+965-12345678">
+            </div>
+            <div class="form-group">
+              <label for="signup-whatsapp" class="form-label" data-i18n="auth.whatsapp">WhatsApp *</label>
+              <input type="tel" id="signup-whatsapp" class="form-input" data-testid="signup-whatsapp" data-label="WhatsApp" data-validate="phone" placeholder="+965-12345678" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="signup-website" class="form-label">Website (Optional)</label>
+              <input type="url" id="signup-website" class="form-input" data-label="Website" placeholder="https://yourwebsite.com">
+            </div>
+            <div class="form-group">
+              <label for="signup-instagram" class="form-label">Instagram (Optional)</label>
+              <input type="text" id="signup-instagram" class="form-input" data-label="Instagram" placeholder="@yourbusiness">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="signup-area" class="form-label">Area</label>
+              <input type="text" id="signup-area" class="form-input" data-label="Area" placeholder="Area">
+            </div>
+            <div class="form-group">
+              <label for="signup-block" class="form-label">Block</label>
+              <input type="text" id="signup-block" class="form-input" data-label="Block" placeholder="Block">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="signup-street" class="form-label">Street</label>
+              <input type="text" id="signup-street" class="form-input" data-label="Street" placeholder="Street">
+            </div>
+            <div class="form-group">
+              <label for="signup-floor" class="form-label">Floor (Optional)</label>
+              <input type="text" id="signup-floor" class="form-input" data-label="Floor" placeholder="Floor">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="signup-office-no" class="form-label">Office No (Optional)</label>
+              <input type="text" id="signup-office-no" class="form-input" data-label="Office No" placeholder="Office No">
+            </div>
           </div>
           
           <div class="form-group">
@@ -264,6 +343,18 @@
               <img id="logo-preview" class="logo-preview hidden" alt="Logo preview" 
                    src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='180'><rect width='100%25' height='100%25' fill='%23222222'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23aaaaaa' font-family='Arial' font-size='16'>Logo preview</text></svg>"
                    onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22320%22 height=%22180%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23222222%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23aaaaaa%22 font-family=%22Arial%22 font-size=%2216%22>Logo preview</text></svg>'">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="gallery-files" class="form-label">Gallery Images (Optional)</label>
+            <div class="file-upload">
+              <input type="file" id="gallery-files" class="file-upload-input" data-doc="gallery" accept="image/*" multiple>
+              <label for="gallery-files" class="file-upload-label">
+                <i class="fas fa-images"></i>
+                <span>Upload Gallery Images (up to 5)</span>
+              </label>
+              <div id="gallery-preview" class="gallery-preview" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.5rem; margin-top: 0.5rem;"></div>
             </div>
           </div>
 
@@ -391,8 +482,8 @@
           </div>
           
           <div class="form-group">
-            <label for="signup-phone" class="form-label" data-i18n="auth.phone">Phone Number (Optional)</label>
-            <input type="tel" id="signup-phone" class="form-input" data-testid="signup-phone" data-label="Phone" placeholder="+9655xxxxxxx" />
+            <label for="signup-user-phone" class="form-label" data-i18n="auth.phone">Phone Number (Optional)</label>
+            <input type="tel" id="signup-user-phone" class="form-input" data-testid="signup-user-phone" data-label="Phone" placeholder="+9655xxxxxxx" />
             <small class="form-help" data-i18n="auth.phoneHelp">Add your phone for SMS login option</small>
           </div>
           
@@ -493,7 +584,9 @@
   
   <!-- Signup modules (loaded separately for auth page) -->
   <script type="module" src="./js/i18n.js"></script>
+  <script type="module" src="/js/businesses.api.js"></script>
   <script type="module" src="js/signup-with-documents.js?v=21"></script>
+  <script type="module" src="js/auth-signup.js"></script>
   <script type="module">
     import { initSignupPage } from '/js/signup-with-documents.js';
     document.addEventListener('DOMContentLoaded', () => {
@@ -522,7 +615,7 @@
         if (!phone || !code) { alert('Enter phone and code'); return; }
         try {
           await verifyPhoneOtp({ phone, code });
-          location.replace('/owner-activities.html');
+          location.replace('/owner.html');
         } catch (err) { alert(err.message); }
       });
 
@@ -552,7 +645,7 @@
           if (r.requiresConfirm) {
             alert('Account created. Check your email to confirm, then log in.');
           } else {
-            location.replace('/owner-activities.html');
+            location.replace('/owner.html');
           }
         } catch (err) {
           alert(err.message);
@@ -592,17 +685,90 @@
       }
     }
 
-    // Handle URL hash routing
+    // Tab switching function
+    function switchTab(tabName) {
+      const loginTab = document.getElementById('tab-login');
+      const signupTab = document.getElementById('tab-signup');
+      const loginPanel = document.getElementById('panel-login');
+      const signupPanel = document.getElementById('panel-signup');
+      
+      if (tabName === 'signup') {
+        // Show signup, hide login
+        if (loginTab) {
+          loginTab.classList.remove('active');
+          loginTab.setAttribute('aria-selected', 'false');
+        }
+        if (signupTab) {
+          signupTab.classList.add('active');
+          signupTab.setAttribute('aria-selected', 'true');
+        }
+        
+        if (loginPanel) {
+          loginPanel.classList.add('hidden');
+          loginPanel.style.display = 'none';
+        }
+        if (signupPanel) {
+          signupPanel.classList.remove('hidden');
+          signupPanel.style.display = 'block';
+        }
+        
+        // Update URL hash
+        window.location.hash = '#signup';
+      } else {
+        // Show login, hide signup
+        if (signupTab) {
+          signupTab.classList.remove('active');
+          signupTab.setAttribute('aria-selected', 'false');
+        }
+        if (loginTab) {
+          loginTab.classList.add('active');
+          loginTab.setAttribute('aria-selected', 'true');
+        }
+        
+        if (signupPanel) {
+          signupPanel.classList.add('hidden');
+          signupPanel.style.display = 'none';
+        }
+        if (loginPanel) {
+          loginPanel.classList.remove('hidden');
+          loginPanel.style.display = 'block';
+        }
+        
+        // Update URL hash
+        window.location.hash = '#login';
+      }
+    }
+    
+    // Add click handlers to tabs
     document.addEventListener('DOMContentLoaded', function() {
-      // Small delay to ensure all event listeners are set up
+      const loginTab = document.getElementById('tab-login');
+      const signupTab = document.getElementById('tab-signup');
+      
+      loginTab?.addEventListener('click', () => switchTab('login'));
+      signupTab?.addEventListener('click', () => switchTab('signup'));
+      
+      // Handle URL hash routing on page load
       setTimeout(() => {
         const hash = window.location.hash;
         if (hash === '#signup') {
-          document.getElementById('tab-signup')?.click();
+          switchTab('signup');
         } else if (hash === '#login') {
-          document.getElementById('tab-login')?.click();
+          switchTab('login');
+        } else {
+          // Default to signup if no hash (most users want to sign up)
+          switchTab('signup');
         }
       }, 100);
+      
+      // Also handle hash changes (when navigating from other pages)
+      window.addEventListener('hashchange', () => {
+        const hash = window.location.hash;
+        if (hash === '#signup') {
+          switchTab('signup');
+        } else if (hash === '#login') {
+          switchTab('login');
+        }
+      });
     });
 
     // Show reason if provided in URL
@@ -1007,7 +1173,173 @@
 
             if (nextStep === 'done' || nextStep === 'dashboard') {
               console.log('[Stepper] Signup complete - redirecting to dashboard');
-              window.location.assign('/owner-activities.html');
+              window.location.assign('/owner.html');
+              return;
+            }
+
+          } catch (error) {
+            console.error('[Stepper] Error processing step:', error);
+            showToast('Error processing step: ' + error.message, 'error');
+            return;
+          }
+        }
+
+        console.log('[Stepper] Moving to next step');
+        showStep(stepNumber + 1);
+      }
+
+      // Handle back button click
+      function handleBackClick(event) {
+        event.preventDefault();
+        
+        const { number: stepNumber } = getCurrentStep();
+        const previousStep = Math.max(1, stepNumber - 1);
+        
+        console.log(`[Stepper] Back clicked - going from step ${stepNumber} to ${previousStep}`);
+        showStep(previousStep);
+      }
+
+      // Initialize event listeners
+      function initializeEventListeners() {
+        if (isInitialized) {
+          console.warn('[Stepper] Already initialized - skipping');
+          return;
+        }
+
+        // OLD BUTTON BINDING DISABLED - Using new validation system
+        // const nextButtons = $$(CONFIG.nextSelectors);
+        // nextButtons.forEach(button => {
+        //   if (button) {
+        //     button.type = 'button'; // Prevent form submission
+        //     button.addEventListener('click', handleNextClick);
+        //     console.log('[Stepper] Bound next button:', button.id || button.className);
+        //   }
+        // });
+
+        // Bind back buttons
+        const backButtons = $$(CONFIG.backSelectors);
+        backButtons.forEach(button => {
+          if (button) {
+            button.type = 'button'; // Prevent form submission
+            button.addEventListener('click', handleBackClick);
+            console.log('[Stepper] Bound back button:', button.id || button.className);
+          }
+        });
+
+        // Initialize step display
+        showStep(1);
+        
+        isInitialized = true;
+        console.log('[Stepper] Initialization complete');
+      }
+
+      // Initialize when DOM is ready
+      function initialize() {
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initializeEventListeners);
+        } else {
+          initializeEventListeners();
+        }
+      }
+
+      // Start initialization
+      initialize();
+
+      // Debug helpers
+      window.__signupDebug = {
+        getCurrentStep: () => getCurrentStep().number,
+        showStep: (n) => showStep(n),
+        forceNext: () => handleNextClick(new Event('click')),
+        validateStep1: () => validateStep1(getCurrentStep().element),
+        validateStep2: () => validateStep2(getCurrentStep().element),
+        bypass: () => { window.SIGNUP_DEBUG_BYPASS = true; },
+        unbypass: () => { window.SIGNUP_DEBUG_BYPASS = false; }
+      };
+
+    })();
+  -->
+
+</body>
+</html>
+
+
+          return;
+        }
+
+        // Validate current step
+        let validationPassed = true;
+        
+        if (stepNumber === 1) {
+          validationPassed = validateStep1(currentElement);
+        } else if (stepNumber === 2) {
+          validationPassed = validateStep2(currentElement);
+        } else if (stepNumber === 3) {
+          validationPassed = validateStep3(currentElement);
+        } else if (stepNumber === 4) {
+          validationPassed = validateStep4(currentElement);
+        }
+
+        if (!validationPassed) {
+          console.log('[Stepper] Validation failed - staying on current step');
+          return;
+        }
+
+        console.log('[Stepper] Validation passed - processing step data');
+
+        // OLD VALIDATION SYSTEM COMPLETELY DISABLED - Using new per-step validation instead
+        // This entire block is disabled to prevent email prompts on Step 1
+        if (false) {
+          try {
+            // Import the signup utils
+            const { ensureSignedIn, collectStepOneFields, collectStepTwoFields, collectStepThreeFields, collectStepFourFields } = await import('./js/signup-utils.js');
+            const { supabase, getAccountAndCompleteness } = await import('/js/supabase-client.js');
+            
+            // Ensure user is signed in
+            const user = await ensureSignedIn();
+            if (!user) {
+              console.log('[Stepper] User not signed in - showing sign-in modal');
+              return; // User will complete sign-in and click Next again
+            }
+
+            console.log('[Stepper] User signed in:', user.email);
+
+            // Collect and save step data
+            let stepData = {};
+            if (stepNumber === 1) {
+              stepData = collectStepOneFields();
+              // Save to businesses table
+              const { error } = await supabase.from('businesses').upsert({
+                owner_id: user.id,
+                name: stepData.name,
+                industry: stepData.category,
+                country: stepData.country,
+                city: stepData.city,
+                short_description: stepData.description,
+                whatsapp: stepData.whatsapp
+              }, { onConflict: 'owner_id' });
+              
+              if (error) {
+                console.error('[Stepper] Error saving step 1:', error);
+                showToast('Error saving business information: ' + error.message, 'error');
+                return;
+              }
+            }
+            // Add other steps as needed...
+
+            // Check completeness and determine next step
+            const { data: completenessData, error: completenessError } = await getAccountAndCompleteness();
+            if (completenessError) {
+              console.error('[Stepper] Error checking completeness:', completenessError);
+              showToast('Error checking progress: ' + completenessError.message, 'error');
+              return;
+            }
+
+            const nextStep = completenessData?.next_step;
+            console.log('[Stepper] Next step from completeness:', nextStep);
+
+            if (nextStep === 'done' || nextStep === 'dashboard') {
+              console.log('[Stepper] Signup complete - redirecting to dashboard');
+              window.location.assign('/owner.html');
               return;
             }
 

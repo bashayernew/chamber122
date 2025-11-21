@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test All Events Display - Chamber122</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f0f0f;
+            color: #e5e7eb;
+        }
+        .container {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #333;
+        }
+        h1 { color: #f59e0b; }
+        .button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover { background: #047857; }
+        .section {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #444;
+        }
+        .event-card {
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .status.success { background: #065f46; color: #d1fae5; }
+        .status.error { background: #7f1d1d; color: #fecaca; }
+        .status.info { background: #1e3a8a; color: #dbeafe; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test All Events Display</h1>
+        
+        <div class="section">
+            <h3>Step 1: Fix RLS Policies (CRITICAL)</h3>
+            <p>First, make sure you've run the RLS fix SQL from the previous tool:</p>
+            <button id="openRLSFix" class="button">Open RLS Fix Tool</button>
+        </div>
+
+        <div class="section">
+            <h3>Step 2: Test All Pages</h3>
+            <p>Test that events show up on all pages:</p>
+            <button id="testEvents" class="button">Test Events Page</button>
+            <button id="testDirectory" class="button">Test Directory Page</button>
+            <button id="testHome" class="button">Test Home Page</button>
+            <button id="testProfile" class="button">Test Profile Page</button>
+        </div>
+
+        <div class="section">
+            <h3>Step 3: Test Event Creation</h3>
+            <p>Create a new event to test the full flow:</p>
+            <button id="createEvent" class="button">Create New Event</button>
+        </div>
+
+        <div class="section">
+            <h3>Step 4: Direct Database Test</h3>
+            <p>Test direct database queries:</p>
+            <button id="testDirectEvents" class="button">Test Direct Events Query</button>
+            <button id="testActivitiesView" class="button">Test Activities View</button>
+        </div>
+
+        <div class="section">
+            <h3>Test Results</h3>
+            <div id="results"></div>
+        </div>
+
+        <div class="section">
+            <h3>Expected Results</h3>
+            <div class="status success">
+                <strong>✅ Events Page:</strong> Shows all published events in a grid<br>
+                <strong>✅ Directory Page:</strong> Shows upcoming events in "Upcoming Events" section<br>
+                <strong>✅ Home Page:</strong> Shows upcoming events in "Upcoming Events" section<br>
+                <strong>✅ Profile Page:</strong> Shows events in "Ongoing", "Upcoming", and "Previous" tabs<br>
+                <strong>✅ Event Creation:</strong> Creates event and shows success message<br>
+                <strong>✅ Auto-Refresh:</strong> New events appear on all pages automatically
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js@2';
+
+        const SUPABASE_URL = 'https://gidbvemmqffogakcepka.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dhY2Vwa2EiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcyNTk0NTQ4MCwiZXhwIjoyMDQxNTIxNDgwfQ.xpMI1i5czqv5hpO-vaLD5xKWsBmAdEryq9IA_jOi3J0';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const resultsEl = document.getElementById('results');
+
+        function addResult(title, content, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${title}:</strong> ${content}`;
+            resultsEl.appendChild(div);
+        }
+
+        document.getElementById('openRLSFix').addEventListener('click', () => {
+            window.open('/fix-all-events-rls.html', '_blank');
+        });
+
+        document.getElementById('testEvents').addEventListener('click', () => {
+            window.open('/events.html', '_blank');
+            addResult('Events Page', 'Opened in new tab', 'info');
+        });
+
+        document.getElementById('testDirectory').addEventListener('click', () => {
+            window.open('/directory.html', '_blank');
+            addResult('Directory Page', 'Opened in new tab', 'info');
+        });
+
+        document.getElementById('testHome').addEventListener('click', () => {
+            window.open('/index.html', '_blank');
+            addResult('Home Page', 'Opened in new tab', 'info');
+        });
+
+        document.getElementById('testProfile').addEventListener('click', () => {
+            window.open('/owner.html', '_blank');
+            addResult('Profile Page', 'Opened in new tab', 'info');
+        });
+
+        document.getElementById('createEvent').addEventListener('click', () => {
+            window.open('/events.html', '_blank');
+            addResult('Event Creation', 'Opened events page - click "Add Event" button', 'info');
+        });
+
+        document.getElementById('testDirectEvents').addEventListener('click', async () => {
+            addResult('Direct Events Test', 'Testing...', 'info');
+            
+            try {
+                const { data, error } = await supabase
+                    .from('events')
+                    .select('id,title,status,is_published,created_at')
+                    .eq('status', 'published')
+                    .eq('is_published', true)
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+
+                if (error) {
+                    addResult('Direct Events Test', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('Direct Events Test', `Found ${data?.length || 0} events`, 'success');
+                    if (data && data.length > 0) {
+                        data.forEach((event, i) => {
+                            addResult(`Event ${i + 1}`, `${event.title} (${new Date(event.created_at).toLocaleString()})`, 'info');
+                        });
+                    }
+                }
+            } catch (err) {
+                addResult('Direct Events Test', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        document.getElementById('testActivitiesView').addEventListener('click', async () => {
+            addResult('Activities View Test', 'Testing...', 'info');
+            
+            try {
+                const { data, error } = await supabase
+                    .from('activities_current')
+                    .select('id,title,type,created_at')
+                    .eq('type', 'event')
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+
+                if (error) {
+                    addResult('Activities View Test', `Error: ${error.message}`, 'error');
+                } else {
+                    addResult('Activities View Test', `Found ${data?.length || 0} events in view`, 'success');
+                    if (data && data.length > 0) {
+                        data.forEach((event, i) => {
+                            addResult(`View Event ${i + 1}`, `${event.title} (${new Date(event.created_at).toLocaleString()})`, 'info');
+                        });
+                    }
+                }
+            } catch (err) {
+                addResult('Activities View Test', `Exception: ${err.message}`, 'error');
+            }
+        });
+
+        // Auto-run initial tests
+        addResult('Test Tool', 'Ready! Click the buttons above to test each component.', 'info');
+    </script>
+</body>
+</html>

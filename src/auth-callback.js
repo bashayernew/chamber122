@@ -14,8 +14,8 @@ async function finish() {
     
     if (user) {
       console.log('User authenticated:', user.email);
-      // Redirect to owner activities page (or dashboard)
-      window.location.replace('/owner-activities.html');
+      // Redirect to owner profile page
+      window.location.replace('/owner.html');
       return;
     }
     
@@ -23,7 +23,7 @@ async function finish() {
     supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state change:', event, session?.user?.email);
       if (event === 'SIGNED_IN' && session?.user) {
-        window.location.replace('/owner-activities.html');
+        window.location.replace('/owner.html');
       } else if (event === 'SIGNED_OUT') {
         window.location.replace('/auth.html');
       }

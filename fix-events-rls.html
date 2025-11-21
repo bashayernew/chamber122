@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Events RLS - Chamber122</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f0f0f;
+            color: #e5e7eb;
+        }
+        .container {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #333;
+        }
+        h1 { color: #f59e0b; }
+        .button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .sql-code {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .warning {
+            background: #dc2626;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #b91c1c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Fix Events RLS Policies</h1>
+        
+        <div class="warning">
+            <strong>🚨 ISSUE:</strong> The events table has RLS policies that are blocking public read access. This is why events aren't showing up on the events page.
+        </div>
+
+        <h3>Step 1: Copy and Run This SQL</h3>
+        <p>Go to your Supabase Dashboard → SQL Editor and run this:</p>
+        
+        <div class="sql-code">
+-- Fix RLS policies for events table
+-- Allow public read access to published events
+CREATE POLICY "Allow public read access to published events" ON events
+FOR SELECT USING (
+  status = 'published' 
+  AND is_published = true
+);
+
+-- Allow authenticated users to insert events
+CREATE POLICY "Allow authenticated users to insert events" ON events
+FOR INSERT WITH CHECK (
+  auth.role() = 'authenticated'
+);
+
+-- Allow users to update their own events
+CREATE POLICY "Allow users to update their own events" ON events
+FOR UPDATE USING (
+  auth.role() = 'authenticated' 
+  AND business_id IN (
+    SELECT id FROM businesses WHERE owner_id = auth.uid()
+  )
+);
+
+-- Allow users to delete their own events
+CREATE POLICY "Allow users to delete their own events" ON events
+FOR DELETE USING (
+  auth.role() = 'authenticated' 
+  AND business_id IN (
+    SELECT id FROM businesses WHERE owner_id = auth.uid()
+  )
+);
+        </div>
+        
+        <button id="copySql" class="button">Copy SQL to Clipboard</button>
+        
+        <h3>Step 2: Alternative - Disable RLS Temporarily</h3>
+        <p>If the above doesn't work, temporarily disable RLS on events table:</p>
+        
+        <div class="sql-code">
+-- TEMPORARY: Disable RLS on events table
+ALTER TABLE events DISABLE ROW LEVEL SECURITY;
+        </div>
+        
+        <button id="copyDisable" class="button">Copy Disable RLS SQL</button>
+        
+        <h3>Step 3: Test</h3>
+        <p>After running the SQL, test the events page:</p>
+        
+        <button id="testEvents" class="button">Open Events Page</button>
+    </div>
+
+    <script>
+        const sqlCode = `-- Fix RLS policies for events table
+-- Allow public read access to published events
+CREATE POLICY "Allow public read access to published events" ON events
+FOR SELECT USING (
+  status = 'published' 
+  AND is_published = true
+);
+
+-- Allow authenticated users to insert events
+CREATE POLICY "Allow authenticated users to insert events" ON events
+FOR INSERT WITH CHECK (
+  auth.role() = 'authenticated'
+);
+
+-- Allow users to update their own events
+CREATE POLICY "Allow users to update their own events" ON events
+FOR UPDATE USING (
+  auth.role() = 'authenticated' 
+  AND business_id IN (
+    SELECT id FROM businesses WHERE owner_id = auth.uid()
+  )
+);
+
+-- Allow users to delete their own events
+CREATE POLICY "Allow users to delete their own events" ON events
+FOR DELETE USING (
+  auth.role() = 'authenticated' 
+  AND business_id IN (
+    SELECT id FROM businesses WHERE owner_id = auth.uid()
+  )
+);`;
+
+        const disableCode = `-- TEMPORARY: Disable RLS on events table
+ALTER TABLE events DISABLE ROW LEVEL SECURITY;`;
+
+        document.getElementById('copySql').addEventListener('click', () => {
+            navigator.clipboard.writeText(sqlCode).then(() => {
+                alert('SQL copied to clipboard! Paste it in Supabase SQL Editor.');
+            });
+        });
+
+        document.getElementById('copyDisable').addEventListener('click', () => {
+            navigator.clipboard.writeText(disableCode).then(() => {
+                alert('Disable RLS SQL copied to clipboard!');
+            });
+        });
+
+        document.getElementById('testEvents').addEventListener('click', () => {
+            window.open('/events.html', '_blank');
+        });
+    </script>
+</body>
+</html>

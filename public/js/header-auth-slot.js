@@ -36,7 +36,7 @@ function ensureSlot() {
   slot.id = 'auth-slot';
   // Fallback buttons (no-JS & while hydrating)
   slot.innerHTML = `
-    <a class="btn" href="/auth.html">Login</a>
+    <a class="btn" href="/auth.html#login">Login</a>
     <a class="btn primary" href="/auth.html#signup">Sign Up &amp; Get Listed</a>
   `;
   mount.appendChild(slot);
@@ -58,7 +58,7 @@ async function getProfile(userId){
 
 function renderSignedOut(slot){
   slot.innerHTML = `
-    <a class="btn" href="/auth.html">Login</a>
+    <a class="btn" href="/auth.html#login">Login</a>
     <a class="btn primary" href="/auth.html#signup">Sign Up &amp; Get Listed</a>
   `;
   slot.classList.remove('hydrating');

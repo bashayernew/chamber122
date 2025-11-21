@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Force Cache Clear</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        button { margin: 5px; padding: 10px 15px; }
+        #log { background: #f8f9fa; padding: 10px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>🚨 Force Cache Clear - Critical Fix</h1>
+    
+    <div class="section error">
+        <h3>❌ Critical Issue Detected</h3>
+        <p><strong>Problem:</strong> Console shows <code>list.js?v=3</code> but we updated to <code>v=4</code></p>
+        <p><strong>Error:</strong> Still using old query with <code>activities_base</code> and <code>businesses</code> join</p>
+        <p><strong>Solution:</strong> Force complete cache clear and reload</p>
+    </div>
+    
+    <div class="section">
+        <h3>🔧 Immediate Actions Required</h3>
+        <button id="clear-all-cache">1. Clear ALL Cache & Storage</button>
+        <button id="hard-refresh-all">2. Hard Refresh All Pages</button>
+        <button id="test-after-clear">3. Test After Cache Clear</button>
+    </div>
+    
+    <div class="section">
+        <h3>🧪 Verification Steps</h3>
+        <button id="check-versions">Check Script Versions</button>
+        <button id="check-queries">Check Database Queries</button>
+        <button id="open-bulletin">Open Bulletin Page</button>
+    </div>
+    
+    <div id="log"></div>
+
+    <script>
+        const log = document.getElementById('log');
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+            log.textContent += `[${timestamp}] ${icon} ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        document.getElementById('clear-all-cache').addEventListener('click', () => {
+            addLog('Clearing ALL cache and storage...');
+            try {
+                // Clear all storage
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Clear service worker cache if exists
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        names.forEach(name => {
+                            caches.delete(name);
+                        });
+                    });
+                }
+                
+                addLog('All cache and storage cleared ✓', 'success');
+                addLog('Now perform hard refresh on all pages');
+            } catch (e) {
+                addLog('Error clearing cache: ' + e.message, 'error');
+            }
+        });
+        
+        document.getElementById('hard-refresh-all').addEventListener('click', () => {
+            addLog('Hard refresh instructions:', 'warning');
+            addLog('1. Press Ctrl+Shift+R (or Cmd+Shift+R on Mac)');
+            addLog('2. Or press F12 > Network tab > check "Disable cache" > refresh');
+            addLog('3. Or close browser completely and reopen');
+            addLog('4. Or use incognito/private mode');
+        });
+        
+        document.getElementById('test-after-clear').addEventListener('click', () => {
+            addLog('Testing after cache clear...');
+            addLog('Opening bulletin page with fresh cache...');
+            window.open('bulletin.html?v=' + Date.now(), '_blank');
+        });
+        
+        document.getElementById('check-versions').addEventListener('click', () => {
+            addLog('Version check instructions:', 'warning');
+            addLog('1. Open Developer Tools (F12)');
+            addLog('2. Go to Sources tab');
+            addLog('3. Look for these files and check versions:');
+            addLog('   - bulletin/list.js should be v=4 (not v=3)');
+            addLog('   - public/js/supabase-client.global.js should be v=4');
+            addLog('   - bulletin/fab.js should be v=4');
+        });
+        
+        document.getElementById('check-queries').addEventListener('click', () => {
+            addLog('Query check instructions:', 'warning');
+            addLog('1. Open Network tab in Developer Tools');
+            addLog('2. Refresh bulletin page');
+            addLog('3. Look for these requests:');
+            addLog('   - Should see: activities_current (GOOD)');
+            addLog('   - Should NOT see: activities_base with businesses join (BAD)');
+            addLog('   - Should NOT see: or=(status.eq.published,is_published.is.true) (BAD)');
+        });
+        
+        document.getElementById('open-bulletin').addEventListener('click', () => {
+            addLog('Opening bulletin page with cache bust...');
+            window.open('bulletin.html?v=' + Date.now(), '_blank');
+        });
+        
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            addLog('🚨 FORCE CACHE CLEAR - CRITICAL FIX');
+            addLog('The bulletin feed is still using old cached code');
+            addLog('Follow the steps above to force complete cache clear');
+            addLog('This will fix the activities_base query error');
+        });
+    </script>
+</body>
+</html>

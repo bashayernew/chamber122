@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Supabase Connection Diagnostic</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        button { margin: 5px; padding: 10px 15px; }
+        #log { background: #f8f9fa; padding: 10px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Supabase Connection Diagnostic</h1>
+    
+    <div class="section error">
+        <h3>❌ Connection Issue Detected</h3>
+        <p><strong>Error:</strong> <code>net::ERR_CONNECTION_CLOSED</code></p>
+        <p><strong>Problem:</strong> Supabase authentication is failing</p>
+        <p><strong>Impact:</strong> Event creation blocked by auth check</p>
+    </div>
+    
+    <div class="section">
+        <h3>🔧 Diagnostic Tests</h3>
+        <button id="test-connection">1. Test Supabase Connection</button>
+        <button id="test-auth">2. Test Authentication</button>
+        <button id="test-database">3. Test Database Access</button>
+        <button id="test-storage">4. Test Storage Access</button>
+    </div>
+    
+    <div class="section">
+        <h3>🛠️ Quick Fixes</h3>
+        <button id="refresh-session">Refresh Auth Session</button>
+        <button id="reconnect-supabase">Reconnect to Supabase</button>
+        <button id="test-event-creation">Test Event Creation</button>
+    </div>
+    
+    <div id="log"></div>
+
+    <script>
+        const SUPABASE_URL = 'https://gidbvemmqffogakcepka.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dhY2Vwa2EiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcyNTk0MjQ3MCwiZXhwIjoyMDQxNTE4NDcwfQ.Ukhzltf0upnwvuEOgiws6amFoNJu6--chR7YGdJNk6c';
+        
+        const log = document.getElementById('log');
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+            log.textContent += `[${timestamp}] ${icon} ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        // Wait for Supabase to load
+        window.addEventListener('load', () => {
+            if (typeof createClient === 'undefined') {
+                addLog('Supabase not loaded, retrying...', 'warning');
+                setTimeout(() => {
+                    if (typeof createClient !== 'undefined') {
+                        initializeTests();
+                    } else {
+                        addLog('Supabase failed to load. Check internet connection.', 'error');
+                    }
+                }, 1000);
+            } else {
+                initializeTests();
+            }
+        });
+        
+        function initializeTests() {
+            window.supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            addLog('Supabase client initialized');
+            
+            document.getElementById('test-connection').addEventListener('click', testConnection);
+            document.getElementById('test-auth').addEventListener('click', testAuth);
+            document.getElementById('test-database').addEventListener('click', testDatabase);
+            document.getElementById('test-storage').addEventListener('click', testStorage);
+            document.getElementById('refresh-session').addEventListener('click', refreshSession);
+            document.getElementById('reconnect-supabase').addEventListener('click', reconnectSupabase);
+            document.getElementById('test-event-creation').addEventListener('click', testEventCreation);
+        }
+        
+        async function testConnection() {
+            addLog('Testing Supabase connection...');
+            try {
+                const { data, error } = await window.supabase.from('events').select('id').limit(1);
+                if (error) {
+                    addLog('Connection failed: ' + error.message, 'error');
+                } else {
+                    addLog('Connection successful ✓', 'success');
+                }
+            } catch (err) {
+                addLog('Connection error: ' + err.message, 'error');
+            }
+        }
+        
+        async function testAuth() {
+            addLog('Testing authentication...');
+            try {
+                const { data: { user }, error } = await window.supabase.auth.getUser();
+                if (error) {
+                    addLog('Auth error: ' + error.message, 'error');
+                } else if (user) {
+                    addLog('User authenticated: ' + user.email, 'success');
+                } else {
+                    addLog('No user authenticated', 'warning');
+                }
+            } catch (err) {
+                addLog('Auth test error: ' + err.message, 'error');
+            }
+        }
+        
+        async function testDatabase() {
+            addLog('Testing database access...');
+            try {
+                const { data, error } = await window.supabase.from('events').select('id').limit(1);
+                if (error) {
+                    addLog('Database error: ' + error.message, 'error');
+                } else {
+                    addLog('Database access successful ✓', 'success');
+                }
+            } catch (err) {
+                addLog('Database test error: ' + err.message, 'error');
+            }
+        }
+        
+        async function testStorage() {
+            addLog('Testing storage access...');
+            try {
+                const { data, error } = await window.supabase.storage.listBuckets();
+                if (error) {
+                    addLog('Storage error: ' + error.message, 'error');
+                } else {
+                    addLog('Storage access successful ✓', 'success');
+                    addLog('Available buckets: ' + data.map(b => b.name).join(', '));
+                }
+            } catch (err) {
+                addLog('Storage test error: ' + err.message, 'error');
+            }
+        }
+        
+        async function refreshSession() {
+            addLog('Refreshing auth session...');
+            try {
+                const { data, error } = await window.supabase.auth.refreshSession();
+                if (error) {
+                    addLog('Session refresh failed: ' + error.message, 'error');
+                } else {
+                    addLog('Session refreshed successfully ✓', 'success');
+                }
+            } catch (err) {
+                addLog('Session refresh error: ' + err.message, 'error');
+            }
+        }
+        
+        async function reconnectSupabase() {
+            addLog('Reconnecting to Supabase...');
+            try {
+                // Recreate the client
+                window.supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                addLog('Supabase client recreated ✓', 'success');
+                
+                // Test connection
+                const { data, error } = await window.supabase.from('events').select('id').limit(1);
+                if (error) {
+                    addLog('Reconnection failed: ' + error.message, 'error');
+                } else {
+                    addLog('Reconnection successful ✓', 'success');
+                }
+            } catch (err) {
+                addLog('Reconnection error: ' + err.message, 'error');
+            }
+        }
+        
+        function testEventCreation() {
+            addLog('Opening events page to test creation...');
+            window.open('events.html?v=' + Date.now(), '_blank');
+        }
+        
+        // Auto-run initial tests
+        window.addEventListener('load', () => {
+            addLog('🔍 Supabase Connection Diagnostic Tool');
+            addLog('Click the test buttons to diagnose the connection issue');
+        });
+    </script>
+</body>
+</html>

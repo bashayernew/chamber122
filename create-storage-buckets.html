@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Storage Buckets - Chamber 122</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .step { margin: 20px 0; padding: 15px; background: #f8f9fa; border-left: 4px solid #007bff; border-radius: 4px; }
+        .code-block { background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 4px; font-family: monospace; margin: 10px 0; overflow-x: auto; }
+        .success { color: #28a745; font-weight: bold; }
+        .error { color: #dc3545; font-weight: bold; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        .log { background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Create Storage Buckets</h1>
+        <p>This tool will create the required storage buckets for the Chamber 122 website.</p>
+
+        <div class="step">
+            <h3>Step 1: Check Current Buckets</h3>
+            <button id="btn-check">Check Existing Buckets</button>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Create Required Buckets</h3>
+            <button id="btn-create">Create All Buckets</button>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Verify Buckets</h3>
+            <button id="btn-verify">Verify All Buckets</button>
+        </div>
+
+        <pre id="log"></pre>
+
+        <div class="step">
+            <h3>Required Buckets:</h3>
+            <ul>
+                <li><strong>business-media</strong> - For event cover images and business assets</li>
+                <li><strong>business-files</strong> - For business documents and compliance files</li>
+                <li><strong>gallery</strong> - For profile gallery images</li>
+                <li><strong>bulletins</strong> - For bulletin cover images</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        window.EDGE_CREATE_BUCKETS_URL = ""; // paste your function URL if you chose Option A
+        window.ADMIN_TASKS_TOKEN = "";       // paste your admin token
+    </script>
+
+    <script type="module">
+        const logEl = document.getElementById('log');
+        const log = (m) => { logEl.textContent += (typeof m === 'string' ? m : JSON.stringify(m,null,2)) + "\n"; };
+
+        // Choose ONE backend:
+        // A) Edge Function (preferred): set EDGE_URL + ADMIN_TOKEN
+        // B) If you used pure SQL above, these buttons can just call a no-op or a GET to /rest/v1/storage.buckets to verify.
+
+        const EDGE_URL    = window.EDGE_CREATE_BUCKETS_URL || "";  // set in a local <script> for dev
+        const ADMIN_TOKEN = window.ADMIN_TASKS_TOKEN || "";
+
+        async function callEdge() {
+            if (!EDGE_URL || !ADMIN_TOKEN) { log("Set EDGE URL & ADMIN TOKEN (or use the SQL path)."); return; }
+            log("Calling create-buckets Edge Function…");
+            const res = await fetch(EDGE_URL, { method:"POST", headers:{ "x-admin-token": ADMIN_TOKEN }});
+            log(`Status: ${res.status}`);
+            const data = await res.json().catch(()=>null);
+            if (data) log(data);
+        }
+
+        document.getElementById('btn-check')?.addEventListener('click', callEdge);
+        document.getElementById('btn-create')?.addEventListener('click', callEdge);
+        document.getElementById('btn-verify')?.addEventListener('click', callEdge);
+    </script>
+</body>
+</html>

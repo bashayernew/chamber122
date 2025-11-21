@@ -2,12 +2,30 @@
 import { supabase } from './supabase-client.js';
 import { trackContentView } from './analytics.js';
 import { formatTimeAgo, formatDate } from './time-ago.js';
-import { getCurrentLanguage } from './i18n.js';
+// Get current language from global I18N object
+function getCurrentLanguage() {
+  return window.I18N ? window.I18N.getLang() : 'en';
+}
+
+// Global function to open MSME overlay
+let msmeOverlayInstance = null;
+
+function openMSMEOverlay(businessId) {
+  if (!msmeOverlayInstance) {
+    msmeOverlayInstance = new MSMEOverlay();
+  }
+  msmeOverlayInstance.open(businessId);
+}
+
+// Make it globally available
+window.openMSMEOverlay = openMSMEOverlay;
 
 class MSMEOverlay {
   constructor() {
     this.overlay = null;
     this.currentAccount = null;
+    // Avoid auto-opening from initial browser state (e.g., refresh/back)
+    this._hasSeenFirstPopstate = false;
     this.init();
   }
 
@@ -19,10 +37,10 @@ class MSMEOverlay {
 
   createOverlay() {
     const overlayHTML = `
-      <div id="msme-overlay" class="msme-overlay" data-testid="msme-overlay" style="display: none;">
-        <div class="msme-overlay-backdrop"></div>
-        <div class="msme-overlay-content">
-          <button class="msme-overlay-close" data-i18n="overlay.close">×</button>
+      <div id=\"msme-overlay\" class=\"msme-overlay\" data-testid=\"msme-overlay\" style=\"display:none; position:fixed; inset:0; z-index:10000; align-items:center; justify-content:center;\">
+        <div class=\"msme-overlay-backdrop\" style=\"position:absolute; inset:0; background:rgba(0,0,0,.7); z-index:0;\"></div>
+        <div class=\"msme-overlay-content\" style=\"position:relative; z-index:1; width:min(900px, 92vw); max-height:90vh; overflow:auto; background:#0f0f0f; border:1px solid #2a2a2a; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.6);\">
+          <button class=\"msme-overlay-close\" data-i18n=\"overlay.close\" aria-label=\"Close\" style=\"position:absolute; top:12px; right:12px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; background:#1a1a1a; color:#ddd; border:1px solid #3a3a3a; border-radius:8px; cursor:pointer; font-size:20px;\">×</button>
           
           <div class="msme-header">
             <div class="msme-cover" id="msme-cover"></div>
@@ -41,6 +59,10 @@ class MSMEOverlay {
           </div>
 
           <div class="msme-actions">
+            <button id="msme-view-profile" class="msme-action-btn profile" style="background: linear-gradient(135deg, #10B981, #059669); color: white; margin-right: 12px;">
+              <i class="fas fa-eye"></i>
+              <span>View Full Profile</span>
+            </button>
             <button id="msme-phone" class="msme-action-btn phone" style="display: none;">
               <i class="fas fa-phone"></i>
               <span data-i18n="msme.phone">Phone</span>
@@ -95,8 +117,38 @@ class MSMEOverlay {
 
   setupEventListeners() {
     // Close overlay
-    this.overlay.querySelector('.msme-overlay-close').addEventListener('click', () => this.close());
-    this.overlay.querySelector('.msme-overlay-backdrop').addEventListener('click', () => this.close());
+    const btnClose = this.overlay.querySelector('.msme-overlay-close');
+    const backdrop = this.overlay.querySelector('.msme-overlay-backdrop');
+    btnClose.addEventListener('click', () => this.close());
+    btnClose.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        this.close();
+      }
+    });
+    backdrop.addEventListener('click', () => this.close());
+    // Click outside content closes overlay
+    this.overlay.addEventListener('click', (e) => {
+      const content = this.overlay.querySelector('.msme-overlay-content');
+      if (e.target === this.overlay || (!content.contains(e.target))) {
+        this.close();
+      }
+    });
+
+    // Fallback global listener in case event binding fails
+    document.addEventListener('click', (e) => {
+      const target = e.target;
+      if (target && (target.classList?.contains('msme-overlay-close') || target.classList?.contains('msme-overlay-backdrop'))) {
+        this.close();
+      }
+    });
+
+    // View full profile button
+    document.getElementById('msme-view-profile').addEventListener('click', () => {
+      if (this.currentAccount) {
+        window.location.href = `owner.html?id=${this.currentAccount.id}`;
+      }
+    });
 
     // Contact actions
     document.getElementById('msme-phone').addEventListener('click', (e) => {
@@ -128,8 +180,14 @@ class MSMEOverlay {
   }
 
   handleURLState() {
-    // Handle URL changes for overlay state
+    // Handle URL changes for overlay state without auto-opening on initial load
     window.addEventListener('popstate', (e) => {
+      // Ignore the very first popstate some browsers fire on load
+      if (!this._hasSeenFirstPopstate) {
+        this._hasSeenFirstPopstate = true;
+        return;
+      }
+
       if (e.state && e.state.msmeId) {
         this.open(e.state.msmeId);
       } else if (this.overlay.style.display !== 'none') {
@@ -155,7 +213,7 @@ class MSMEOverlay {
       await trackContentView('msme', accountId, accountId);
 
       // Show overlay
-      this.overlay.style.display = 'flex';
+      this.overlay.classList.add('is-open');
       document.body.style.overflow = 'hidden';
 
       // Update URL
@@ -250,7 +308,7 @@ class MSMEOverlay {
     const noBulletinsText = lang === 'ar' ? 'لا توجد نشرات بعد' : 'No bulletins yet';
     
     // Load events
-    const { data: events } = await supabase.from('events').select('*').eq('account_id', accountId).or('status.eq.published,is_published.is.true').order('starts_at', { ascending: false }).limit(5);
+    const { data: events } = await supabase.from('events').select('*').eq('account_id', accountId).eq('status', 'published').eq('is_published', true).order('starts_at', { ascending: false }).limit(5);
     
     if (events && events.length > 0) {
       document.getElementById('msme-events').innerHTML = events.map(event => `
@@ -281,8 +339,10 @@ class MSMEOverlay {
   }
 
   close() {
-    this.overlay.style.display = 'none';
-    document.body.style.overflow = 'auto';
+    try {
+      this.overlay.classList.remove('is-open');
+      document.body.style.overflow = 'auto';
+    } catch {}
     
     // Update URL
     history.pushState({}, '', window.location.pathname);
@@ -294,3 +354,4 @@ const msmeOverlay = new MSMEOverlay();
 
 // Export for global access
 window.openMSMEOverlay = (accountId) => msmeOverlay.open(accountId);
+window.closeMSMEOverlay = () => msmeOverlay.close();

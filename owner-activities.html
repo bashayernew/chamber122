@@ -62,7 +62,7 @@
             <svg class="h-4 w-4 opacity-70" viewBox="0 0 20 20"><path d="M5 7l5 6 5-6"/></svg>
           </button>
           <div id="account-dropdown" class="menu hidden">
-            <a href="owner-activities.html" data-testid="menu-my-activities" data-i18n="nav.myActivities">My Activities</a>
+            <a href="owner.html" data-testid="menu-my-business" data-i18n="nav.myBusiness">My Business</a>
             <a href="admin-dashboard.html" id="menu-admin" class="hidden" data-testid="menu-admin" data-i18n="nav.admin">Admin Panel</a>
             <a href="#" id="btn-logout" data-testid="logout" data-i18n="nav.logout">Logout</a>
           </div>
@@ -84,7 +84,7 @@
         <i class="fas fa-building"></i>
         My Business
       </a>
-      <a href="owner-activities.html" class="mobile-link">
+      <a href="owner.html" class="mobile-link">
         <i class="fas fa-calendar-alt"></i>
         My Activities
       </a>
@@ -93,7 +93,7 @@
         Admin Panel
       </a>
       <div class="mobile-divider"></div>
-      <a href="auth.html" class="mobile-link">
+      <a href="auth.html#login" class="mobile-link">
         <i class="fas fa-sign-in-alt"></i>
         Login
       </a>
@@ -200,6 +200,35 @@
       <!-- Bulletins List -->
       <div id="bulletins-list" class="bulletins-list"></div>
 
+      <!-- Registrations Section -->
+      <div class="card mt-8" style="margin-top: 3rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <h2 class="section-title" style="margin: 0;">Registrations</h2>
+          <span id="registrations-count" style="background: #f59e0b; color: white; padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: 600;">0</span>
+        </div>
+        <p style="color: #AFAFAF; margin-bottom: 20px;">View and manage registrations for your events and bulletin responses.</p>
+        
+        <div class="tabs mb-4 flex gap-2">
+          <button class="tab active" data-tab="reg-all">All</button>
+          <button class="tab" data-tab="reg-events">Events</button>
+          <button class="tab" data-tab="reg-bulletins">Bulletins</button>
+          <button class="tab" data-tab="reg-pending">Pending</button>
+        </div>
+        
+        <div id="reg-all" class="tab-pane">
+          <div id="registrations-all"></div>
+        </div>
+        <div id="reg-events" class="tab-pane hidden">
+          <div id="registrations-events"></div>
+        </div>
+        <div id="reg-bulletins" class="tab-pane hidden">
+          <div id="registrations-bulletins"></div>
+        </div>
+        <div id="reg-pending" class="tab-pane hidden">
+          <div id="registrations-pending"></div>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -261,6 +290,143 @@
   <!-- Activities Page Script -->
   <script type="module" src="js/account-completeness.js"></script>
   <script type="module" src="js/owner-activities-new.js"></script>
+  <script type="module">
+    import { loadRegistrations, renderRegistrations } from '/assets/js/registrations.js';
+
+    // Wire up tabs
+    function wireRegistrationTabs() {
+      document.querySelectorAll('.tabs .tab').forEach(btn => {
+        if (!btn.closest('.card').querySelector('#registrations-all')) return; // Only for registration tabs
+        
+        btn.addEventListener('click', () => {
+          const group = btn.closest('.card');
+          group.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const target = btn.dataset.tab;
+          group.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+          group.querySelector(`#${target}`)?.classList.remove('hidden');
+        });
+      });
+    }
+
+    // Load and display registrations
+    async function initRegistrations() {
+      try {
+        const data = await loadRegistrations();
+        
+        // Update count
+        const countEl = document.getElementById('registrations-count');
+        if (countEl) {
+          const totalCount = data.all.length;
+          countEl.textContent = totalCount;
+          countEl.style.display = totalCount > 0 ? 'inline-block' : 'none';
+        }
+
+        // Render all registrations
+        renderRegistrations(document.getElementById('registrations-all'), data.all);
+        renderRegistrations(document.getElementById('registrations-events'), data.events);
+        renderRegistrations(document.getElementById('registrations-bulletins'), data.bulletins);
+        
+        // Render pending
+        const pending = data.all.filter(r => r.status === 'pending');
+        renderRegistrations(document.getElementById('registrations-pending'), pending);
+
+        // Make reload function available globally
+        window.reloadRegistrations = initRegistrations;
+      } catch (error) {
+        console.error('Error initializing registrations:', error);
+      }
+    }
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      wireRegistrationTabs();
+      setTimeout(initRegistrations, 1000); // Small delay to ensure other scripts are loaded
+    });
+  </script>
+  
+  <link rel="stylesheet" href="css/modal.css">
+  <link rel="stylesheet" href="css/header.css?v=1">
+</body>
+</html>
+
+      <p>&copy; 2025 Chamber122. All Rights Reserved. | Empowering Kuwait's MSMEs</p>
+    </div>
+  </footer>
+ 
+  <script src="js/main.js?v=7"></script>
+  <script type="module" src="./js/i18n.js"></script>
+  <!-- Import authentication scripts -->
+  <script type="module" src="js/modal-login-required.js"></script>
+  <script type="module" src="js/guest.js"></script>
+  <script type="module">
+    import { initNavAuthState } from '/js/nav-auth-state.js';
+    initNavAuthState();
+  </script>
+  
+  <!-- Auth Guard -->
+  <script type="module">
+    import { requireAuth } from '/shared/auth-guard.js';
+    const user = await requireAuth(); // redirects if not logged in
+  </script>
+  
+  <!-- Activities Page Script -->
+  <script type="module" src="js/account-completeness.js"></script>
+  <script type="module" src="js/owner-activities-new.js"></script>
+  <script type="module">
+    import { loadRegistrations, renderRegistrations } from '/assets/js/registrations.js';
+
+    // Wire up tabs
+    function wireRegistrationTabs() {
+      document.querySelectorAll('.tabs .tab').forEach(btn => {
+        if (!btn.closest('.card').querySelector('#registrations-all')) return; // Only for registration tabs
+        
+        btn.addEventListener('click', () => {
+          const group = btn.closest('.card');
+          group.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const target = btn.dataset.tab;
+          group.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+          group.querySelector(`#${target}`)?.classList.remove('hidden');
+        });
+      });
+    }
+
+    // Load and display registrations
+    async function initRegistrations() {
+      try {
+        const data = await loadRegistrations();
+        
+        // Update count
+        const countEl = document.getElementById('registrations-count');
+        if (countEl) {
+          const totalCount = data.all.length;
+          countEl.textContent = totalCount;
+          countEl.style.display = totalCount > 0 ? 'inline-block' : 'none';
+        }
+
+        // Render all registrations
+        renderRegistrations(document.getElementById('registrations-all'), data.all);
+        renderRegistrations(document.getElementById('registrations-events'), data.events);
+        renderRegistrations(document.getElementById('registrations-bulletins'), data.bulletins);
+        
+        // Render pending
+        const pending = data.all.filter(r => r.status === 'pending');
+        renderRegistrations(document.getElementById('registrations-pending'), pending);
+
+        // Make reload function available globally
+        window.reloadRegistrations = initRegistrations;
+      } catch (error) {
+        console.error('Error initializing registrations:', error);
+      }
+    }
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      wireRegistrationTabs();
+      setTimeout(initRegistrations, 1000); // Small delay to ensure other scripts are loaded
+    });
+  </script>
   
   <link rel="stylesheet" href="css/modal.css">
   <link rel="stylesheet" href="css/header.css?v=1">

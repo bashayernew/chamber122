@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Details - Chamber122</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#0a0a0a] text-white">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <div id="event-details" class="space-y-6">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                <p class="mt-4 text-gray-400">Loading event details...</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { supabase } from '/assets/js/supabase-client.global.js';
+
+        async function loadEventDetails() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const eventId = urlParams.get('id');
+            
+            if (!eventId) {
+                document.getElementById('event-details').innerHTML = `
+                    <div class="text-center py-12">
+                        <h1 class="text-2xl font-bold text-red-400 mb-4">Event Not Found</h1>
+                        <p class="text-gray-400">No event ID provided.</p>
+                        <a href="/" class="inline-block mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Go Home</a>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const { data: event, error } = await supabase
+                    .from('events')
+                    .select('*')
+                    .eq('id', eventId)
+                    .single();
+
+                if (error || !event) {
+                    throw new Error('Event not found');
+                }
+
+                renderEventDetails(event);
+            } catch (error) {
+                console.error('Error loading event:', error);
+                document.getElementById('event-details').innerHTML = `
+                    <div class="text-center py-12">
+                        <h1 class="text-2xl font-bold text-red-400 mb-4">Event Not Found</h1>
+                        <p class="text-gray-400">The requested event could not be found.</p>
+                        <a href="/" class="inline-block mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Go Home</a>
+                    </div>
+                `;
+            }
+        }
+
+        function renderEventDetails(event) {
+            const startDate = event.start_at ? new Date(event.start_at).toLocaleString() : 'TBD';
+            const endDate = event.end_at ? new Date(event.end_at).toLocaleString() : null;
+            const contact = [event.contact_phone, event.contact_email].filter(Boolean).join(' • ');
+            const location = [event.governorate, event.area, event.street, event.block ? `Block ${event.block}` : null, event.floor ? `Floor ${event.floor}` : null]
+                .filter(Boolean).join(', ');
+
+            document.getElementById('event-details').innerHTML = `
+                <div class="bg-[#0f0f0f] rounded-2xl border border-[#222] overflow-hidden">
+                    ${event.cover_image_url ? `
+                        <div class="h-64 md:h-80 bg-[#111] overflow-hidden">
+                            <img src="${event.cover_image_url}" class="w-full h-full object-cover" alt="${event.title}">
+                        </div>
+                    ` : ''}
+                    
+                    <div class="p-6 md:p-8 space-y-6">
+                        <div class="flex items-center gap-2">
+                            <span class="px-3 py-1 text-sm rounded-full bg-[#1f2937] text-[#e5e7eb]">Event</span>
+                            <span class="text-sm text-[#9ca3af]">${startDate}${endDate ? ' – ' + endDate : ''}</span>
+                        </div>
+                        
+                        <h1 class="text-3xl md:text-4xl font-bold text-white">${event.title || 'Untitled Event'}</h1>
+                        
+                        ${event.description ? `
+                            <div class="prose prose-invert max-w-none">
+                                <p class="text-[#d1d5db] text-lg leading-relaxed whitespace-pre-wrap">${event.description}</p>
+                            </div>
+                        ` : ''}
+                        
+                        ${location ? `
+                            <div class="flex items-start gap-3">
+                                <span class="text-[#9ca3af] mt-1">📍</span>
+                                <div>
+                                    <h3 class="font-semibold text-white mb-1">Location</h3>
+                                    <p class="text-[#d1d5db]">${location}</p>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${contact ? `
+                            <div class="flex items-start gap-3">
+                                <span class="text-[#9ca3af] mt-1">☎️</span>
+                                <div>
+                                    <h3 class="font-semibold text-white mb-1">Contact</h3>
+                                    <p class="text-[#d1d5db]">${contact}</p>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${event.link ? `
+                            <div class="flex items-start gap-3">
+                                <span class="text-[#9ca3af] mt-1">🔗</span>
+                                <div>
+                                    <h3 class="font-semibold text-white mb-1">More Information</h3>
+                                    <a href="${event.link}" target="_blank" rel="noopener noreferrer" class="text-[#93c5fd] hover:text-[#60a5fa] underline">
+                                        ${event.link}
+                                    </a>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="pt-6 border-t border-[#222]">
+                            <a href="/" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                ← Back to Events
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Load event details when page loads
+        document.addEventListener('DOMContentLoaded', loadEventDetails);
+    </script>
+</body>
+</html>

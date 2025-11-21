@@ -36,12 +36,12 @@ async function finish() {
 
 function redirectUser(mode) {
   // Determine where to redirect based on mode and user state
-  let redirectUrl = '/owner-activities.html'; // Default to owner activities
+  let redirectUrl = '/owner.html'; // Default to owner profile page
   
   if (mode === 'signup') {
-    redirectUrl = '/owner-activities.html'; // New users go to complete their profile
+    redirectUrl = '/owner.html'; // New users go to their profile
   } else if (mode === 'signin') {
-    redirectUrl = '/owner-activities.html'; // Existing users go to their dashboard
+    redirectUrl = '/owner.html'; // Existing users go to their profile
   }
   
   console.log(`Redirecting to: ${redirectUrl}`);

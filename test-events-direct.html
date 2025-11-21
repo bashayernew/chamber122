@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Events Direct - Chamber122</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f0f0f;
+            color: #e5e7eb;
+        }
+        .container {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #333;
+        }
+        h1 { color: #f59e0b; }
+        .button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .log {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .event-card {
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test Events Direct Query</h1>
+        
+        <button id="testBtn" class="button">Test Direct Events Query</button>
+        <button id="refreshBtn" class="button">Refresh Events Page</button>
+        
+        <div id="results"></div>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js@2';
+
+        const SUPABASE_URL = 'https://gidbvemmqffogakcepka.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dhY2Vwa2EiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcyNTk0NTQ4MCwiZXhwIjoyMDQxNTIxNDgwfQ.xpMI1i5czqv5hpO-vaLD5xKWsBmAdEryq9IA_jOi3J0';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const logEl = document.getElementById('log');
+        const resultsEl = document.getElementById('results');
+
+        function log(msg) {
+            logEl.textContent += new Date().toLocaleTimeString() + ': ' + msg + '\n';
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            log('Testing direct events query...');
+            
+            try {
+                const { data, error } = await supabase
+                    .from('events')
+                    .select(`
+                        id, business_id, title, description, 
+                        governorate, area, street, block, floor,
+                        contact_name, contact_phone, contact_email,
+                        start_at, end_at, cover_image_url, created_at,
+                        status, is_published,
+                        businesses!inner(name, logo_url)
+                    `)
+                    .eq('status', 'published')
+                    .eq('is_published', true)
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    log('ERROR: ' + error.message);
+                    resultsEl.innerHTML = '<div style="color: red;">Error: ' + error.message + '</div>';
+                    return;
+                }
+
+                log('SUCCESS: Found ' + (data?.length || 0) + ' events');
+                
+                if (data && data.length > 0) {
+                    let html = '<h3>Events Found:</h3>';
+                    data.forEach((event, i) => {
+                        html += `
+                        <div class="event-card">
+                            <strong>Event ${i + 1}:</strong><br>
+                            <strong>ID:</strong> ${event.id}<br>
+                            <strong>Title:</strong> ${event.title || 'No title'}<br>
+                            <strong>Status:</strong> ${event.status}<br>
+                            <strong>Published:</strong> ${event.is_published}<br>
+                            <strong>Business:</strong> ${event.businesses?.name || 'Unknown'}<br>
+                            <strong>Created:</strong> ${new Date(event.created_at).toLocaleString()}<br>
+                            <strong>Start:</strong> ${event.start_at ? new Date(event.start_at).toLocaleString() : 'No start date'}<br>
+                            <strong>Description:</strong> ${event.description ? event.description.substring(0, 100) + '...' : 'No description'}
+                        </div>`;
+                    });
+                    resultsEl.innerHTML = html;
+                } else {
+                    resultsEl.innerHTML = '<div style="color: orange;">No events found</div>';
+                }
+
+            } catch (err) {
+                log('EXCEPTION: ' + err.message);
+                resultsEl.innerHTML = '<div style="color: red;">Exception: ' + err.message + '</div>';
+            }
+        });
+
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            window.open('/events.html', '_blank');
+        });
+
+        log('Test tool ready - click "Test Direct Events Query"');
+    </script>
+</body>
+</html>

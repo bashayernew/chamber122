@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fix Bulletin Errors</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        button { margin: 5px; padding: 10px 15px; }
+        #log { background: #f8f9fa; padding: 10px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Fix Bulletin Errors</h1>
+    
+    <div class="section error">
+        <h3>❌ Bulletin Feed Errors Detected</h3>
+        <p><strong>Error 1:</strong> <code>activities_base</code> with <code>businesses</code> join (400 Bad Request)</p>
+        <p><strong>Error 2:</strong> <code>PGRST200</code> - Could not find relationship between activities_base and business_id</p>
+        <p><strong>Root Cause:</strong> Cached code still using old query pattern</p>
+    </div>
+    
+    <div class="section">
+        <h3>🔧 Fix Actions</h3>
+        <button id="update-versions">1. Update All Version Numbers</button>
+        <button id="clear-cache">2. Clear Browser Cache</button>
+        <button id="test-bulletin">3. Test Bulletin Page</button>
+        <button id="check-queries">4. Check Network Queries</button>
+    </div>
+    
+    <div class="section">
+        <h3>🧪 Verification</h3>
+        <button id="verify-fix">Verify Fix Applied</button>
+        <button id="open-bulletin">Open Bulletin Page</button>
+    </div>
+    
+    <div id="log"></div>
+
+    <script>
+        const log = document.getElementById('log');
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+            log.textContent += `[${timestamp}] ${icon} ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        document.getElementById('update-versions').addEventListener('click', () => {
+            addLog('Updating version numbers to force cache clear...');
+            addLog('This will force browser to reload all JavaScript files');
+            addLog('Version updates applied to:');
+            addLog('- bulletin.html: v4 → v5');
+            addLog('- events.html: v19 → v20');
+            addLog('- All script references updated');
+        });
+        
+        document.getElementById('clear-cache').addEventListener('click', () => {
+            addLog('Cache clearing instructions:', 'warning');
+            addLog('1. Press Ctrl+Shift+R (hard refresh)');
+            addLog('2. Or press F12 > Network tab > check "Disable cache" > refresh');
+            addLog('3. Or close browser completely and reopen');
+            addLog('4. Or use incognito/private mode');
+        });
+        
+        document.getElementById('test-bulletin').addEventListener('click', () => {
+            addLog('Opening bulletin page with cache bust...');
+            window.open('bulletin.html?v=' + Date.now(), '_blank');
+        });
+        
+        document.getElementById('check-queries').addEventListener('click', () => {
+            addLog('Query check instructions:', 'warning');
+            addLog('1. Open Developer Tools (F12)');
+            addLog('2. Go to Network tab');
+            addLog('3. Refresh bulletin page');
+            addLog('4. Look for these requests:');
+            addLog('   - Should see: activities_current (GOOD)');
+            addLog('   - Should NOT see: activities_base with businesses join (BAD)');
+            addLog('   - Should NOT see: or=(status.eq.published,is_published.is.true) (BAD)');
+        });
+        
+        document.getElementById('verify-fix').addEventListener('click', () => {
+            addLog('Verification checklist:', 'warning');
+            addLog('1. Check console for updated error messages');
+            addLog('2. Verify bulletin feed loads without errors');
+            addLog('3. Check that queries use activities_current');
+            addLog('4. Confirm no more PGRST200 errors');
+        });
+        
+        document.getElementById('open-bulletin').addEventListener('click', () => {
+            addLog('Opening bulletin page...');
+            window.open('bulletin.html?v=' + Date.now(), '_blank');
+        });
+        
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            addLog('🔧 Bulletin Error Fix Tool');
+            addLog('The bulletin feed is using cached code with old queries');
+            addLog('Follow the steps above to force cache clear and fix');
+        });
+    </script>
+</body>
+</html>

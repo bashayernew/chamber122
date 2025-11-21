@@ -1,5 +1,8 @@
 // Time-ago formatting with i18n support and Arabic numerals
-import { getCurrentLanguage } from './i18n.js';
+// Get current language from global I18N object
+function getCurrentLanguage() {
+  return window.I18N ? window.I18N.getLang() : 'en';
+}
 
 const timeAgoTranslations = {
   en: {

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Cleanup - Chamber122</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f0f0f;
+            color: #e5e7eb;
+        }
+        .container {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #333;
+        }
+        h1 { color: #f59e0b; }
+        .button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover { background: #047857; }
+        .section {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #444;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .status.success { background: #065f46; color: #d1fae5; }
+        .status.info { background: #1e3a8a; color: #dbeafe; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Simple Cleanup - Directory Empty State</h1>
+        
+        <div class="section">
+            <h3>✅ Directory Page Status</h3>
+            <p>The directory page is already configured to show empty sections when no events exist. Here's what happens:</p>
+            <ul>
+                <li><strong>No Events:</strong> Shows "No upcoming events" with calendar icon</li>
+                <li><strong>With Events:</strong> Shows event cards in a grid</li>
+                <li><strong>Loading:</strong> Shows "Please wait while we fetch the latest events"</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3>🧪 Test All Pages</h3>
+            <p>Test that all pages show proper empty states:</p>
+            <button id="testDirectory" class="button">Test Directory Page</button>
+            <button id="testHome" class="button">Test Home Page</button>
+            <button id="testEvents" class="button">Test Events Page</button>
+            <button id="testProfile" class="button">Test Profile Page</button>
+        </div>
+
+        <div class="section">
+            <h3>📋 Expected Results</h3>
+            <div class="status info">
+                <strong>Directory Page:</strong><br>
+                • Shows "No upcoming events" with calendar icon<br>
+                • Message: "Check back soon for new community events!"<br><br>
+                
+                <strong>Home Page:</strong><br>
+                • Shows "No upcoming events" with calendar icon<br>
+                • Message: "Check back soon for new community events!"<br><br>
+                
+                <strong>Events Page:</strong><br>
+                • Shows empty grid with "No events found" message<br><br>
+                
+                <strong>Profile Page:</strong><br>
+                • Shows empty tabs with "No events" messages
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>🔧 If You Need to Clean Database</h3>
+            <p>If there are actual demo events in the database that need to be removed, you'll need to:</p>
+            <ol>
+                <li><strong>Sign in</strong> to your account first</li>
+                <li><strong>Go to Supabase Dashboard</strong> → Table Editor → events</li>
+                <li><strong>Delete any demo/test events</strong> manually</li>
+                <li><strong>Or run this SQL</strong> in Supabase SQL Editor:</li>
+            </ol>
+            <div style="background: #111; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 14px; margin: 10px 0;">
+DELETE FROM events WHERE 
+  title ILIKE '%demo%' OR 
+  title ILIKE '%test%' OR 
+  title ILIKE '%sample%' OR
+  description ILIKE '%demo%' OR 
+  description ILIKE '%test%' OR 
+  description ILIKE '%sample%';
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>✅ Status</h3>
+            <div id="status"></div>
+        </div>
+    </div>
+
+    <script>
+        const statusEl = document.getElementById('status');
+
+        function addStatus(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            statusEl.appendChild(div);
+        }
+
+        document.getElementById('testDirectory').addEventListener('click', () => {
+            window.open('/directory.html', '_blank');
+            addStatus('✅ Opened Directory Page - should show empty state', 'success');
+        });
+
+        document.getElementById('testHome').addEventListener('click', () => {
+            window.open('/index.html', '_blank');
+            addStatus('✅ Opened Home Page - should show empty state', 'success');
+        });
+
+        document.getElementById('testEvents').addEventListener('click', () => {
+            window.open('/events.html', '_blank');
+            addStatus('✅ Opened Events Page - should show empty state', 'success');
+        });
+
+        document.getElementById('testProfile').addEventListener('click', () => {
+            window.open('/owner.html', '_blank');
+            addStatus('✅ Opened Profile Page - should show empty state', 'success');
+        });
+
+        // Initial status
+        addStatus('✅ Directory page is already configured to show empty sections when no events exist. Test the pages above to verify.', 'success');
+    </script>
+</body>
+</html>
