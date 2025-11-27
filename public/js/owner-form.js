@@ -567,18 +567,61 @@ async function preloadEdit() {
 // Load and display existing documents
 async function loadExistingDocuments(business) {
   try {
-    // Get media from business object or fetch separately
+    // Get media from business object or from localStorage documents
     let media = business.media || [];
     
-    // If no media in business object, fetch it
+    // If no media in business object, get from localStorage documents
     if (!media || media.length === 0) {
       try {
-        const { apiRequest } = await import('/js/api.js');
-        const response = await apiRequest('/business/me', { method: 'GET' });
-        media = response?.media || response?.business?.media || [];
-        console.log('[owner-form] Fetched media separately:', media.length, 'items');
+        const { getCurrentUser } = await import('/js/auth-localstorage.js');
+        const user = getCurrentUser();
+        if (user && user.id && business && business.id) {
+          // Try to get documents from localStorage
+          const documentsStr = localStorage.getItem('chamber122_documents');
+          if (documentsStr) {
+            try {
+              const allDocuments = JSON.parse(documentsStr);
+              // Filter documents for this user/business
+              const userDocuments = allDocuments.filter(doc => 
+                (doc.user_id === user.id || doc.owner_id === user.id || doc.business_id === business.id)
+              );
+              
+              // Convert documents to media format
+              media = userDocuments.map(doc => ({
+                id: doc.id || doc.document_id,
+                business_id: business.id,
+                document_type: doc.document_type || doc.type || doc.kind,
+                public_url: doc.url || doc.signedUrl || doc.path || doc.public_url,
+                file_name: doc.name || doc.file_name,
+                file_type: doc.file_type || 'document',
+                created_at: doc.created_at || doc.uploaded_at
+              }));
+              console.log('[owner-form] Loaded documents from localStorage:', media.length, 'items');
+            } catch (parseErr) {
+              console.warn('[owner-form] Error parsing documents from localStorage:', parseErr);
+              media = [];
+            }
+          } else {
+            // Also check if documents are stored in business.documents object
+            if (business.documents && typeof business.documents === 'object') {
+              media = Object.entries(business.documents).map(([docType, docData]) => {
+                const url = typeof docData === 'string' ? docData : (docData.url || docData.signedUrl || docData.path);
+                return {
+                  id: docType,
+                  business_id: business.id,
+                  document_type: docType,
+                  public_url: url,
+                  file_name: docType + '.png',
+                  file_type: 'document',
+                  created_at: business.updated_at || business.created_at
+                };
+              });
+              console.log('[owner-form] Loaded documents from business.documents:', media.length, 'items');
+            }
+          }
+        }
       } catch (err) {
-        console.warn('[owner-form] Could not fetch media:', err);
+        console.warn('[owner-form] Could not load documents from localStorage:', err);
         media = [];
       }
     }
@@ -615,7 +658,8 @@ async function loadExistingDocuments(business) {
         
         if (statusEl && fileUrl && !fileUrl.startsWith('blob:')) {
           // Show document status with link to view
-          const fullUrl = fileUrl.startsWith('http') ? fileUrl : `http://localhost:4000${fileUrl}`;
+          // For base64 data URLs, use directly; for other URLs, use as-is
+          const fullUrl = fileUrl.startsWith('data:') || fileUrl.startsWith('http') ? fileUrl : fileUrl;
           statusEl.innerHTML = `
             <span style="color: #10b981;">✓ Uploaded: </span>
             <a href="${fullUrl}" target="_blank" style="color: #3b82f6; text-decoration: underline;">
