@@ -812,17 +812,31 @@ async function saveProfile(ev) {
     fd.append('industry', industryValue);
     fd.append('category', industryValue);
     
-    const descriptionEl = $('description');
-    const descriptionValue = descriptionEl ? safeTrim(descriptionEl.value) : '';
-    // Don't save placeholder text
-    const finalDescription = (descriptionValue && !descriptionValue.includes('Describe what you offer')) ? descriptionValue : '';
-    fd.append('description', finalDescription);
+    const descriptionEl = document.getElementById('description');
+    if (descriptionEl && descriptionEl.tagName === 'TEXTAREA') {
+      const descriptionValue = safeTrim(descriptionEl.value || '');
+      // Don't save placeholder text or label text
+      const invalidTexts = ['Describe what you offer', 'Business Description', 'Tell us about your business'];
+      const isInvalid = invalidTexts.some(text => descriptionValue.includes(text));
+      const finalDescription = (descriptionValue && !isInvalid) ? descriptionValue : '';
+      fd.append('description', finalDescription);
+      console.log('[owner-form] Description value:', finalDescription.substring(0, 50) + (finalDescription.length > 50 ? '...' : ''));
+    } else {
+      fd.append('description', '');
+    }
     
-    const storyEl = $('story');
-    const storyValue = storyEl ? safeTrim(storyEl.value) : '';
-    // Don't save placeholder text
-    const finalStory = (storyValue && !storyValue.includes('Share your journey')) ? storyValue : '';
-    fd.append('story', finalStory);
+    const storyEl = document.getElementById('story');
+    if (storyEl && storyEl.tagName === 'TEXTAREA') {
+      const storyValue = safeTrim(storyEl.value || '');
+      // Don't save placeholder text or label text
+      const invalidTexts = ['Share your journey', 'Business Description', 'Tell us about your business'];
+      const isInvalid = invalidTexts.some(text => storyValue.includes(text));
+      const finalStory = (storyValue && !isInvalid) ? storyValue : '';
+      fd.append('story', finalStory);
+      console.log('[owner-form] Story value:', finalStory.substring(0, 50) + (finalStory.length > 50 ? '...' : ''));
+    } else {
+      fd.append('story', '');
+    }
     
     console.log('[owner-form] Form values being sent:', {
       name: nameValue,
@@ -981,7 +995,7 @@ async function saveProfile(ev) {
       whatsapp: businessData.whatsapp || '',
       website: businessData.website || '',
       instagram: businessData.instagram || '',
-      logo_url: businessData.logo_url || null,
+      logo_url: businessData.logo_url || (business ? business.logo_url : null),
       gallery_urls: businessData.gallery_urls || [],
       updated_at: new Date().toISOString()
     };
