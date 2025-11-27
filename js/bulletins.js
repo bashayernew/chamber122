@@ -366,6 +366,8 @@ async function handleBulletinSubmit(e) {
       block: formData.get('block') || document.getElementById('bBlock')?.value || null,
       floor: formData.get('floor') || document.getElementById('bFloor')?.value || null,
       image_url: imageUrl,
+      cover_image_url: imageUrl,
+      cover_url: imageUrl,
       is_published: true,
       status: 'published'
     };

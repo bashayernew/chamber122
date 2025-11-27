@@ -304,7 +304,7 @@
   <script type="module" src="js/auth-state-manager.js"></script>
   <script type="module" src="./js/modal-login-required.js"></script>
   <script type="module" src="./js/gating.js"></script>
-  <script type="module" src="./js/visitor-tracking.js"></script>
+  <!-- <script type="module" src="./js/visitor-tracking.js"></script> --> <!-- Visitor tracking disabled - not needed for static site -->
   <!-- <script type="module" src="js/compliance-banner.js"></script> --> <!-- Compliance banner disabled - uses Supabase -->
   <!-- <script type="module" src="js/notification-system.js"></script> --> <!-- Notification system disabled - uses Supabase -->
   
@@ -350,13 +350,17 @@
         const data = await getPublicBusinesses();
         
         let businesses = [];
+        // Handle different return formats
         if (data && data.ok && data.businesses) {
           businesses = data.businesses;
-          console.log(`[home] Loaded ${businesses.length} businesses for featured section`);
         } else if (data && Array.isArray(data)) {
           businesses = data;
-          console.log(`[home] Loaded ${businesses.length} businesses for featured section`);
+        } else if (data && data.businesses && Array.isArray(data.businesses)) {
+          businesses = data.businesses;
         }
+        
+        console.log(`[home] Loaded ${businesses.length} businesses for featured section`);
+        console.log('[home] Businesses data:', businesses);
 
         // Check if current user has a business
         const user = await getCurrentUser();
