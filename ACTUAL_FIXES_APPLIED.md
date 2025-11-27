@@ -242,6 +242,7 @@ await createActivityBase({
   type: 'event',
   business_id: businessId,
   title: 'Test Event',
+  
   description: 'Testing...',
   location: 'Kuwait',
   start_at: new Date(Date.now() + 86400000).toISOString(),

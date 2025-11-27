@@ -1,20 +1,20 @@
-import { supabase } from "./supabase-client.js";
+// auth-state-manager.js - Using backend API instead of Supabase
+import { getCurrentUser as apiGetCurrentUser } from './api.js';
 
 let currentUser = null;
 let initialized = false;
 
-/** Initialize Supabase auth listeners once */
-export function initAuthState() {
+/** Initialize auth state manager */
+export async function initAuthState() {
   if (initialized) return;
   initialized = true;
 
-  // initial fetch
-  supabase.auth.getUser().then(({ data: { user } }) => { currentUser = user ?? null; });
-
-  // subscribe to changes
-  supabase.auth.onAuthStateChange((_event, session) => {
-    currentUser = session?.user ?? null;
-  });
+  // Fetch current user from backend
+  try {
+    currentUser = await apiGetCurrentUser();
+  } catch (err) {
+    currentUser = null;
+  }
 }
 
 /** Returns the latest known user (might be null) */

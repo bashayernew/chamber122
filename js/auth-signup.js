@@ -33,9 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const email = form.querySelector('#signup-email')?.value?.trim();
-      const password = form.querySelector('#signup-password')?.value;
-      const confirmPassword = form.querySelector('#signup-confirm-password')?.value;
+      const emailEl = form.querySelector('#signup-email');
+      const passwordEl = form.querySelector('#signup-password');
+      const confirmPasswordEl = form.querySelector('#signup-confirm-password');
+      const email = emailEl && emailEl.value ? emailEl.value.trim() : '';
+      const password = passwordEl && passwordEl.value ? passwordEl.value : '';
+      const confirmPassword = confirmPasswordEl && confirmPasswordEl.value ? confirmPasswordEl.value : '';
 
       if (!email || !password) {
         alert('Email and password are required');
@@ -48,24 +51,29 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // Collect all business fields
+      const getFieldValue = (selector) => {
+        const el = form.querySelector(selector);
+        return el && el.value ? el.value.trim() : null;
+      };
+      
       const fields = {
-        name: form.querySelector('#signup-name')?.value?.trim() || null,
-        business_name: form.querySelector('#signup-name')?.value?.trim() || null, // Also store as business_name for compatibility
-        description: form.querySelector('#signup-desc')?.value?.trim() || null,
-        story: form.querySelector('#signup-story')?.value?.trim() || null,
-        country: form.querySelector('#signup-country')?.value?.trim() || 'Kuwait',
-        city: form.querySelector('#signup-city')?.value?.trim() || null,
-        area: form.querySelector('#signup-area')?.value?.trim() || null,
-        block: form.querySelector('#signup-block')?.value?.trim() || null,
-        street: form.querySelector('#signup-street')?.value?.trim() || null,
-        floor: form.querySelector('#signup-floor')?.value?.trim() || null,
-        office_no: form.querySelector('#signup-office-no')?.value?.trim() || null,
-        industry: form.querySelector('#signup-category')?.value?.trim() || 'general',
-        category: form.querySelector('#signup-category')?.value?.trim() || 'general', // Also store as category
-        phone: form.querySelector('#signup-phone')?.value?.trim() || null,
-        whatsapp: form.querySelector('#signup-whatsapp')?.value?.trim() || null,
-        website: form.querySelector('#signup-website')?.value?.trim() || null,
-        instagram: form.querySelector('#signup-instagram')?.value?.trim() || null,
+        name: getFieldValue('#signup-name'),
+        business_name: getFieldValue('#signup-name'), // Also store as business_name for compatibility
+        description: getFieldValue('#signup-desc'),
+        story: getFieldValue('#signup-story'),
+        country: getFieldValue('#signup-country') || 'Kuwait',
+        city: getFieldValue('#signup-city'),
+        area: getFieldValue('#signup-area'),
+        block: getFieldValue('#signup-block'),
+        street: getFieldValue('#signup-street'),
+        floor: getFieldValue('#signup-floor'),
+        office_no: getFieldValue('#signup-office-no'),
+        industry: getFieldValue('#signup-category') || 'general',
+        category: getFieldValue('#signup-category') || 'general', // Also store as category
+        phone: getFieldValue('#signup-phone'),
+        whatsapp: getFieldValue('#signup-whatsapp'),
+        website: getFieldValue('#signup-website'),
+        instagram: getFieldValue('#signup-instagram'),
       };
 
       console.log('[auth-signup] Collected fields:', fields);
@@ -127,9 +135,9 @@ document.addEventListener('DOMContentLoaded', () => {
           const doc = state.uploaded[docType];
           // Store document info (file name, size, etc.) for pre-population
           documents[docType] = {
-            name: doc.file?.name || doc.name || null,
-            size: doc.file?.size || doc.size || null,
-            type: doc.file?.type || doc.type || null,
+            name: (doc.file && doc.file.name) || doc.name || null,
+            size: (doc.file && doc.file.size) || doc.size || null,
+            type: (doc.file && doc.file.type) || doc.type || null,
             url: doc.url || doc.signedUrl || doc.publicUrl || null,
             hasFile: !!(doc.file)
           };
@@ -137,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       // Get logo and gallery info
-      const logoFile = state.uploaded.logo?.file || null;
+      const logoFile = (state.uploaded && state.uploaded.logo && state.uploaded.logo.file) ? state.uploaded.logo.file : null;
       const galleryFiles = state.galleryFiles || [];
       
       // Store signup form data for pre-population (including documents, logo, gallery)
@@ -148,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
             name: logoFile.name,
             size: logoFile.size,
             type: logoFile.type,
-            url: state.uploaded.logo?.url || state.uploaded.logo?.signedUrl || null
+            url: (state.uploaded && state.uploaded.logo && state.uploaded.logo.url) ? state.uploaded.logo.url : ((state.uploaded && state.uploaded.logo && state.uploaded.logo.signedUrl) ? state.uploaded.logo.signedUrl : null)
           } : null,
           gallery: galleryFiles.map(f => ({
             name: f.name,
@@ -180,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const doc = state.uploaded[docType];
             adminDocuments[docType] = {
               file: doc.file || null,
-              name: doc.file?.name || doc.name || null,
+              name: (doc.file && doc.file.name) || doc.name || null,
               url: doc.url || doc.signedUrl || doc.publicUrl || null
             };
           }
@@ -191,14 +199,14 @@ document.addEventListener('DOMContentLoaded', () => {
           email: user.email,
           name: fields.business_name || fields.name || '',
           phone: fields.phone || fields.whatsapp || '',
-          business_name: fields.business_name || business?.name || '',
+          business_name: fields.business_name || (business && business.name) || '',
           industry: fields.industry || fields.category || '',
           city: fields.city || '',
           country: fields.country || 'Kuwait',
-          business_id: business?.id || null,
+          business_id: (business && business.id) || null,
           created_at: new Date().toISOString()
         }, adminDocuments);
-        console.log('[auth-signup] ✅ Saved to admin system:', savedUser?.id);
+        console.log('[auth-signup] ✅ Saved to admin system:', savedUser && savedUser.id ? savedUser.id : 'unknown');
       } catch (adminError) {
         console.error('[auth-signup] Could not save to admin system:', adminError);
         // Don't fail signup if admin save fails

@@ -1,7 +1,8 @@
 // MSME Profile Overlay Component with RTL Support
-import { supabase } from './supabase-client.js';
+// Updated to use backend API instead of Supabase
 import { trackContentView } from './analytics.js';
 import { formatTimeAgo, formatDate } from './time-ago.js';
+import { api } from './api.js';
 // Get current language from global I18N object
 function getCurrentLanguage() {
   return window.I18N ? window.I18N.getLang() : 'en';
@@ -198,17 +199,13 @@ class MSMEOverlay {
 
   async open(accountId) {
     try {
-      // Load account data
-      const { data: account, error } = await supabase.from('businesses').select('*').eq('id', accountId).single();
+      // Load account data from backend API
+      // TODO: Implement /api/businesses/:id endpoint
+      console.log('[msme-overlay] Loading account:', accountId);
+      // For now, show error message
+      alert('Business profile loading not yet implemented with backend API');
+      return;
       
-      if (error || !account) {
-        console.error('Error loading account:', error);
-        return;
-      }
-
-      this.currentAccount = account;
-      this.populateOverlay(account);
-
       // Track view
       await trackContentView('msme', accountId, accountId);
 
@@ -308,7 +305,9 @@ class MSMEOverlay {
     const noBulletinsText = lang === 'ar' ? 'لا توجد نشرات بعد' : 'No bulletins yet';
     
     // Load events
-    const { data: events } = await supabase.from('events').select('*').eq('account_id', accountId).eq('status', 'published').eq('is_published', true).order('starts_at', { ascending: false }).limit(5);
+    // Load events from backend API
+    // TODO: Implement /api/events?business_id= endpoint
+    const events = [];
     
     if (events && events.length > 0) {
       document.getElementById('msme-events').innerHTML = events.map(event => `
@@ -323,7 +322,9 @@ class MSMEOverlay {
     }
 
     // Load bulletins
-    const { data: bulletins } = await supabase.from('bulletins').select('*').eq('account_id', accountId).eq('status', 'published').order('created_at', { ascending: false }).limit(5);
+    // Load bulletins from backend API
+    // TODO: Implement /api/bulletins?business_id= endpoint
+    const bulletins = [];
     
     if (bulletins && bulletins.length > 0) {
       document.getElementById('msme-bulletins').innerHTML = bulletins.map(bulletin => `

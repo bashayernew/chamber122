@@ -1,34 +1,26 @@
-// js/owner.js - Load and display business data
-import { supabase } from '../public/js/supabase-client.global.js';
-import { fetchEvents } from './lib/events.fetch.js';
-
-// Ensure supabase is available on window for events.fetch.js
-if (typeof window !== 'undefined' && supabase) {
-  window.__supabaseClient = supabase;
-  window.supabase = supabase; // Also set for legacy compatibility
-}
+// js/owner.js - Load and display business data using localStorage only (no backend, no API)
+import { getCurrentUser, getBusinessByOwner, getBusinessById, getAllBusinesses } from './auth-localstorage.js';
 
 console.log('[owner] Loading business display script');
 
-async function loadAndDisplayBusiness() {
-  console.log('[owner] Loading business data...');
+async function loadAndDisplayBusiness(businessId = null) {
+  console.log('[owner] Loading business data...', businessId ? `for business ID: ${businessId}` : 'for current user');
   
   try {
-    // Check URL for businessId parameter (for viewing other businesses)
-    const urlParams = new URLSearchParams(window.location.search);
-    const businessIdFromUrl = urlParams.get('businessId');
+    let business = null;
     
-    // Explicitly select all fields to ensure we get everything
-    let query = supabase
-      .from('businesses')
-      .select('id, name, owner_id, industry, category, country, city, area, block, street, floor, office_no, description, short_description, story, phone, whatsapp, website, instagram, logo_url, is_active, created_at, updated_at');
-    
-    if (businessIdFromUrl) {
-      // Load specific business by ID
-      query = query.eq('id', businessIdFromUrl).single();
+    // If businessId is provided, load that business (for viewing other businesses)
+    if (businessId) {
+      console.log('[owner] Loading business by ID:', businessId);
+      business = getBusinessById(businessId);
+      if (!business) {
+        alert('Business not found');
+        window.location.href = '/directory.html';
+        return;
+      }
     } else {
-      // Load current user's business
-      const { data: { user } } = await supabase.auth.getUser();
+      // Otherwise, load current user's business
+      const user = getCurrentUser();
       if (!user) {
         console.log('[owner] No user, redirecting to auth');
         location.href = '/auth.html';
@@ -36,66 +28,113 @@ async function loadAndDisplayBusiness() {
       }
       
       console.log('[owner] User ID:', user.id);
-      query = query.eq('owner_id', user.id).maybeSingle();
-    }
-    
-    let biz, error;
-    try {
-      const result = await query;
-      biz = result.data;
-      error = result.error;
-    } catch (err) {
-      console.error('[owner] Query exception:', err);
-      error = err;
-      biz = null;
-    }
-    
-    // Handle 406 error or no business found
-    if (error) {
-      // Check if it's a 406 error or "no rows" error
-      if (error.code === 'PGRST116' || error.message?.includes('406') || error.message?.includes('Not Acceptable')) {
-        console.log('[owner] No business found for user (406 or no rows)');
-        // Redirect to form page to create business
+      
+      // Load business data from localStorage
+      business = getBusinessByOwner(user.id);
+      
+      if (!business) {
+        console.log('[owner] No business found - redirecting to form');
         if (confirm('No business profile found. Would you like to create one?')) {
           window.location.href = '/owner-form.html';
         }
         return;
       }
-      console.error('[owner] Error fetching business:', error);
+    }
+    
+    if (!business) {
+      console.error('[owner] No business data available');
       return;
     }
     
-    if (!biz) {
-      console.log('[owner] No business found - redirecting to form');
-      if (confirm('No business profile found. Would you like to create one?')) {
-        window.location.href = '/owner-form.html';
-      }
-      return;
-    }
-    
-    console.log('[owner] Business loaded:', biz.name);
-    console.log('[owner] Business data from database:', biz);
+    console.log('[owner] Business loaded:', business.name || business.business_name);
+    console.log('[owner] Business data from localStorage:', business);
     
     // Helper function for safe values
-    const val = (x, fallback = '—') => (x && String(x).trim().length ? x : fallback);
+    const val = (x, fallback) => {
+      fallback = fallback || '—';
+      return (x && String(x).trim().length) ? x : fallback;
+    };
     
     // Populate all fields (use correct IDs from HTML)
     const $ = (id) => document.getElementById(id);
     
     // Business name and info
-    if ($('biz-name')) $('biz-name').textContent = biz.name || 'Your Business';
+    if ($('biz-name')) {
+      $('biz-name').textContent = business.name || business.business_name || 'Your Business';
+    }
+    
+    // Status badge - ensure it shows the correct status
+    // Check both business status and user status from localStorage
+    const statusBadge = $('status-badge');
+    if (statusBadge) {
+      let status = (business.status || 'pending').toLowerCase();
+      
+      // Also check user status from localStorage (admin dashboard state)
+      try {
+        const user = getCurrentUser();
+        if (user && user.id) {
+          const stateKey = 'chamber_admin_dashboard_state';
+          const stateStr = localStorage.getItem(stateKey);
+          const state = stateStr ? JSON.parse(stateStr) : {};
+          const userStatus = state.userStatuses && state.userStatuses[user.id] ? state.userStatuses[user.id] : null;
+          if (userStatus) {
+            status = userStatus.toLowerCase();
+            console.log('[owner] Using status from admin dashboard state:', status);
+          } else {
+            // Also check from users array
+            try {
+              const { getAllUsers } = await import('./admin-auth.js');
+              const users = getAllUsers();
+              const userData = users.find(u => u.id === user.id);
+              if (userData && userData.status) {
+                status = userData.status.toLowerCase();
+                console.log('[owner] Using status from users array:', status);
+              }
+            } catch (err) {
+              console.debug('[owner] Could not check users array:', err);
+            }
+          }
+        }
+      } catch (err) {
+        console.debug('[owner] Could not check user status from localStorage:', err);
+      }
+      
+      // Set text content and styling based on status
+      if (status === 'approved') {
+        statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> Approved';
+        statusBadge.className = 'badge status-badge approved';
+        statusBadge.style.background = '#10b981';
+        statusBadge.style.color = '#fff';
+      } else if (status === 'suspended') {
+        statusBadge.innerHTML = '<i class="fas fa-ban"></i> Suspended';
+        statusBadge.className = 'badge status-badge suspended';
+        statusBadge.style.background = '#ef4444';
+        statusBadge.style.color = '#fff';
+      } else if (status === 'rejected') {
+        statusBadge.innerHTML = '<i class="fas fa-times-circle"></i> Rejected';
+        statusBadge.className = 'badge status-badge rejected';
+        statusBadge.style.background = '#f59e0b';
+        statusBadge.style.color = '#fff';
+      } else {
+        statusBadge.innerHTML = `<i class="fas fa-clock"></i> ${status.charAt(0).toUpperCase() + status.slice(1)}`;
+        statusBadge.className = `badge status-badge ${status}`;
+        statusBadge.style.background = '#6b7280';
+        statusBadge.style.color = '#fff';
+      }
+      console.log('[owner] Status badge set to:', status);
+    }
     
     // Description and Story
     const descEl = $('description');
     if (descEl) {
-      const descText = val(biz.description || biz.short_description, 'No description yet...');
+      const descText = val(business.description || business.short_description, 'No description yet...');
       descEl.textContent = descText;
       console.log('[owner] Setting description:', descText.substring(0, 50) + '...');
     }
     
     const storyEl = $('story');
     if (storyEl) {
-      const storyText = val(biz.story, 'No story yet...');
+      const storyText = val(business.story, 'No story yet...');
       storyEl.textContent = storyText;
       console.log('[owner] Setting story:', storyText.substring(0, 50) + '...');
     }
@@ -103,10 +142,10 @@ async function loadAndDisplayBusiness() {
     // Contact fields
     const phoneEl = $('phone');
     if (phoneEl) {
-      const phoneVal = val(biz.phone, 'Not provided');
+      const phoneVal = val(business.phone, 'Not provided');
       if (phoneEl.tagName === 'A') {
         phoneEl.textContent = phoneVal;
-        phoneEl.href = biz.phone ? `tel:${biz.phone}` : '#';
+        phoneEl.href = business.phone ? `tel:${business.phone}` : '#';
       } else {
         phoneEl.textContent = phoneVal;
       }
@@ -114,10 +153,10 @@ async function loadAndDisplayBusiness() {
     
     const whatsappEl = $('whatsapp');
     if (whatsappEl) {
-      const whatsappVal = val(biz.whatsapp, 'Not provided');
+      const whatsappVal = val(business.whatsapp, 'Not provided');
       if (whatsappEl.tagName === 'A') {
         whatsappEl.textContent = whatsappVal;
-        whatsappEl.href = biz.whatsapp ? `https://wa.me/${biz.whatsapp.replace(/[^0-9]/g, '')}` : '#';
+        whatsappEl.href = business.whatsapp ? `https://wa.me/${business.whatsapp.replace(/[^0-9]/g, '')}` : '#';
       } else {
         whatsappEl.textContent = whatsappVal;
       }
@@ -125,10 +164,10 @@ async function loadAndDisplayBusiness() {
     
     const websiteEl = $('website');
     if (websiteEl) {
-      const websiteVal = val(biz.website, 'Not provided');
+      const websiteVal = val(business.website, 'Not provided');
       if (websiteEl.tagName === 'A') {
         websiteEl.textContent = websiteVal;
-        websiteEl.href = biz.website || '#';
+        websiteEl.href = business.website || '#';
       } else {
         websiteEl.textContent = websiteVal;
       }
@@ -136,313 +175,69 @@ async function loadAndDisplayBusiness() {
     
     const instagramEl = $('instagram');
     if (instagramEl) {
-      const instagramVal = val(biz.instagram, 'Not provided');
+      const instagramVal = val(business.instagram, 'Not provided');
       if (instagramEl.tagName === 'A') {
         instagramEl.textContent = instagramVal;
-        instagramEl.href = biz.instagram ? `https://instagram.com/${biz.instagram.replace(/^@/, '')}` : '#';
+        instagramEl.href = business.instagram ? `https://instagram.com/${business.instagram.replace(/^@/, '')}` : '#';
       } else {
         instagramEl.textContent = instagramVal;
       }
     }
     
     // Location fields
-    if ($('country')) {
-      $('country').textContent = val(biz.country, 'Kuwait');
-    }
-    if ($('city')) {
-      $('city').textContent = val(biz.city);
-    }
-    if ($('area')) {
-      $('area').textContent = val(biz.area);
-    }
-    if ($('block')) {
-      $('block').textContent = val(biz.block);
-    }
-    if ($('street')) {
-      $('street').textContent = val(biz.street);
-    }
-    if ($('floor')) {
-      $('floor').textContent = val(biz.floor);
-    }
-    if ($('office_no')) {
-      $('office_no').textContent = val(biz.office_no);
-    }
-    if ($('industry')) {
-      $('industry').textContent = val(biz.industry || biz.category);
+    const locationEl = $('location');
+    if (locationEl) {
+      const locationParts = [];
+      if (business.area) locationParts.push(business.area);
+      if (business.block) locationParts.push(`Block ${business.block}`);
+      if (business.street) locationParts.push(business.street);
+      if (business.floor) locationParts.push(`Floor ${business.floor}`);
+      if (business.office_no) locationParts.push(`Office ${business.office_no}`);
+      const locationText = locationParts.length > 0 ? locationParts.join(', ') : 'Not provided';
+      locationEl.textContent = locationText;
     }
     
-    // Logo - CORRECT ID is "biz-logo"
-    if (biz.logo_url) {
-      const logoImg = $('biz-logo');
-      if (logoImg) {
-        console.log('[owner] Setting logo URL:', biz.logo_url);
-        logoImg.src = biz.logo_url;
-        logoImg.style.display = 'block';
-        console.log('[owner] Logo element updated');
+    // Logo
+    const logoEl = $('logo');
+    if (logoEl && business.logo_url) {
+      if (logoEl.tagName === 'IMG') {
+        logoEl.src = business.logo_url;
+        logoEl.alt = business.name || business.business_name || 'Business logo';
       } else {
-        console.error('[owner] Logo element #biz-logo not found!');
+        logoEl.innerHTML = `<img src="${business.logo_url}" alt="Business logo" style="max-width: 200px; max-height: 120px; border-radius: 8px;">`;
       }
-    } else {
-      console.log('[owner] No logo_url in business data');
     }
     
-    // Load gallery images
-    await loadGalleryImages(biz.id);
+    // Gallery
+    const galleryEl = $('gallery');
+    if (galleryEl && business.gallery_urls && business.gallery_urls.length > 0) {
+      galleryEl.innerHTML = business.gallery_urls.map((url, idx) => {
+        return `<img src="${url}" alt="Gallery image ${idx + 1}" style="max-width: 200px; max-height: 150px; border-radius: 8px; margin: 8px; object-fit: cover;">`;
+      }).join('');
+    }
     
-    console.log('[owner] Business data displayed successfully');
+    // Category/Industry
+    const categoryEl = $('category');
+    if (categoryEl) {
+      categoryEl.textContent = val(business.category || business.industry, 'Not specified');
+    }
     
+    console.log('[owner] Business display completed');
   } catch (error) {
     console.error('[owner] Error loading business:', error);
+    alert('Error loading business data. Please try again.');
   }
 }
 
-// Load gallery images
-async function loadGalleryImages(businessId) {
-  console.log('[owner] Loading gallery for business:', businessId);
-  
-  try {
-    const { data, error } = await supabase
-      .from('business_media')
-      .select('id, url')
-      .eq('business_id', businessId)
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('[owner] Error loading gallery:', error);
-      return;
-    }
-    
-    console.log('[owner] Gallery items found:', data?.length || 0);
-    
-    const galleryDiv = document.getElementById('gallery');
-    if (!galleryDiv) {
-      console.log('[owner] Gallery container not found');
-      return;
-    }
-    
-    if (!data || data.length === 0) {
-      galleryDiv.innerHTML = '<p style="color:#94a3b8;text-align:center;">No images yet. Edit your profile to add gallery images.</p>';
-      return;
-    }
-    
-    // Clear and render gallery
-    galleryDiv.innerHTML = '';
-    
-    data.forEach((item, index) => {
-      console.log('[owner] Rendering gallery image', index + 1, ':', item.url);
-      
-      const imgWrapper = document.createElement('div');
-      imgWrapper.className = 'gallery-item';
-      imgWrapper.style.cssText = 'position:relative;overflow:hidden;border-radius:8px;';
-      
-      const img = document.createElement('img');
-      img.src = item.url;
-      img.alt = `Gallery image ${index + 1}`;
-      img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
-      img.onload = () => console.log('[owner] Gallery image loaded:', item.url);
-      img.onerror = () => console.error('[owner] Gallery image failed to load:', item.url);
-      
-      imgWrapper.appendChild(img);
-      galleryDiv.appendChild(imgWrapper);
-    });
-    
-    console.log('[owner] Gallery rendered with', data.length, 'images');
-    
-  } catch (error) {
-    console.error('[owner] Error in loadGalleryImages:', error);
-  }
-}
-
-// Events loading functions
-function fmt(dt) {
-  return new Date(dt).toLocaleString();
-}
-
-// tiny renderer
-function renderCards(targetId, rows) {
-  const target = document.getElementById(targetId);
-  if (!target) return;
-  if (!rows?.length) { 
-    target.innerHTML = '<p class="muted">No items yet.</p>'; 
-    return; 
-  }
-  target.innerHTML = rows.map(r => `
-    <article class="card" style="padding:12px;margin:8px 0;display:flex;gap:12px;align-items:center;">
-      ${r.cover_image_url ? `<img src="${r.cover_image_url}" alt="" style="width:68px;height:48px;object-fit:cover;border-radius:8px;">` : ''}
-      <div style="flex:1">
-        <div style="font-weight:600">${r.title || 'Untitled event'}</div>
-        <div class="muted" style="font-size:.9rem">${fmt(r.start_at)}${r.end_at ? ' – ' + fmt(r.end_at) : ''}</div>
-      </div>
-      <a href="/events.html?id=${r.id}" class="btn btn-sm">View</a>
-    </article>
-  `).join('');
-}
-
-async function getOwnerBusinessIds(userId) {
-  const { data, error } = await supabase
-    .from('businesses')
-    .select('id')
-    .eq('owner_id', userId);
-  if (error) { 
-    console.error('[owner-events] businesses error', error); 
-    return []; 
-  }
-  return (data || []).map(x => x.id);
-}
-
-export async function loadOwnerEvents() {
-  console.log('[owner-events] Loading owner events...');
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user?.id) { 
-    console.warn('[owner-events] not signed in'); 
-    return; 
-  }
-
-  const bizIds = await getOwnerBusinessIds(user.id);
-  if (!bizIds.length) { 
-    renderCards('ongoing-list', []); 
-    renderCards('past-list', []); 
-    return; 
-  }
-
-  const nowIso = new Date().toISOString();
-
-  // Use unified fetch for owner events (shows all events including drafts)
-  const { data: allEvents, error } = await fetchEvents({ 
-    scope: 'owner', 
-    kind: 'all', 
-    upcomingOnly: false 
-  });
-
-  if (error) {
-    console.error('[owner-events] error loading events:', error);
-    renderCards('ongoing-list', []);
-    renderCards('past-list', []);
-    return;
-  }
-
-  // Filter by business IDs and categorize
-  const ownerEvents = allEvents.filter(event => bizIds.includes(event.business_id));
-  
-  const ongoing = ownerEvents.filter(e => 
-    e.start_at <= nowIso && (e.end_at >= nowIso || !e.end_at)
-  );
-  
-  const past = ownerEvents.filter(e => 
-    e.end_at ? e.end_at < nowIso : e.start_at < nowIso
-  ).slice(0, 20);
-
-  renderCards('ongoing-list', ongoing);
-  renderCards('past-list', past);
-}
-
-// Listen for refresh notifications from events page
-window.addEventListener('storage', (e) => {
-  if (e.key === 'owner-events-refresh') {
-    console.log('[owner-events] Refresh notification received, reloading events...');
-    loadOwnerEvents();
-  }
-});
-
-// Run on load
+// Initialize when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    loadAndDisplayBusiness();
-    loadOwnerEvents();
+    const urlParams = new URLSearchParams(window.location.search);
+    const businessId = urlParams.get('businessId');
+    loadAndDisplayBusiness(businessId);
   });
 } else {
-  loadAndDisplayBusiness();
-  loadOwnerEvents();
+  const urlParams = new URLSearchParams(window.location.search);
+  const businessId = urlParams.get('businessId');
+  loadAndDisplayBusiness(businessId);
 }
-
-
-  }
-  target.innerHTML = rows.map(r => `
-    <article class="card" style="padding:12px;margin:8px 0;display:flex;gap:12px;align-items:center;">
-      ${r.cover_image_url ? `<img src="${r.cover_image_url}" alt="" style="width:68px;height:48px;object-fit:cover;border-radius:8px;">` : ''}
-      <div style="flex:1">
-        <div style="font-weight:600">${r.title || 'Untitled event'}</div>
-        <div class="muted" style="font-size:.9rem">${fmt(r.start_at)}${r.end_at ? ' – ' + fmt(r.end_at) : ''}</div>
-      </div>
-      <a href="/events.html?id=${r.id}" class="btn btn-sm">View</a>
-    </article>
-  `).join('');
-}
-
-async function getOwnerBusinessIds(userId) {
-  const { data, error } = await supabase
-    .from('businesses')
-    .select('id')
-    .eq('owner_id', userId);
-  if (error) { 
-    console.error('[owner-events] businesses error', error); 
-    return []; 
-  }
-  return (data || []).map(x => x.id);
-}
-
-export async function loadOwnerEvents() {
-  console.log('[owner-events] Loading owner events...');
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user?.id) { 
-    console.warn('[owner-events] not signed in'); 
-    return; 
-  }
-
-  const bizIds = await getOwnerBusinessIds(user.id);
-  if (!bizIds.length) { 
-    renderCards('ongoing-list', []); 
-    renderCards('past-list', []); 
-    return; 
-  }
-
-  const nowIso = new Date().toISOString();
-
-  // Use unified fetch for owner events (shows all events including drafts)
-  const { data: allEvents, error } = await fetchEvents({ 
-    scope: 'owner', 
-    kind: 'all', 
-    upcomingOnly: false 
-  });
-
-  if (error) {
-    console.error('[owner-events] error loading events:', error);
-    renderCards('ongoing-list', []);
-    renderCards('past-list', []);
-    return;
-  }
-
-  // Filter by business IDs and categorize
-  const ownerEvents = allEvents.filter(event => bizIds.includes(event.business_id));
-  
-  const ongoing = ownerEvents.filter(e => 
-    e.start_at <= nowIso && (e.end_at >= nowIso || !e.end_at)
-  );
-  
-  const past = ownerEvents.filter(e => 
-    e.end_at ? e.end_at < nowIso : e.start_at < nowIso
-  ).slice(0, 20);
-
-  renderCards('ongoing-list', ongoing);
-  renderCards('past-list', past);
-}
-
-// Listen for refresh notifications from events page
-window.addEventListener('storage', (e) => {
-  if (e.key === 'owner-events-refresh') {
-    console.log('[owner-events] Refresh notification received, reloading events...');
-    loadOwnerEvents();
-  }
-});
-
-// Run on load
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    loadAndDisplayBusiness();
-    loadOwnerEvents();
-  });
-} else {
-  loadAndDisplayBusiness();
-  loadOwnerEvents();
-}
-

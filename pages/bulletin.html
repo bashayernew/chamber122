@@ -18,7 +18,7 @@
     </div>
 
     <script type="module">
-        import { supabase } from '/assets/js/supabase-client.global.js';
+        import { getBulletinById } from '/js/api.js';
 
         async function loadBulletinDetails() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -36,13 +36,9 @@
             }
 
             try {
-                const { data: bulletin, error } = await supabase
-                    .from('bulletins')
-                    .select('*')
-                    .eq('id', bulletinId)
-                    .single();
+                const bulletin = await getBulletinById(bulletinId);
 
-                if (error || !bulletin) {
+                if (!bulletin) {
                     throw new Error('Bulletin not found');
                 }
 

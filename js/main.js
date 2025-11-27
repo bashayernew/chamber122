@@ -1,4 +1,7 @@
-// Real MSME data will be loaded from backend API
+// main.js - Using localStorage only (no backend, no API)
+import { getAllBusinesses } from './auth-localstorage.js';
+
+// Real MSME data will be loaded from localStorage
 const msmeData = [];
 
 // DOM elements
@@ -51,174 +54,92 @@ function setupEventListeners() {
 function displayMSMEs(msmes) {
   if (!directoryGrid) return;
   
-  directoryGrid.innerHTML = '';
+  if (msmes.length === 0) {
+    directoryGrid.innerHTML = '<p>No businesses found.</p>';
+    return;
+  }
   
-  msmes.forEach(msme => {
-    const card = createMSMECard(msme);
-    directoryGrid.appendChild(card);
-  });
+  directoryGrid.innerHTML = msmes.map(msme => createMSMECard(msme)).join('');
 }
 
-// Create MSME card element
-function createMSMECard(business) {
-  const card = document.createElement('div');
-  card.className = 'msme-card';
-  card.onclick = () => window.location.href = `/owner.html?businessId=${business.id}`;
+// Create MSME card HTML
+function createMSMECard(msme) {
+  const name = msme.name || msme.business_name || 'Unknown Business';
+  const description = msme.description || msme.short_description || '';
+  const category = msme.category || msme.industry || 'General';
+  const location = msme.city || msme.area || 'Kuwait';
+  const logo = msme.logo_url || '';
   
-  const businessName = (business.name || business.business_name || 'Unnamed Business').trim();
-  // Filter out blob URLs - they're temporary and won't work after page reload
-  let imageUrl = business.logo_url || '';
-  if (imageUrl.startsWith('blob:')) {
-    imageUrl = ''; // Don't use blob URLs
-  }
-  const category = business.category || business.industry || 'General';
-  const description = business.description || business.short_description || '';
-  const statusClass = business.status === 'approved' ? 'verified' : '';
-  
-  card.innerHTML = `
-    ${imageUrl ? `<img src="${imageUrl}" alt="${businessName}">` : `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #ffd166, #ff6b6b); display: flex; align-items: center; justify-content: center;"><i class="fas fa-building" style="color: #111; font-size: 48px;"></i></div>`}
-    <h3>${businessName}</h3>
-    <div class="category">${category}</div>
-    <div class="status ${statusClass}">${business.status === 'approved' ? 'Verified' : 'Available'}</div>
-    <p class="description">${description.substring(0, 100)}${description.length > 100 ? '...' : ''}</p>
-    <div class="visit-btn">Visit Profile</div>
+  return `
+    <div class="msme-card" data-business-id="${msme.id}">
+      ${logo ? `<img src="${logo}" alt="${escapeHtml(name)}" class="msme-logo" onerror="this.style.display='none'">` : ''}
+      <h3>${escapeHtml(name)}</h3>
+      <p class="category">${escapeHtml(category)}</p>
+      <p class="location"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(location)}</p>
+      ${description ? `<p class="description">${escapeHtml(description.substring(0, 100))}${description.length > 100 ? '...' : ''}</p>` : ''}
+      <a href="/owner.html?businessId=${msme.id}" class="btn btn-primary">View Profile</a>
+    </div>
   `;
-  
-  return card;
+}
+
+// Escape HTML helper
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 // Search businesses
 function searchBusinesses() {
-  const location = document.getElementById('location').value;
-  const category = document.getElementById('category').value;
-  const businessName = document.getElementById('business-name').value.toLowerCase();
+  const nameInput = document.getElementById('quick-business-name');
+  const categorySelect = document.getElementById('quick-category');
+  const locationSelect = document.getElementById('quick-location');
   
-  let filteredData = msmeData.filter(msme => {
-    const matchesLocation = !location || msme.location.toLowerCase().includes(location.replace('-', ' '));
-    const matchesCategory = !category || msme.category.toLowerCase().includes(category.replace('-', ' '));
-    const matchesName = !businessName || msme.name.toLowerCase().includes(businessName);
-    
-    return matchesLocation && matchesCategory && matchesName;
-  });
+  const name = nameInput ? nameInput.value.trim() : '';
+  const category = categorySelect ? categorySelect.value : '';
+  const location = locationSelect ? locationSelect.value : '';
   
-  displayMSMEs(filteredData);
+  // Build URL with search parameters
+  const params = new URLSearchParams();
+  if (name) params.set('name', name);
+  if (category) params.set('category', category);
+  if (location) params.set('location', location);
   
-  // Add animation to cards
-  const cards = document.querySelectorAll('.msme-card');
-  cards.forEach((card, index) => {
-    card.style.animationDelay = `${index * 0.1}s`;
-    card.classList.add('fade-in-up');
-  });
-}
-
-// Open modal with MSME details
-function openModal(msme) {
-  document.getElementById('modal-image').src = msme.image;
-  document.getElementById('modal-image').alt = msme.name;
-  document.getElementById('modal-title').textContent = msme.name;
-  document.getElementById('modal-category').textContent = msme.category;
-  document.getElementById('modal-description').textContent = msme.description;
-  document.getElementById('modal-story').textContent = msme.story;
-  
-  // Set up contact links
-  document.getElementById('modal-email').href = `mailto:${msme.email}`;
-  document.getElementById('modal-whatsapp').href = `https://wa.me/${msme.whatsapp.replace(/[^0-9]/g, '')}`;
-  document.getElementById('modal-website').href = msme.website;
-  
-  if (modalOverlay) {
-    modalOverlay.classList.add('active');
-    document.body.style.overflow = 'hidden';
-  }
+  // Redirect to directory page with search parameters
+  window.location.href = `/directory.html?${params.toString()}`;
 }
 
 // Close modal
 function closeModal() {
   if (modalOverlay) {
-    modalOverlay.classList.remove('active');
-    document.body.style.overflow = 'auto';
+    modalOverlay.style.display = 'none';
   }
 }
 
 // Newsletter subscription
 function subscribeNewsletter() {
   const emailInput = document.querySelector('.newsletter-input');
-  const email = emailInput.value.trim();
+  const email = emailInput ? emailInput.value.trim() : '';
   
-  if (!email || !isValidEmail(email)) {
+  if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
     alert('Please enter a valid email address.');
     return;
   }
   
-  // Simulate subscription
-  alert('Thank you for subscribing to our newsletter!');
-  emailInput.value = '';
-}
-
-// Email validation
-function isValidEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
-
-// Smooth scroll for navigation links
-document.addEventListener('click', (e) => {
-  const a = e.target.closest('a[href]');
-  if (!a) return;
-
-  const href = a.getAttribute('href');
-
-  // If it's just "#", do nothing but prevent jump
-  if (href === '#') {
-    e.preventDefault();
-    return;
-  }
-
-  // Only try querySelector for real IDs like "#section-1"
-  if (href && href.startsWith('#') && href.length > 1) {
-    e.preventDefault();
-    const el = document.querySelector(href);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Store subscription in localStorage
+  try {
+    const subscriptions = JSON.parse(localStorage.getItem('chamber122_newsletter') || '[]');
+    if (!subscriptions.includes(email)) {
+      subscriptions.push(email);
+      localStorage.setItem('chamber122_newsletter', JSON.stringify(subscriptions));
     }
-    return;
+    alert('Thank you for subscribing!');
+    if (emailInput) emailInput.value = '';
+  } catch (e) {
+    console.error('Error saving newsletter subscription:', e);
+    alert('Subscription saved locally. Thank you!');
   }
-
-  // otherwise let the link behave normally (external/internal nav)
-}, { passive: false });
-
-// Add scroll effect to navbar
-window.addEventListener('scroll', function() {
-  const navbar = document.querySelector('.navbar');
-  if (window.scrollY > 100) {
-    navbar.style.background = 'rgba(15, 15, 15, 0.98)';
-  } else {
-    navbar.style.background = 'rgba(15, 15, 15, 0.95)';
-  }
-});
-
-// Auto-scroll featured carousel (optional)
-function autoScrollCarousel() {
-  const carousel = document.querySelector('.featured-carousel');
-  if (carousel) {
-    setInterval(() => {
-      carousel.scrollBy({
-        left: 300,
-        behavior: 'smooth'
-      });
-    }, 5000);
-  }
-}
-
-// Initialize auto-scroll (uncomment if desired)
-// autoScrollCarousel();
-
-// Add loading states
-function showLoading() {
-  document.body.classList.add('loading');
-}
-
-function hideLoading() {
-  document.body.classList.remove('loading');
 }
 
 // Display newest MSMEs on home page
@@ -227,63 +148,17 @@ async function displayNewestMSMEs() {
   if (!newestGrid) return;
   
   try {
-    // Fetch businesses from API
-    const response = await fetch('/api/businesses/public');
+    // Get businesses from localStorage
+    const businesses = getAllBusinesses();
     
-    let businesses = [];
-    
-    // Check if response is OK before parsing JSON
-    if (!response.ok) {
-      if (response.status === 404) {
-        console.warn('[main] API endpoint not available (404), using localStorage fallback');
-        // Try localStorage fallback
-        try {
-          const stored = localStorage.getItem('chamber122_businesses');
-          if (stored) {
-            businesses = JSON.parse(stored);
-            console.log(`[main] Loaded ${businesses.length} businesses from localStorage`);
-          } else {
-            // Try getting from users in localStorage
-            const users = JSON.parse(localStorage.getItem('chamber122_users') || '[]');
-            businesses = users
-              .filter(u => (u.status === 'approved' || !u.status) && u.business_name)
-              .map(u => ({
-                id: u.id,
-                name: u.business_name,
-                description: u.description || '',
-                category: u.industry || u.category || 'Other',
-                status: 'approved'
-              }));
-            console.log(`[main] Loaded ${businesses.length} businesses from users in localStorage`);
-          }
-        } catch (e) {
-          console.warn('[main] Error reading from localStorage:', e);
-          businesses = [];
-        }
-      } else {
-        throw new Error(`HTTP ${response.status}`);
-      }
-    } else {
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Response is not JSON');
-      }
-      
-      const data = await response.json();
-      if (data.ok && data.businesses) {
-        businesses = data.businesses;
-        // Store in localStorage for fallback
-        try {
-          localStorage.setItem('chamber122_businesses', JSON.stringify(businesses));
-        } catch (e) {
-          console.warn('[main] Could not store in localStorage:', e);
-        }
-        console.log(`[main] Loaded ${businesses.length} businesses for newest section`);
-      }
-    }
+    // Filter to only approved and active businesses
+    const approvedBusinesses = businesses.filter(b => 
+      (b.status === 'approved' || !b.status) && 
+      (b.is_active !== false)
+    );
     
     // Get the 4 most recent businesses
-    const newestMSMEs = businesses.slice(-4).reverse();
+    const newestMSMEs = approvedBusinesses.slice(-4).reverse();
     
     newestGrid.innerHTML = '';
     if (newestMSMEs.length === 0) {
@@ -299,8 +174,10 @@ async function displayNewestMSMEs() {
     
     newestMSMEs.forEach(msme => {
       const card = createMSMECard(msme);
-      newestGrid.appendChild(card);
+      newestGrid.insertAdjacentHTML('beforeend', card);
     });
+    
+    console.log(`[main] Displayed ${newestMSMEs.length} newest businesses`);
   } catch (error) {
     console.error('[main] Error loading newest MSMEs:', error);
     newestGrid.innerHTML = `
@@ -313,169 +190,25 @@ async function displayNewestMSMEs() {
   }
 }
 
-// Quick search functionality for home page
+// Global search function (redirects to directory)
 function performQuickSearch() {
-  const businessName = document.getElementById('quick-business-name')?.value?.trim();
-  const category = document.getElementById('quick-category')?.value?.trim();
-  const area = document.getElementById('quick-area')?.value?.trim();
+  const searchInput = document.getElementById('quick-business-name');
+  const categorySelect = document.getElementById('quick-category');
+  const locationSelect = document.getElementById('quick-location');
   
-  // Build query string
+  const name = searchInput ? searchInput.value.trim() : '';
+  const category = categorySelect ? categorySelect.value : '';
+  const location = locationSelect ? locationSelect.value : '';
+  
+  // Build URL with search parameters
   const params = new URLSearchParams();
-  if (businessName) params.set('name', businessName);
+  if (name) params.set('name', name);
   if (category) params.set('category', category);
-  if (area) params.set('location', area);
+  if (location) params.set('location', location);
   
-  // Redirect to directory page with filters
-  const queryString = params.toString();
-  window.location.href = queryString ? `directory.html?${queryString}` : 'directory.html';
+  // Redirect to directory page with search parameters
+  window.location.href = `/directory.html?${params.toString()}`;
 }
 
-// Mobile menu toggle
-function toggleMobileMenu() {
-  const mobileMenu = document.getElementById('mobile-menu');
-  if (mobileMenu) {
-    mobileMenu.classList.toggle('active');
-  }
-}
-
-// Initialize global search bar
-function initGlobalSearch() {
-  // Find all navbar containers
-  const navContainers = document.querySelectorAll('.nav-container');
-  
-  navContainers.forEach(container => {
-    // Check if search bar already exists
-    if (container.querySelector('#global-search-bar')) {
-      return;
-    }
-
-    // Create search bar wrapper
-    const searchWrapper = document.createElement('div');
-    searchWrapper.id = 'global-search-bar';
-    searchWrapper.className = 'global-search-wrapper';
-    searchWrapper.innerHTML = `
-      <div class="global-search-container">
-        <input 
-          type="text" 
-          id="global-search-input" 
-          class="global-search-input" 
-          placeholder="Search businesses..." 
-          autocomplete="off"
-        />
-        <button 
-          type="button" 
-          id="global-search-btn" 
-          class="global-search-btn"
-          aria-label="Search"
-        >
-          <i class="fas fa-search"></i>
-        </button>
-      </div>
-    `;
-
-    // Insert before nav-actions or at the end
-    const navActions = container.querySelector('.nav-actions');
-    if (navActions) {
-      container.insertBefore(searchWrapper, navActions);
-    } else {
-      container.appendChild(searchWrapper);
-    }
-  });
-
-  // Setup event listeners
-  setupGlobalSearchListeners();
-}
-
-let globalSearchListenersAttached = false;
-
-function setupGlobalSearchListeners() {
-  // Prevent duplicate listeners
-  if (globalSearchListenersAttached) {
-    return;
-  }
-  
-  // Use event delegation to handle dynamically created search inputs
-  document.addEventListener('keypress', (e) => {
-    if (e.target && e.target.id === 'global-search-input' && e.key === 'Enter') {
-      e.preventDefault();
-      performGlobalSearch(e.target.value);
-    }
-  });
-
-  // Handle search button clicks using event delegation
-  document.addEventListener('click', (e) => {
-    if (e.target && (e.target.id === 'global-search-btn' || e.target.closest('#global-search-btn'))) {
-      const searchBtn = e.target.id === 'global-search-btn' ? e.target : e.target.closest('#global-search-btn');
-      const container = searchBtn.closest('.global-search-container');
-      const input = container?.querySelector('#global-search-input');
-      if (input) {
-        performGlobalSearch(input.value);
-      }
-    }
-  });
-  
-  globalSearchListenersAttached = true;
-}
-
-function performGlobalSearch(searchTerm) {
-  const term = searchTerm?.trim() || '';
-  
-  if (!term) {
-    // If empty, just go to directory
-    window.location.href = 'directory.html';
-    return;
-  }
-
-  // Redirect to directory with search parameter
-  const params = new URLSearchParams();
-  params.set('name', term);
-  window.location.href = `directory.html?${params.toString()}`;
-}
-
-// Initialize global search on DOM ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initGlobalSearch);
-} else {
-  initGlobalSearch();
-}
-
-// Make functions available globally
-window.initGlobalSearch = initGlobalSearch;
-window.performGlobalSearch = performGlobalSearch;
-
-// User dropdown toggle
-function toggleUserMenu() {
-  const userDropdownContainer = document.querySelector('.user-dropdown');
-  if (userDropdownContainer) {
-    userDropdownContainer.classList.toggle('active');
-  }
-}
-
-// Close dropdown when clicking outside
-document.addEventListener('click', function(event) {
-  const userDropdownContainer = document.querySelector('.user-dropdown');
-  const userMenuBtn = document.querySelector('.user-menu-btn');
-  
-  if (userDropdownContainer && userMenuBtn && !userMenuBtn.contains(event.target) && !userDropdownContainer.contains(event.target)) {
-    userDropdownContainer.classList.remove('active');
-  }
-});
-
-// Enhanced modal functionality
-function openBusinessModal(businessId) {
-  const business = msmeData.find(b => 
-    b.id == businessId || 
-    b.name.toLowerCase().replace(/\s+/g, '-') === businessId
-  );
-  if (business) {
-    openModal(business);
-  }
-}
-
-// Export functions for global access
-window.searchBusinesses = searchBusinesses;
-window.closeModal = closeModal;
+// Make search function globally available
 window.performQuickSearch = performQuickSearch;
-window.toggleMobileMenu = toggleMobileMenu;
-window.toggleUserMenu = toggleUserMenu;
-window.openBusinessModal = openBusinessModal;

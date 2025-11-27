@@ -1,5 +1,5 @@
 // public/js/auth-login.js (v24)
-import { supabase } from '/js/supabase-client.js';
+import { login } from '/js/api.js';
 import { go } from '/js/nav.js';
 
 const LOG = (...a) => console.log('[auth-login]', ...a);
@@ -26,18 +26,35 @@ function bindLogin(form) {
 
     setBusy(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        console.warn('[auth-login] signIn error', error);
-        alert(error.message || 'Sign in failed');
-        setBusy(false);
-        return;
+      LOG('Attempting login for:', email);
+      const result = await login(email, password);
+      LOG('Login result:', { ok: result?.ok, hasUser: !!result?.user, hasError: !!result?.error });
+      
+      if (!result || !result.user) {
+        const errorMsg = result?.error || 'Login failed. Please check your email and password.';
+        LOG('Login failed:', errorMsg);
+        throw new Error(errorMsg);
       }
-      LOG('signed in as', data.user?.email);
-      go('/dashboard.html');
+      
+      LOG('✅ Login successful, signed in as:', result.user?.email);
+      // Small delay to ensure token is stored
+      await new Promise(resolve => setTimeout(resolve, 100));
+      // Trigger a page refresh to update auth state
+      window.location.href = '/dashboard.html';
     } catch (err) {
-      console.warn('[auth-login] exception', err);
-      alert(String(err));
+      console.error('[auth-login] Login error:', err);
+      let errorMsg = err.message || String(err) || 'Sign in failed. Please check your email and password.';
+      
+      // Provide helpful guidance
+      if (errorMsg.includes('not found') || errorMsg.includes('sign up')) {
+        errorMsg += '\n\nWould you like to create an account instead?';
+        if (confirm(errorMsg)) {
+          window.location.href = '/auth.html#signup';
+          return;
+        }
+      } else {
+        alert(errorMsg);
+      }
       setBusy(false);
     }
   });

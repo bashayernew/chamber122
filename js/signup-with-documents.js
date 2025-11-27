@@ -59,7 +59,7 @@ function wireOneInput(el) {
     }
     
     // For non-gallery files, get single file
-    const file = e.target.files?.[0];
+    const file = e.target.files && e.target.files.length > 0 ? e.target.files[0] : null;
     
     if (!file) {
       console.log('No file selected');
@@ -88,9 +88,9 @@ function wireOneInput(el) {
     if (type !== 'logo' && type !== 'gallery') {
       const previewContainer = document.getElementById(`${type}-preview`) || 
                                document.getElementById(`${type === 'articles' ? 'incorporation' : type === 'signature_auth' ? 'signature' : type}-preview`);
-      const img = previewContainer?.querySelector(`[data-local-preview="${type}"]`);
-      const fileName = previewContainer?.querySelector('.file-name');
-      const fileLink = previewContainer?.querySelector('.file-link');
+      const img = previewContainer ? previewContainer.querySelector(`[data-local-preview="${type}"]`) : null;
+      const fileName = previewContainer ? previewContainer.querySelector('.file-name') : null;
+      const fileLink = previewContainer ? previewContainer.querySelector('.file-link') : null;
       
       if (previewContainer) {
         previewContainer.style.display = 'block';
@@ -184,7 +184,7 @@ function wireOneInput(el) {
       // Preview already shown above, just add remove button handler
       const previewContainer = document.getElementById(`${type}-preview`) || 
                                document.getElementById(`${type === 'articles' ? 'incorporation' : type === 'signature_auth' ? 'signature' : type}-preview`);
-      const img = previewContainer?.querySelector(`[data-local-preview="${type}"]`);
+      const img = previewContainer ? previewContainer.querySelector(`[data-local-preview="${type}"]`) : null;
       
       // Add remove button handler
       const removeBtn = previewContainer?.querySelector('.remove-file');

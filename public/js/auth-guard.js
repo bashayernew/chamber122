@@ -1,25 +1,61 @@
-import { supabase } from './supabase-client.global.js'
-
+// Auth guard using new API (replaces Supabase)
 export async function requireAuthOrPrompt() {
-  const { data: { session } } = await supabase.auth.getSession()
-  if (session) return session
-
-  const dlg = document.getElementById('login-required-modal')
-  if (!dlg) {
-    console.error('[auth-guard] login-required-modal not found in DOM')
-    throw new Error('AUTH_REQUIRED')
+  try {
+    // Check if user is logged in via API
+    const response = await fetch('/api/auth/me', {
+      credentials: 'include'
+    });
+    
+    if (response.ok) {
+      const { user } = await response.json();
+      if (user) {
+        return { user }; // User is logged in
+      }
+    }
+  } catch (error) {
+    console.warn('[auth-guard] Auth check failed:', error);
   }
 
-  const doLogin = () => {
-    const redirect = encodeURIComponent(location.pathname + location.search)
-    location.href = `/auth.html?redirect=${redirect}`
+  // User is not logged in - show modal or redirect
+  // Try different modal IDs that might exist
+  const dlg = document.getElementById('login-required-modal') || 
+              document.getElementById('auth-required-modal');
+  
+  if (dlg) {
+    // Show modal if it exists
+    const doLogin = () => {
+      const redirect = encodeURIComponent(location.pathname + location.search);
+      location.href = `/auth.html?redirect=${redirect}`;
+    };
+    const doCancel = () => {
+      if (dlg.close) dlg.close();
+      else dlg.style.display = 'none';
+    };
+
+    // Try different button IDs
+    const loginBtn = document.getElementById('login-now') || 
+                     document.getElementById('auth-go') ||
+                     document.querySelector('[data-testid="auth-sign-in"]');
+    const cancelBtn = document.getElementById('login-cancel') || 
+                      document.getElementById('events-auth-cancel') ||
+                      document.getElementById('bulletin-auth-cancel') ||
+                      document.querySelector('[data-testid="auth-cancel"]');
+
+    loginBtn?.addEventListener('click', doLogin, { once: true });
+    cancelBtn?.addEventListener('click', doCancel, { once: true });
+
+    // Show modal (support both dialog and div)
+    if (dlg.showModal) {
+      dlg.showModal();
+    } else {
+      dlg.style.display = 'flex';
+    }
+  } else {
+    // No modal found - redirect directly to auth page
+    const redirect = encodeURIComponent(location.pathname + location.search);
+    location.href = `/auth.html?redirect=${redirect}`;
   }
-  const doCancel = () => dlg.close()
-
-  document.getElementById('login-now')?.addEventListener('click', doLogin, { once:true })
-  document.getElementById('login-cancel')?.addEventListener('click', doCancel, { once:true })
-
-  dlg.showModal()
-  throw new Error('AUTH_REQUIRED')
+  
+  throw new Error('AUTH_REQUIRED');
 }
 

@@ -1,7 +1,8 @@
 // Global Compliance Status Banner
 // Shows compliance status across all pages
+// Updated to use backend API instead of Supabase
 
-import { supabase } from './supabase-client.js';
+// Compliance banner disabled for now - can be re-enabled with backend API if needed
 
 class ComplianceBanner {
   constructor() {

@@ -51,7 +51,20 @@ jobs:
           echo "MSME_PENDING_PASSWORD=${{ secrets.MSME_PENDING_PASSWORD }}" >> .env.e2e
           echo "MSME_APPROVED_EMAIL=${{ secrets.MSME_APPROVED_EMAIL }}" >> .env.e2e
           echo "MSME_APPROVED_PASSWORD=${{ secrets.MSME_APPROVED_PASSWORD }}" >> .env.e2e
-          echo "GUEST_EMAIL=${{ secrets.GUEST_EMAIL || 'guest@demo.com' }}" >> .env.e2e
+          if [ -z "${{ secrets.GUEST_EMAIL }}" ]; then
+            echo "GUEST_EMAIL=guest@demo.com" >> .env.e2e
+          else
+            echo "GUEST_EMAIL=${{ secrets.GUEST_EMAIL }}" >> .env.e2e
+          fi
+          
+      - name: Set default GUEST_EMAIL
+        id: set_guest_email
+        run: |
+          if [ -z "${{ secrets.GUEST_EMAIL }}" ]; then
+            echo "guest_email=guest@demo.com" >> $GITHUB_OUTPUT
+          else
+            echo "guest_email=${{ secrets.GUEST_EMAIL }}" >> $GITHUB_OUTPUT
+          fi
           
       - name: Seed test data
         run: npm run seed:e2e
@@ -65,7 +78,7 @@ jobs:
           MSME_PENDING_PASSWORD: ${{ secrets.MSME_PENDING_PASSWORD }}
           MSME_APPROVED_EMAIL: ${{ secrets.MSME_APPROVED_EMAIL }}
           MSME_APPROVED_PASSWORD: ${{ secrets.MSME_APPROVED_PASSWORD }}
-          GUEST_EMAIL: ${{ secrets.GUEST_EMAIL || 'guest@demo.com' }}
+          GUEST_EMAIL: ${{ steps.set_guest_email.outputs.guest_email }}
           
       - name: Run E2E tests
         run: npm run test:e2e

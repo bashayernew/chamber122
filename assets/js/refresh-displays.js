@@ -32,40 +32,43 @@ window.refreshEventsAndBulletins = async function() {
   if (ownerSections.length > 0) {
     console.log('[refresh] Refreshing owner profile displays...');
     
-    // Get owner ID from current user's business
-    const { supabase } = await import('./supabase-client.global.js');
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: business } = await supabase
-        .from('businesses')
-        .select('id')
-        .eq('owner_id', user.id)
-        .single();
-      
-      if (business?.id) {
-        // Always show all events/bulletins (including drafts) when refreshing owner's own profile
-        const data = await loadOwnerEventsAndBulletins(business.id, true);
+    try {
+      // Get owner ID from current user's business using new API
+      const { getCurrentUser, getMyBusiness } = await import('/js/api.js');
+      const user = await getCurrentUser();
+      if (user) {
+        const business = await getMyBusiness();
         
-        renderList(document.getElementById('ev-ongoing'),  data.events.ongoing,  eventCard, 'No ongoing events.');
-        renderList(document.getElementById('ev-upcoming'), data.events.upcoming, eventCard, 'No upcoming events.');
-        renderList(document.getElementById('ev-previous'), data.events.previous, eventCard, 'No previous events.');
-        renderList(document.getElementById('ev-pending'),  data.events.pending,  eventCard, 'No pending events.');
-        
-        renderList(document.getElementById('bl-current'), data.bulletins.current, bulletinCard, 'No current bulletins.');
-        renderList(document.getElementById('bl-recent'),  data.bulletins.recent,  bulletinCard, 'No recent bulletins.');
-        renderList(document.getElementById('bl-pending'),  data.bulletins.pending,  bulletinCard, 'No pending bulletins.');
+        if (business?.id) {
+          // Always show all events/bulletins (including drafts) when refreshing owner's own profile
+          const data = await loadOwnerEventsAndBulletins(business.id, true);
+          
+          renderList(document.getElementById('ev-ongoing'),  data.events.ongoing,  eventCard, 'No ongoing events.');
+          renderList(document.getElementById('ev-upcoming'), data.events.upcoming, eventCard, 'No upcoming events.');
+          renderList(document.getElementById('ev-previous'), data.events.previous, eventCard, 'No previous events.');
+          renderList(document.getElementById('ev-pending'),  data.events.pending,  eventCard, 'No pending events.');
+          
+          renderList(document.getElementById('bl-current'), data.bulletins.current, bulletinCard, 'No current bulletins.');
+          renderList(document.getElementById('bl-recent'),  data.bulletins.recent,  bulletinCard, 'No recent bulletins.');
+          renderList(document.getElementById('bl-pending'),  data.bulletins.pending,  bulletinCard, 'No pending bulletins.');
+        }
       }
+    } catch (error) {
+      console.error('[refresh] Error refreshing owner profile displays:', error);
     }
   }
   
   console.log('[refresh] Refresh complete!');
 };
 
-// Auto-refresh every 30 seconds
-setInterval(() => {
-  if (document.visibilityState === 'visible') {
-    window.refreshEventsAndBulletins();
-  }
-}, 30000);
+// Auto-refresh every 60 seconds (reduced frequency to prevent spam)
+let refreshInterval = null;
+if (typeof window !== 'undefined') {
+  refreshInterval = setInterval(() => {
+    if (document.visibilityState === 'visible') {
+      window.refreshEventsAndBulletins();
+    }
+  }, 60000); // 60 seconds instead of 30
+}
 
 console.log('[refresh] Events & Bulletins refresh system loaded');

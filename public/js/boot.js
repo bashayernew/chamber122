@@ -1,5 +1,5 @@
-// boot.js v=2 - Single module entry point
-import './supabase-client.global.js?v=3';  // Must be first
+// boot.js v=3 - Single module entry point (Supabase removed)
+import '/js/api.js';  // Backend API helper
 import './header-auth-slot.js';
 
 const page = document.body?.dataset?.page || '';

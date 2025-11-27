@@ -413,10 +413,18 @@ async function load() {
     // after you have `biz` from Supabase:
     await applyLogo(biz);
 
-    // status/visibility
-    const status = (biz.status || "").toString().toLowerCase(); // 'draft' | 'pending' | 'published' | etc.
+    // status/visibility - ensure status is refreshed from backend
+    const status = (biz.status || "").toString().toLowerCase(); // 'draft' | 'pending' | 'approved' | 'suspended' | 'rejected'
     const isPublic = biz.is_published === true || status === "published";
-    setBadge(el("status-badge"), status || "pending");
+    
+    // Set status badge with proper value
+    const statusBadge = el("status-badge");
+    if (statusBadge) {
+      statusBadge.textContent = status || "pending";
+      statusBadge.className = `badge ${status}`; // Add status class for styling
+      console.log('[owner.js] Status badge set to:', status);
+    }
+    
     setBadge(el("visibility-badge"), isPublic ? "Yes (published)" : "No (draft)");
 
     // Last updated

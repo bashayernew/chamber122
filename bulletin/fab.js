@@ -199,14 +199,20 @@ function setupEventListeners() {
     fabBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       
-      const supabase = await getSupabase();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        alert('Please sign in to create bulletins.');
-        return;
+      // Check authentication using new API
+      try {
+        const { requireAuthOrPrompt } = await import('/public/js/auth-guard.js');
+        await requireAuthOrPrompt();
+        // If we get here, user is authenticated
+        openBulletinModal();
+      } catch (err) {
+        if (err.message === 'AUTH_REQUIRED') {
+          console.log('User needs to log in to post bulletin');
+          // Modal or redirect handled by requireAuthOrPrompt
+        } else {
+          console.error('Auth check error:', err);
+        }
       }
-      
-      openBulletinModal();
     });
   }
 
@@ -256,6 +262,13 @@ async function handleSubmit() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       alert('You must be signed in.');
+      return;
+    }
+    
+    // Check if account is suspended
+    const { isAccountSuspended } = await import('/js/api.js');
+    if (await isAccountSuspended()) {
+      alert('Your account has been suspended. You cannot post bulletins. Please contact support if you have any questions or would like to appeal this decision.');
       return;
     }
 

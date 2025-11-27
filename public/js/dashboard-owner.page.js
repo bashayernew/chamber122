@@ -313,6 +313,13 @@ function closeEventModal() {
 async function handleEventSubmit(e) {
   e.preventDefault();
   
+  // Check if account is suspended
+  const { isAccountSuspended } = await import('/js/api.js');
+  if (await isAccountSuspended()) {
+    alert('Your account has been suspended. You cannot post events. Please contact support if you have any questions or would like to appeal this decision.');
+    return;
+  }
+  
   const submitBtn = document.getElementById('submitEvent');
   const submitText = document.getElementById('submitEventText');
   const submitSpinner = document.getElementById('submitEventSpinner');

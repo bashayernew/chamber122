@@ -10,15 +10,18 @@ class AdminDashboard {
 
   async init() {
     try {
-      // Require admin authentication
-      const isAuthenticated = await requireAuth('/auth.html');
-      if (!isAuthenticated) return;
+      // Check authentication
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = '/admin-login.html';
+        return;
+      }
       
       // Check if user is admin
       const isAdmin = await this.checkAdminStatus();
       if (!isAdmin) {
         alert('Access denied. Admin privileges required.');
-        window.location.href = '/index.html';
+        window.location.href = '/admin-login.html';
         return;
       }
       
@@ -26,6 +29,7 @@ class AdminDashboard {
       await this.loadDashboardData();
     } catch (error) {
       console.error('Error initializing admin dashboard:', error);
+      window.location.href = '/admin-login.html';
     }
   }
 
@@ -34,10 +38,24 @@ class AdminDashboard {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
       
-      // Check if user has admin role in metadata or email contains admin
-      return user.user_metadata?.role === 'admin' || 
-             user.email?.includes('admin') ||
-             user.email === 'admin@chamber122.com';
+      // Check if user is the specific admin
+      if (user.email === 'bashayer@123123') {
+        // Ensure admin record exists
+        const { error } = await supabase
+          .from('admins')
+          .upsert({ user_id: user.id }, { onConflict: 'user_id' });
+        if (error) console.warn('Could not update admins table:', error);
+        return true;
+      }
+      
+      // Also check admins table
+      const { data: adminData } = await supabase
+        .from('admins')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      return !!adminData;
     } catch (error) {
       console.error('Error checking admin status:', error);
       return false;
@@ -106,40 +124,130 @@ class AdminDashboard {
 
   async loadApprovals() {
     try {
-      const { data: accounts } = await supabase
+      // Get all businesses with their documents
+      const { data: businesses } = await supabase
         .from('businesses')
         .select('*')
-        .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
-      const container = document.getElementById('approvals-list');
-      
-      if (!accounts || accounts.length === 0) {
-        container.innerHTML = '<p>No pending approvals</p>';
+      if (!businesses || businesses.length === 0) {
+        document.getElementById('approvals-list').innerHTML = '<p>No users found</p>';
         return;
       }
 
-      container.innerHTML = accounts.map(account => `
-        <div class="approval-item">
-          <div class="approval-info">
-            <h3>${account.name}</h3>
-            <p>Category: ${account.category || 'N/A'}</p>
-            <p>Profile Completeness: ${account.profile_completeness}%</p>
-            <p>Submitted: ${new Date(account.created_at).toLocaleDateString()}</p>
+      // Get documents for all businesses
+      const businessIds = businesses.map(b => b.id);
+      let allDocuments = [];
+      if (businessIds.length > 0) {
+        const { data: docs, error: docsError } = await supabase
+          .from('documents')
+          .select('*')
+          .in('business_id', businessIds);
+        if (!docsError) {
+          allDocuments = docs || [];
+        }
+      }
+
+      // Get user profiles
+      const ownerIds = businesses.map(b => b.owner_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', ownerIds);
+
+      // Group documents by business
+      const documentsByBusiness = {};
+      (allDocuments || []).forEach(doc => {
+        if (!documentsByBusiness[doc.business_id]) {
+          documentsByBusiness[doc.business_id] = [];
+        }
+        documentsByBusiness[doc.business_id].push(doc);
+      });
+
+      // Create profiles map
+      const profilesMap = {};
+      (profiles || []).forEach(profile => {
+        profilesMap[profile.id] = profile;
+      });
+
+      const container = document.getElementById('approvals-list');
+      container.innerHTML = businesses.map(business => {
+        const docs = documentsByBusiness[business.id] || [];
+        const profile = profilesMap[business.owner_id] || {};
+        const status = business.status || business.is_active ? 'approved' : 'pending';
+        
+        const docTypes = {
+          'civil_id_front': 'Civil ID Front',
+          'civil_id_back': 'Civil ID Back',
+          'owner_proof': 'Owner Proof'
+        };
+
+        return `
+          <div class="approval-item" data-business-id="${business.id}">
+            <div class="approval-info">
+              <div class="user-header">
+                <h3>${business.name || business.legal_name || 'Unnamed Business'}</h3>
+                <span class="status-badge status-${status}">${status}</span>
+              </div>
+              <div class="user-details">
+                <p><strong>Email:</strong> ${profile.contact_email || 'N/A'}</p>
+                <p><strong>Phone:</strong> ${profile.phone || business.phone || 'N/A'}</p>
+                <p><strong>Business ID:</strong> ${business.id}</p>
+                <p><strong>Created:</strong> ${new Date(business.created_at).toLocaleDateString()}</p>
+                ${business.industry ? `<p><strong>Industry:</strong> ${business.industry}</p>` : ''}
+                ${business.city ? `<p><strong>City:</strong> ${business.city}</p>` : ''}
+              </div>
+              <div class="documents-section">
+                <h4>Documents:</h4>
+                <div class="documents-list">
+                  ${Object.keys(docTypes).map(docType => {
+                    const doc = docs.find(d => d.kind === docType);
+                    return `
+                      <div class="document-item ${doc ? 'uploaded' : 'missing'}">
+                        <span class="doc-icon">${doc ? '✓' : '✗'}</span>
+                        <span class="doc-name">${docTypes[docType]}</span>
+                        ${doc ? `
+                          <a href="${doc.file_url}" target="_blank" class="doc-link">View</a>
+                          <button class="btn-small btn-issue" onclick="adminDashboard.showMessageModal('${business.owner_id}', '${business.id}', '${docType}')">
+                            Report Issue
+                          </button>
+                        ` : '<span class="doc-missing">Not uploaded</span>'}
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            </div>
+            <div class="approval-actions">
+              ${status === 'pending' ? `
+                <button class="btn-approve" onclick="adminDashboard.approveAccount('${business.id}', '${business.owner_id}')">
+                  <i class="fas fa-check"></i> Approve
+                </button>
+                <button class="btn-reject" onclick="adminDashboard.rejectAccount('${business.id}', '${business.owner_id}')">
+                  <i class="fas fa-times"></i> Reject
+                </button>
+              ` : ''}
+              ${status === 'approved' ? `
+                <button class="btn-suspend" onclick="adminDashboard.suspendAccount('${business.id}', '${business.owner_id}')">
+                  <i class="fas fa-ban"></i> Suspend
+                </button>
+              ` : ''}
+              ${status === 'suspended' ? `
+                <button class="btn-approve" onclick="adminDashboard.unsuspendAccount('${business.id}', '${business.owner_id}')">
+                  <i class="fas fa-check"></i> Unsuspend
+                </button>
+              ` : ''}
+              <button class="btn-view" onclick="adminDashboard.viewUserDetails('${business.owner_id}', '${business.id}')">
+                <i class="fas fa-eye"></i> View Details
+              </button>
+            </div>
           </div>
-          <div class="approval-actions">
-            <button class="btn-approve" onclick="adminDashboard.approveAccount('${account.id}')">
-              <i class="fas fa-check"></i> Approve
-            </button>
-            <button class="btn-reject" onclick="adminDashboard.rejectAccount('${account.id}')">
-              <i class="fas fa-times"></i> Reject
-            </button>
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
 
     } catch (error) {
       console.error('Error loading approvals:', error);
+      document.getElementById('approvals-list').innerHTML = `<p>Error loading users: ${error.message}</p>`;
     }
   }
 
@@ -323,59 +431,210 @@ class AdminDashboard {
     }
   }
 
-  async approveAccount(accountId) {
+  async approveAccount(businessId, userId) {
+    if (!confirm('Are you sure you want to approve this account?')) return;
+    
     try {
       const { error } = await supabase
         .from('businesses')
-        .update({ status: 'approved' })
-        .eq('id', accountId);
+        .update({ 
+          status: 'approved',
+          is_active: true 
+        })
+        .eq('id', businessId);
 
       if (error) throw error;
+
+      // Create notification
+      await this.createNotification({
+        user_id: userId,
+        title: 'Account Approved',
+        body: 'Your account has been approved! You can now access all features.',
+        kind: 'success'
+      });
 
       alert('Account approved successfully');
       await this.loadApprovals();
       await this.loadStats();
     } catch (error) {
       console.error('Error approving account:', error);
-      alert('Error approving account');
+      alert('Error approving account: ' + error.message);
     }
   }
 
-  async rejectAccount(accountId) {
+  async rejectAccount(businessId, userId) {
+    const reason = prompt('Please provide a reason for rejection:');
+    if (!reason) return;
+    
     try {
-      // Get the business details first
-      const { data: business } = await supabase
-        .from('businesses')
-        .select('*, profiles:owner_id(*)')
-        .eq('id', accountId)
-        .single();
-
-      if (!business) throw new Error('Business not found');
-
-      // Update business status
       const { error } = await supabase
         .from('businesses')
-        .update({ status: 'rejected' })
-        .eq('id', accountId);
+        .update({ 
+          status: 'rejected',
+          is_active: false 
+        })
+        .eq('id', businessId);
 
       if (error) throw error;
 
-      // Create notification for the MSME
+      // Create notification
       await this.createNotification({
-        user_id: business.owner_id,
-        type: 'document_rejected',
-        title: 'Document Submission Rejected',
-        message: 'Your business profile documents have been rejected. Please review and resubmit with the required corrections.',
-        business_id: accountId
+        user_id: userId,
+        title: 'Account Rejected',
+        body: `Your account has been rejected. Reason: ${reason}`,
+        kind: 'error'
       });
 
-      alert('Account rejected and notification sent to MSME');
+      alert('Account rejected and notification sent');
       await this.loadApprovals();
       await this.loadStats();
     } catch (error) {
       console.error('Error rejecting account:', error);
-      alert('Error rejecting account');
+      alert('Error rejecting account: ' + error.message);
     }
+  }
+
+  async suspendAccount(businessId, userId) {
+    if (!confirm('Are you sure you want to suspend this account?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('businesses')
+        .update({ 
+          status: 'suspended',
+          is_active: false 
+        })
+        .eq('id', businessId);
+
+      if (error) throw error;
+
+      // Create notification
+      await this.createNotification({
+        user_id: userId,
+        title: 'Account Suspended',
+        body: 'Your account has been suspended. Please contact support for more information.',
+        kind: 'warning'
+      });
+
+      alert('Account suspended successfully');
+      await this.loadApprovals();
+      await this.loadStats();
+    } catch (error) {
+      console.error('Error suspending account:', error);
+      alert('Error suspending account: ' + error.message);
+    }
+  }
+
+  async unsuspendAccount(businessId, userId) {
+    if (!confirm('Are you sure you want to unsuspend this account?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('businesses')
+        .update({ 
+          status: 'approved',
+          is_active: true 
+        })
+        .eq('id', businessId);
+
+      if (error) throw error;
+
+      // Create notification
+      await this.createNotification({
+        user_id: userId,
+        title: 'Account Unsuspended',
+        body: 'Your account has been unsuspended. You can now access all features.',
+        kind: 'success'
+      });
+
+      alert('Account unsuspended successfully');
+      await this.loadApprovals();
+      await this.loadStats();
+    } catch (error) {
+      console.error('Error unsuspending account:', error);
+      alert('Error unsuspending account: ' + error.message);
+    }
+  }
+
+  showMessageModal(userId, businessId, documentType) {
+    const docTypeNames = {
+      'civil_id_front': 'Civil ID Front',
+      'civil_id_back': 'Civil ID Back',
+      'owner_proof': 'Owner Proof'
+    };
+
+    const subject = prompt(`Enter subject for message about ${docTypeNames[documentType] || documentType}:`, `Issue with ${docTypeNames[documentType] || documentType}`);
+    if (!subject) return;
+
+    const message = prompt(`Enter message to send to user about ${docTypeNames[documentType] || documentType}:`, `The ${docTypeNames[documentType] || documentType} document you submitted has an issue. Please review and resubmit.`);
+    if (!message) return;
+
+    this.sendMessageToUser(userId, businessId, subject, message, documentType);
+  }
+
+  async sendMessageToUser(userId, businessId, subject, message, documentType) {
+    try {
+      const { data: { user: adminUser } } = await supabase.auth.getUser();
+      
+      const { error } = await supabase
+        .from('admin_messages')
+        .insert({
+          user_id: userId,
+          business_id: businessId,
+          admin_id: adminUser.id,
+          subject: subject,
+          message: message,
+          document_type: documentType,
+          status: 'open'
+        });
+
+      if (error) throw error;
+
+      // Also create a notification
+      await this.createNotification({
+        user_id: userId,
+        title: 'Message from Admin',
+        body: `You have a new message: ${subject}`,
+        kind: 'info'
+      });
+
+      alert('Message sent to user successfully');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Error sending message: ' + error.message);
+    }
+  }
+
+  async viewUserDetails(userId, businessId) {
+    // Open a modal or new page with user details
+    const { data: business } = await supabase
+      .from('businesses')
+      .select('*')
+      .eq('id', businessId)
+      .single();
+
+      let documents = [];
+      const { data: docs, error: docsError } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('business_id', businessId);
+      if (!docsError) {
+        documents = docs || [];
+      }
+
+    const { data: messages } = await supabase
+      .from('admin_messages')
+      .select('*, admin_message_responses(*)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    const details = `
+      Business: ${business?.name || 'N/A'}
+      Documents: ${documents?.length || 0}
+      Messages: ${messages?.length || 0}
+    `;
+
+    alert('User Details:\n\n' + details + '\n\nFull details would be shown in a modal.');
   }
 
   async createNotification(notificationData) {
@@ -384,12 +643,9 @@ class AdminDashboard {
         .from('notifications')
         .insert([{
           user_id: notificationData.user_id,
-          type: notificationData.type,
           title: notificationData.title,
-          message: notificationData.message,
-          business_id: notificationData.business_id,
-          is_read: false,
-          created_at: new Date().toISOString()
+          body: notificationData.body || notificationData.message,
+          kind: notificationData.kind || 'info'
         }]);
 
       if (error) throw error;

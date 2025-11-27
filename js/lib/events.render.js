@@ -171,54 +171,73 @@ export function renderEventsGrid(items, {
     const statusColor = ev.is_published ? '#10b981' : '#f59e0b';
     const statusText = ev.is_published ? 'Published' : 'Draft';
     
+    // Check if event is ongoing (can register)
+    const now = new Date();
+    const isOngoing = (!ev.start_at || new Date(ev.start_at) <= now) && (!ev.end_at || new Date(ev.end_at) >= now);
+    
     card.innerHTML = `
-      ${ev.cover_image_url ? `
-        <div style="height: 200px; overflow: hidden;">
-          <img src="${ev.cover_image_url}" alt="${ev.title}" 
-               style="width: 100%; height: 100%; object-fit: cover;">
+      <!-- Business Profile Header (TOP) -->
+      ${ev.business_name ? `
+        <div onclick="event.stopPropagation(); window.location.href='/owner.html?businessId=${ev.business_id || ''}'" style="padding: 12px 16px; background: #0f0f0f; border-bottom: 1px solid #2a2a2a; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#151515'" onmouseout="this.style.background='#0f0f0f'">
+          ${ev.business_logo_url ? `<img src="${ev.business_logo_url}" alt="${ev.business_name}" style="width: 32px; height: 32px; border-radius: 6px; object-fit: cover; border: 1px solid #2a2a2a;">` : `<div style="width: 32px; height: 32px; border-radius: 6px; background: #374151; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 14px; font-weight: 600;">${(ev.business_name || 'B').charAt(0).toUpperCase()}</div>`}
+          <div style="flex: 1;">
+            <div style="color: #9ca3af; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Organized by</div>
+            <div style="color: #fff; font-size: 14px; font-weight: 600;">${ev.business_name}</div>
+          </div>
+          <i class="fas fa-chevron-right" style="color: #6b7280; font-size: 12px;"></i>
         </div>
-      ` : `
-        <div style="height: 200px; background: linear-gradient(135deg, #ffd166, #ff6b6b); display: flex; align-items: center; justify-content: center; color: #111; font-size: 32px;">
-          <i class="fas fa-calendar-alt"></i>
-        </div>
-      `}
+      ` : ''}
       
-      <div style="padding: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-          <h3 style="margin: 0; color: #fff; font-size: 18px; font-weight: 600; line-height: 1.3;">
-            ${ev.title ?? '(untitled)'}
-          </h3>
-          <span style="background: ${statusColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">
-            ${statusText}
-          </span>
-        </div>
-        
-        ${ev.description ? `
-          <p style="color: #d1d5db; font-size: 14px; line-height: 1.5; margin-bottom: 16px;">
-            ${ev.description.length > 100 ? ev.description.substring(0, 100) + '...' : ev.description}
-          </p>
-        ` : ''}
-        
-        <div style="color: #9ca3af; font-size: 14px; margin-bottom: 12px;">
-          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
-            <i class="fas fa-clock"></i>
-            <span>${new Date(ev.start_at).toLocaleDateString()}</span>
+      <!-- Event Image -->
+      <div onclick="if(typeof showEventDetails === 'function') { showEventDetails('${ev.id}'); } else { window.location.href='/event.html?id=${encodeURIComponent(ev.id)}'; }" style="cursor: pointer;">
+        ${ev.cover_image_url ? `
+          <div style="height: 200px; overflow: hidden;">
+            <img src="${ev.cover_image_url}" alt="${ev.title}" 
+                 style="width: 100%; height: 100%; object-fit: cover;">
           </div>
-          
-          ${ev.location ? `
-            <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
-              <i class="fas fa-map-marker-alt"></i>
-              <span>${ev.location}</span>
-            </div>
-          ` : ''}
-        </div>
+        ` : `
+          <div style="height: 200px; background: linear-gradient(135deg, #ffd166, #ff6b6b); display: flex; align-items: center; justify-content: center; color: #111; font-size: 32px;">
+            <i class="fas fa-calendar-alt"></i>
+          </div>
+        `}
+      </div>
+      
+      <div style="padding: 16px;">
+        <h3 onclick="if(typeof showEventDetails === 'function') { showEventDetails('${ev.id}'); } else { window.location.href='/event.html?id=${encodeURIComponent(ev.id)}'; }" style="color: #fff; font-size: 16px; font-weight: 600; margin: 0 0 12px 0; line-height: 1.3; cursor: pointer;">${ev.title ?? 'Event Title *'}</h3>
         
-        ${ev.contact_phone || ev.contact_email ? `
-          <div style="border-top: 1px solid #333; padding-top: 12px; color: #9ca3af; font-size: 12px;">
-            ${ev.contact_phone ? `<div><i class="fas fa-phone"></i> ${ev.contact_phone}</div>` : ''}
-            ${ev.contact_email ? `<div><i class="fas fa-envelope"></i> ${ev.contact_email}</div>` : ''}
+        ${ev.start_at || ev.end_at ? `
+          <div style="color: #f2c64b; font-size: 12px; margin-bottom: 8px;">
+            ${(() => {
+              const s = ev.start_at ? new Date(ev.start_at) : null;
+              const e = ev.end_at ? new Date(ev.end_at) : null;
+              if (s && e) {
+                const startStr = `${s.getDate()} ${s.toLocaleString('en-US', { month: 'short' })}, ${s.getHours().toString().padStart(2, '0')}:${s.getMinutes().toString().padStart(2, '0')}`;
+                const endStr = `${e.getDate()} ${e.toLocaleString('en-US', { month: 'short' })}, ${e.getHours().toString().padStart(2, '0')}:${e.getMinutes().toString().padStart(2, '0')}`;
+                return `${startStr} – ${endStr}`;
+              }
+              if (s) {
+                return `${s.getDate()} ${s.toLocaleString('en-US', { month: 'short' })}, ${s.getHours().toString().padStart(2, '0')}:${s.getMinutes().toString().padStart(2, '0')}`;
+              }
+              return '—';
+            })()}
           </div>
         ` : ''}
+        
+        ${ev.location ? `
+          <div style="color: #AFAFAF; font-size: 12px; margin-bottom: 16px;">
+            ${ev.location}
+          </div>
+        ` : ''}
+        
+        <!-- Action Buttons - Always show both -->
+        <div style="display: flex; gap: 8px; margin-top: 16px;">
+          <button onclick="event.stopPropagation(); if(typeof showEventDetails === 'function') { showEventDetails('${ev.id}'); } else { window.location.href='/event.html?id=${encodeURIComponent(ev.id)}'; }" style="flex: 1; padding: 10px 16px; background: #2a2a2a; color: #fff; border: 1px solid #3a3a3a; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#333'; this.style.borderColor='#444'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#3a3a3a'">
+            More Info
+          </button>
+          <button onclick="event.stopPropagation(); if(typeof showEventDetails === 'function') { showEventDetails('${ev.id}'); } else { window.location.href='/event.html?id=${encodeURIComponent(ev.id)}'; }" style="flex: 1; padding: 10px 16px; background: linear-gradient(135deg, #ffd166, #ffed4e); color: #111; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+            Register
+          </button>
+        </div>
       </div>
     `;
     
@@ -236,3 +255,9 @@ export function renderEventsGrid(items, {
     mount.appendChild(card);
   }
 }
+
+// Make showEventDetails globally accessible (will be implemented in events.js)
+window.showEventDetails = async function(eventId) {
+  // This will be implemented in events.js
+  console.log('[events] showEventDetails called for:', eventId);
+};

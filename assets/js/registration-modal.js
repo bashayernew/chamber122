@@ -1,5 +1,6 @@
 // Registration Modal for Events and Bulletins
-import { supabase } from './supabase-client.global.js';
+// Updated to use backend API instead of Supabase
+import { api } from '/js/api.js';
 
 let modalInstance = null;
 
@@ -93,27 +94,13 @@ async function handleSubmit(e) {
   }
   
   try {
-    // Save registration to database
-    const { data, error } = await supabase
-      .from('registrations')
-      .insert({
-        type: type, // 'event' or 'bulletin'
-        item_id: itemId,
-        name: name,
-        email: email,
-        phone: phone,
-        created_at: new Date().toISOString()
-      });
-    
-    if (error) {
-      console.error('Registration error:', error);
-      
-      // If registrations table doesn't exist, still send the email
-      await sendRegistrationEmail(type, itemId, name, email, phone);
-      alert('✅ Registration submitted! We\'ll contact you soon.');
-      closeModal();
-      return;
-    }
+    // Save registration to backend API
+    const endpoint = type === 'event' ? `/events/${itemId}/register` : `/bulletins/${itemId}/register`;
+    await api.post(endpoint, {
+      name,
+      email,
+      phone
+    });
     
     // Send email notification
     await sendRegistrationEmail(type, itemId, name, email, phone);
@@ -129,32 +116,22 @@ async function handleSubmit(e) {
 
 async function sendRegistrationEmail(type, itemId, name, email, phone) {
   try {
-    // Get event/bulletin details to send to creator
-    const table = type === 'event' ? 'events' : 'bulletins';
-    const { data: item, error } = await supabase
-      .from(table)
-      .select('title, contact_email, businesses(name, owner_id)')
-      .eq('id', itemId)
-      .single();
+    // Get event/bulletin details from backend API
+    const endpoint = type === 'event' ? `/events/${itemId}` : `/bulletins/${itemId}`;
+    const response = await api.get(endpoint);
+    const item = type === 'event' ? response.event : response.bulletin;
     
-    if (error || !item) {
-      console.error('Failed to fetch item details:', error);
+    if (!item) {
+      console.error('Failed to fetch item details');
       return;
     }
     
-    // Send email via Supabase Edge Function or custom service
-    // For now, we'll log the registration
+    // Log registration details (email sending can be implemented later)
     console.log('Registration details:', {
       type,
       itemTitle: item.title,
-      creatorEmail: item.contact_email,
       registrant: { name, email, phone }
     });
-    
-    // In production, you would call your email service here
-    // await supabase.functions.invoke('send-email', {
-    //   body: { to: item.contact_email, subject: `New registration for ${item.title}`, ... }
-    // });
     
   } catch (err) {
     console.error('Failed to send email:', err);

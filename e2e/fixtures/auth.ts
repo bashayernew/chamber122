@@ -1,15 +1,20 @@
 // Authentication helpers for E2E tests
+/// <reference types="node" />
 import { Page, expect } from '@playwright/test';
 
 export async function setLang(page: Page, lang: 'en' | 'ar') {
-  await page.evaluate((l) => localStorage.setItem('ch122_lang', l), lang);
+  await page.evaluate((l: string) => {
+    (window as any).localStorage.setItem('ch122_lang', l);
+  }, lang);
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
 }
 
 export async function logout(page: Page) {
   await page.context().clearCookies();
-  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(() => {
+    (window as any).localStorage.clear();
+  });
 }
 
 export async function loginWithForm(page: Page, email: string, password: string) {

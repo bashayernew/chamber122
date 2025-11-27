@@ -1,15 +1,25 @@
-import { supabase } from './supabase-client.global.js';
+// events-public.js - Using backend API instead of Supabase
+import { getPublicEvents } from '/js/api.js';
 
 export async function loadPublicEvents(limit = 12) {
-  const now = new Date().toISOString();
-
-  const current = await supabase.from('activities_current')
-    .select('id,business_id,business_name,business_logo_url,title,description,location,cover_image_url,created_at,start_at,end_at,contact_phone,contact_email')
-    .eq('type','event')
-    .order('start_at', { ascending: true }).limit(limit);
-
-  return {
-    current: current.data ?? [],
-    error: current.error || null
-  };
+  try {
+    const events = await getPublicEvents();
+    
+    // Sort by start_at and limit
+    const sorted = events
+      .filter(e => e.start_at)
+      .sort((a, b) => new Date(a.start_at) - new Date(b.start_at))
+      .slice(0, limit);
+    
+    return {
+      current: sorted,
+      error: null
+    };
+  } catch (error) {
+    console.error('[events-public] Error loading events:', error);
+    return {
+      current: [],
+      error: error.message || 'Failed to load events'
+    };
+  }
 }

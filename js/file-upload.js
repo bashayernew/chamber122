@@ -1,16 +1,12 @@
-// File Upload Utility for Supabase Storage
-// Handles file uploads to business-files bucket
-
-import { supabase } from './supabase-client.js';
+// File Upload Utility using backend API
+import { uploadFile } from './api.js';
 
 // Upload to temp folder (works before login)
 export async function uploadTempDoc(file, docType) {
   if (!file) throw new Error('No file chosen');
-  const ext = (file.name?.split('.').pop() || 'bin').toLowerCase();
-  const key = `temp/${docType}_${Date.now()}.${ext}`;
-
-  // For now, always use local storage fallback during signup
-  // This avoids RLS issues and timeout problems
+  
+  // For signup process, use local storage fallback
+  // Files will be uploaded after user is authenticated
   console.log('Using local storage fallback for signup process');
   
   const localUrl = URL.createObjectURL(file);
@@ -24,18 +20,18 @@ export async function uploadTempDoc(file, docType) {
     docType: docType,
     timestamp: Date.now(),
     localUrl: localUrl,
-    originalKey: key
+    file: null // Will be recreated from blob
   }));
   
   return { 
-    path: key, 
+    path: `temp/${docType}_${Date.now()}.${file.name.split('.').pop() || 'bin'}`,
     signedUrl: localUrl,
     fallback: true,
     fallbackKey: fallbackKey
   };
 }
 
-// Upload files to Supabase after user is authenticated
+// Upload files after user is authenticated
 export async function uploadFilesAfterSignup() {
   const uploadedFiles = [];
   
@@ -45,28 +41,19 @@ export async function uploadFilesAfterSignup() {
     if (key && key.startsWith('temp_upload_')) {
       try {
         const fileData = JSON.parse(sessionStorage.getItem(key));
-        const file = await fetch(fileData.localUrl).then(r => r.blob());
+        const file = await fetch(fileData.localUrl).then(r => r.blob()).then(blob => {
+          return new File([blob], fileData.name, { type: fileData.type });
+        });
         
-        // Upload to Supabase
-        const { data, error } = await supabase
-          .storage
-          .from('business-files')
-          .upload(fileData.originalKey, file, {
-            upsert: true,
-            cacheControl: '3600',
-            contentType: fileData.type || 'application/octet-stream',
-          });
+        // Upload via API
+        const uploadResult = await uploadFile(file);
         
-        if (error) {
-          console.error('Failed to upload file after signup:', error);
-        } else {
-          console.log('Successfully uploaded file after signup:', fileData.name);
-          uploadedFiles.push({
-            docType: fileData.docType,
-            path: data.path,
-            name: fileData.name
-          });
-        }
+        uploadedFiles.push({
+          docType: fileData.docType,
+          path: uploadResult.public_url,
+          name: fileData.name,
+          public_url: uploadResult.public_url
+        });
         
         // Clean up sessionStorage
         sessionStorage.removeItem(key);
@@ -82,7 +69,6 @@ export async function uploadFilesAfterSignup() {
 
 class FileUploadManager {
   constructor() {
-    this.bucketName = 'business-files';
     this.maxFileSize = 25 * 1024 * 1024; // 25MB
     this.allowedTypes = [
       'application/pdf',
@@ -92,20 +78,6 @@ class FileUploadManager {
       'image/gif',
       'image/webp'
     ];
-    this.init();
-  }
-
-  async init() {
-    await this.ensureBucketExists();
-  }
-
-  async ensureBucketExists() {
-    // Buckets must be created in Supabase Dashboard or via server service key.
-    // Here we just verify config is present; we do NOT call createBucket() on the client.
-    if (!this.bucketName) {
-      throw new Error('Missing storage bucket name.');
-    }
-    return true;
   }
 
   async uploadFile(file, businessId, documentType) {
@@ -116,60 +88,15 @@ class FileUploadManager {
         throw new Error(validation.message);
       }
 
-      // Use temp folder to avoid RLS issues
-      const fileExt = file.name.split('.').pop();
-      const fileName = `temp/${documentType}_${Date.now()}.${fileExt}`;
-
-      // Try to upload to temp folder first
-      const { data, error } = await supabase.storage
-        .from(this.bucketName)
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: true,
-          contentType: file.type || 'application/octet-stream'
-        });
-
-      if (error) {
-        console.error('Upload failed due to RLS:', error);
-        
-        // Fallback: Store file data locally and return local URL
-        const localUrl = URL.createObjectURL(file);
-        
-        // Store file info in sessionStorage for later processing
-        const fallbackKey = `pending_upload_${documentType}_${Date.now()}`;
-        sessionStorage.setItem(fallbackKey, JSON.stringify({
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          businessId: businessId,
-          documentType: documentType,
-          timestamp: Date.now()
-        }));
-        
-        return {
-          success: true,
-          fileName: fileName,
-          publicUrl: localUrl,
-          fileSize: file.size,
-          mimeType: file.type,
-          fallback: true,
-          fallbackKey: fallbackKey
-        };
-      }
-
-      // Get signed URL for private bucket
-      const { data: signedData, error: signError } = await supabase.storage
-        .from(this.bucketName)
-        .createSignedUrl(data.path, 60 * 60 * 24); // 24 hours
-
-      const url = signError ? null : signedData.signedUrl;
-
+      // Upload via API
+      const uploadResult = await uploadFile(file);
+      
       return {
         success: true,
-        fileName: data.path,
-        publicUrl: url,
-        fileSize: file.size,
-        mimeType: file.type
+        fileName: uploadResult.filename,
+        publicUrl: uploadResult.public_url,
+        fileSize: uploadResult.size,
+        mimeType: uploadResult.type
       };
 
     } catch (error) {
@@ -194,46 +121,19 @@ class FileUploadManager {
   }
 
   async deleteFile(fileName) {
-    try {
-      const { error } = await supabase.storage
-        .from(this.bucketName)
-        .remove([fileName]);
-
-      if (error) throw error;
-
-      return { success: true };
-    } catch (error) {
-      console.error('Error deleting file:', error);
-      return { success: false, error: error.message };
-    }
+    // TODO: Implement delete endpoint
+    console.warn('[file-upload] Delete not yet implemented');
+    return { success: false, error: 'Delete not yet implemented' };
   }
 
   async getFileUrl(fileName) {
-    try {
-      const { data } = supabase.storage
-        .from(this.bucketName)
-        .getPublicUrl(fileName);
-
-      return data.publicUrl;
-    } catch (error) {
-      console.error('Error getting file URL:', error);
-      return null;
-    }
+    // Files are public, return direct URL
+    return fileName.startsWith('/') ? fileName : `/uploads/${fileName}`;
   }
 
   async getSignedUrl(fileName, expiresIn = 3600) {
-    try {
-      const { data, error } = await supabase.storage
-        .from(this.bucketName)
-        .createSignedUrl(fileName, expiresIn);
-
-      if (error) throw error;
-
-      return data.signedUrl;
-    } catch (error) {
-      console.error('Error getting signed URL:', error);
-      return null;
-    }
+    // Files are public, return direct URL
+    return this.getFileUrl(fileName);
   }
 
   validateFile(file) {

@@ -1,22 +1,17 @@
 // Analytics tracking and management with RTL support
-import { supabase } from './supabase-client.js';
+// Updated to use backend API instead of Supabase
 
 // Get current language from global I18N object
 function getCurrentLanguage() {
   return window.I18N ? window.I18N.getLang() : 'en';
 }
 
-// Track content view in Supabase
+// Track content view (analytics disabled for now - can be re-enabled with backend API)
 async function trackContentView(contentType, contentId, accountId) {
   try {
-    await supabase
-      .from('content_views')
-      .insert({
-        content_type: contentType,
-        content_id: contentId,
-        account_id: accountId,
-        viewed_at: new Date().toISOString()
-      });
+    // TODO: Implement analytics tracking endpoint
+    // For now, just log the view
+    console.log('[analytics] Content view:', { contentType, contentId, accountId });
   } catch (error) {
     console.error('Error tracking content view:', error);
   }
@@ -61,17 +56,16 @@ class Analytics {
   // Get analytics data for dashboard
   async getAccountAnalytics(accountId, days = 30) {
     try {
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - days);
-
-      const { data: views } = await supabase
-        .from('content_views')
-        .select('*')
-        .eq('account_id', accountId)
-        .gte('created_at', startDate.toISOString())
-        .order('created_at', { ascending: false });
-
-      return this.processAnalyticsData(views);
+      // TODO: Implement analytics API endpoint
+      // For now, return empty analytics
+      console.log('[analytics] Analytics not yet implemented with backend API');
+      return {
+        totalViews: 0,
+        dailyViews: {},
+        contentViews: {},
+        referrers: {},
+        topContent: []
+      };
     } catch (error) {
       console.error('Error fetching analytics:', error);
       return null;

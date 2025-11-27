@@ -329,6 +329,13 @@ async function deleteActivity(activityId) {
 async function handleCreateBulletin(e) {
   e.preventDefault();
   
+  // Check if account is suspended
+  const { isAccountSuspended } = await import('./api.js');
+  if (await isAccountSuspended()) {
+    alert('Your account has been suspended. You cannot post bulletins. Please contact support if you have any questions or would like to appeal this decision.');
+    return;
+  }
+  
   const submitBtn = e.target.querySelector('button[type="submit"]');
   const originalText = submitBtn.innerHTML;
   

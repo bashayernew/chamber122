@@ -1,72 +1,151 @@
-// ---- Setup ----
-import { supabase } from './supabase-client.global.js';
+// public/js/owner-form.js - Edit business profile using backend API with FormData
+import { getMyBusiness, getCurrentUser } from '/js/api.js';
 
-console.log('[owner-form] Loading version 10 - Using global client');
+console.log('[owner-form] Loading - Using FormData for saves');
 
-const sb = supabase;
-const $ = s => document.querySelector(s);
+/**
+ * Mark account as updated after fixing documents
+ * This updates the admin dashboard state to show the account has been updated
+ */
+async function markAccountUpdatedAfterIssue(currentUserId) {
+  if (!currentUserId) {
+    console.warn('[owner-form] No userId provided to markAccountUpdatedAfterIssue');
+    return;
+  }
+
+  try {
+    // Load admin dashboard state
+    const stateKey = 'chamber_admin_dashboard_state';
+    const stateStr = localStorage.getItem(stateKey);
+    if (!stateStr) {
+      console.debug('[owner-form] No admin dashboard state found - creating new state');
+      const newState = {
+        userMetadata: {},
+        userStatuses: {}
+      };
+      newState.userMetadata[currentUserId] = {
+        documentsUpdatedAt: Date.now()
+      };
+      newState.userStatuses[currentUserId] = 'updated';
+      localStorage.setItem(stateKey, JSON.stringify(newState));
+      console.log('[owner-form] Created new admin state and marked account as updated');
+      return;
+    }
+
+    const state = JSON.parse(stateStr);
+
+    // Make sure we have a metadata object
+    if (!state.userMetadata) state.userMetadata = {};
+    if (!state.userMetadata[currentUserId]) state.userMetadata[currentUserId] = {};
+    if (!state.userStatuses) state.userStatuses = {};
+
+    // Mark as updated + record timestamp
+    state.userMetadata[currentUserId].documentsUpdatedAt = Date.now();
+    state.userStatuses[currentUserId] = 'updated';
+
+    localStorage.setItem(stateKey, JSON.stringify(state));
+    console.log('[owner-form] Account marked as updated in admin dashboard:', currentUserId);
+    
+    // Also update the user status in the main users storage if it exists
+    try {
+      const { getAllUsers, saveUsers } = await import('/js/admin-auth.js');
+      const users = getAllUsers();
+      const userIndex = users.findIndex(u => u.id === currentUserId);
+      if (userIndex !== -1) {
+        users[userIndex].status = 'updated';
+        users[userIndex].updated_at = new Date().toISOString();
+        saveUsers(users);
+        console.log('[owner-form] User status updated in main users storage');
+      }
+    } catch (err) {
+      console.debug('[owner-form] Could not update user status in main storage (may not exist):', err.message);
+    }
+  } catch (error) {
+    console.error('[owner-form] Error marking account as updated:', error);
+  }
+}
+
+const $ = s => document.getElementById(s);
+
+// Safe trim helper - handles all value types
+const safeTrim = (v) => {
+  if (v == null || v === undefined) return '';
+  if (typeof v === 'string') return v.trim();
+  if (typeof v === 'number' || typeof v === 'boolean') return String(v).trim();
+  if (Array.isArray(v)) return '';
+  if (typeof v === 'object') {
+    // Handle objects - try to extract a meaningful string value
+    return (v.name || v.value || v.label || '').toString().trim();
+  }
+  return String(v ?? '').trim();
+};
 
 let currentBusinessId = null;
-let existingMedia = [];      // [{id, url}]
+let existingMedia = [];      // [{id, public_url}]
 let removedMediaIds = new Set();
 let newFiles = [];           // File[]
 
-// Helper functions
-function getExt(name='') { 
-  return (name.split('.').pop() || 'jpg').toLowerCase(); 
-}
-
-async function uploadPublic(bucket, path, file) {
-  const { error } = await sb.storage.from(bucket).upload(path, file, { upsert: true });
-  if (error) throw error;
-  const { data } = sb.storage.from(bucket).getPublicUrl(path);
-  return data.publicUrl;
-}
-
-// ---- Gallery Management ----
-async function loadExistingGallery(businessId) {
-  console.log('Loading existing gallery for business:', businessId);
+// ---- Logo Preview
+function setupLogoPreview() {
+  const logoInput = document.getElementById('logo');
+  const logoPreview = document.getElementById('logoPreview');
   
-  const { data, error } = await sb
-    .from('business_media')
-    // Select only existing columns
-    .select('id, url, created_at')
-    .eq('business_id', businessId)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('loadExistingGallery error', error);
-    return;
-  }
-
-  console.log('Gallery data from database:', data);
-
-  // Use the url field directly
-  const normalized = (data || []).map(r => ({
-    id: r.id,
-    url: r.url || ''
-  })).filter(r => !!r.url);
-
-  console.log('Normalized gallery data:', normalized);
-
-  existingMedia = normalized;
-  renderGallery();
+  if (!logoInput || !logoPreview) return;
+  
+  logoInput.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Revoke previous object URL if exists
+    if (logoPreview.dataset.objectUrl) {
+      URL.revokeObjectURL(logoPreview.dataset.objectUrl);
+    }
+    
+    // Create preview
+    const objectUrl = URL.createObjectURL(file);
+    logoPreview.src = objectUrl;
+    logoPreview.dataset.objectUrl = objectUrl;
+    logoPreview.style.display = 'block';
+    logoPreview.style.visibility = 'visible';
+    logoPreview.style.opacity = '1';
+  });
 }
 
+// Setup Gallery Preview
+function setupGalleryPreview() {
+  const galleryInput = document.getElementById('galleryFiles');
+  const galleryPreview = document.getElementById('galleryPreview');
+  
+  if (!galleryInput || !galleryPreview) return;
+  
+  galleryInput.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    
+    const MAX_GALLERY = 5;
+    const currentTotal = existingMedia.length - removedMediaIds.size + newFiles.length;
+    const remainingSlots = Math.max(0, MAX_GALLERY - currentTotal);
+    
+    if (files.length > remainingSlots) {
+      alert(`You can only add ${remainingSlots} more image(s). Maximum ${MAX_GALLERY} images allowed.`);
+      const filesToAdd = files.slice(0, remainingSlots);
+      newFiles.push(...filesToAdd);
+    } else {
+      newFiles.push(...files);
+    }
+    
+    renderGallery();
+    e.target.value = ''; // Reset input
+  });
+}
+
+// Render Gallery
 function renderGallery() {
   const wrap = document.getElementById('galleryPreview');
-  if (!wrap) {
-    console.error('Gallery preview container not found!');
-    return;
-  }
-  
-  console.log('Rendering gallery with', existingMedia.length, 'existing images and', newFiles.length, 'new files');
-  console.log('Removed media IDs:', Array.from(removedMediaIds));
+  if (!wrap) return;
   
   wrap.classList.add('gallery-grid');
   wrap.innerHTML = '';
-  
-  // Ensure it's visible
   wrap.style.display = 'grid';
 
   // Show message if no images
@@ -78,14 +157,9 @@ function renderGallery() {
     return;
   }
 
-  // Existing (keep × button)
+  // Existing images (with remove button)
   for (const m of existingMedia) {
-    if (removedMediaIds.has(m.id)) {
-      console.log('Skipping removed image:', m.id);
-      continue;
-    }
-
-    console.log('Rendering existing image:', m.id, m.url);
+    if (removedMediaIds.has(m.id)) continue;
 
     const item = document.createElement('div');
     item.className = 'gallery-item';
@@ -96,21 +170,15 @@ function renderGallery() {
     img.style.width = '100%';
     img.style.height = '100%';
     img.style.objectFit = 'cover';
-    img.onload = () => console.log('Image loaded successfully:', m.url);
-    img.onerror = () => {
-      console.error('Image failed to load:', m.url);
-      item.style.display = 'none';
-    };
     item.appendChild(img);
 
     const btn = document.createElement('button');
     btn.className = 'gallery-remove';
     btn.textContent = '×';
-    btn.type = 'button'; // Prevent form submission
+    btn.type = 'button';
     btn.onclick = (e) => {
       e.preventDefault();
       e.stopPropagation();
-      console.log('Removing image:', m.id);
       removedMediaIds.add(m.id);
       renderGallery();
     };
@@ -121,8 +189,6 @@ function renderGallery() {
 
   // New files preview
   for (const f of newFiles) {
-    console.log('Rendering new file:', f.name);
-
     const item = document.createElement('div');
     item.className = 'gallery-item';
 
@@ -133,19 +199,16 @@ function renderGallery() {
     img.style.width = '100%';
     img.style.height = '100%';
     img.style.objectFit = 'cover';
-    // Clean up object URL when image is removed
     item.dataset.objectUrl = objectUrl;
     item.appendChild(img);
 
     const btn = document.createElement('button');
     btn.className = 'gallery-remove';
     btn.textContent = '×';
-    btn.type = 'button'; // Prevent form submission
+    btn.type = 'button';
     btn.onclick = (e) => {
       e.preventDefault();
       e.stopPropagation();
-      console.log('Removing new file:', f.name);
-      // Clean up object URL
       if (item.dataset.objectUrl) {
         URL.revokeObjectURL(item.dataset.objectUrl);
       }
@@ -156,241 +219,196 @@ function renderGallery() {
 
     wrap.appendChild(item);
   }
-  
-  console.log('Gallery rendered with', wrap.children.length, 'items');
 }
 
-function wireGalleryInputs() {
-  const galleryFilesInput = document.getElementById('galleryFiles');
-  if (!galleryFilesInput) {
-    console.error('Gallery files input not found!');
-    return;
-  }
-  
-  console.log('Wiring gallery inputs...');
-  
-  // Remove any existing listeners to prevent duplicates
-  const newInput = galleryFilesInput.cloneNode(true);
-  galleryFilesInput.parentNode.replaceChild(newInput, galleryFilesInput);
-  
-  newInput.addEventListener('change', (e) => {
-    const files = Array.from(e.target.files || []);
-    console.log('Files selected:', files.length, files.map(f => f.name));
+// Load existing gallery
+async function loadExistingGallery(businessId) {
+  try {
+    const response = await fetch('/api/business/me', {
+      credentials: 'include',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('session_token')}`
+      }
+    });
     
-    // Check MAX_GALLERY limit (existing + new)
-    const MAX_GALLERY = 5;
-    const currentTotal = existingMedia.length - removedMediaIds.size + newFiles.length;
-    const remainingSlots = Math.max(0, MAX_GALLERY - currentTotal);
+    if (!response.ok) return;
     
-    if (files.length > remainingSlots) {
-      alert(`You can only add ${remainingSlots} more image(s). Maximum ${MAX_GALLERY} images allowed.`);
-      const filesToAdd = files.slice(0, remainingSlots);
-      newFiles = [...newFiles, ...filesToAdd];
-    } else {
-      newFiles = [...newFiles, ...files];
-    }
+    const data = await response.json();
+    const media = data.media || [];
     
-    console.log('Total new files now:', newFiles.length);
-    console.log('Total existing images:', existingMedia.length - removedMediaIds.size);
+    existingMedia = media
+      .filter(m => m.document_type === 'gallery' || !m.document_type)
+      .map(r => ({
+        id: r.id,
+        url: r.public_url || r.url || ''
+      }))
+      .filter(r => {
+        // Filter out blob URLs - they're temporary and can't be used
+        if (!r.url) return false;
+        if (r.url.startsWith('blob:')) {
+          console.warn('[owner-form] Skipping blob URL in existing media:', r.url);
+          return false;
+        }
+        return true;
+      });
     
     renderGallery();
-    // reset input so selecting same file again still triggers change
-    e.target.value = '';
-  });
+  } catch (error) {
+    console.error('loadExistingGallery error', error);
+  }
 }
 
-// ---- Save Gallery Changes ----
-async function saveGalleryChanges() {
-  if (!currentBusinessId) {
-    console.log('No currentBusinessId, skipping gallery save');
+// Preload edit data
+async function preloadEdit() {
+  const user = await getCurrentUser();
+  if (!user) {
+    window.location.href = '/auth.html#login';
     return;
   }
 
-  console.log('Saving gallery changes for business:', currentBusinessId);
-  console.log('Removed media IDs:', Array.from(removedMediaIds));
-  console.log('New files to upload:', newFiles.length);
-
-  // 1) Delete removed
-  if (removedMediaIds.size > 0) {
-    const ids = Array.from(removedMediaIds);
-    console.log('Deleting media IDs:', ids);
-    const { error: delErr } = await sb
-      .from('business_media')
-      .delete()
-      .in('id', ids);
-    if (delErr) {
-      console.error('Delete media error', delErr);
-      // keep going; don't block uploads
-    } else {
-      console.log('Successfully deleted', ids.length, 'media items');
-    }
-  }
-
-  // 2) Upload new files to storage and insert rows
-  for (const file of newFiles) {
-    console.log('Uploading file:', file.name);
-    const ext = getExt(file.name);
-    const path = `${currentBusinessId}/gallery/${crypto.randomUUID()}.${ext}`;
-    console.log('Upload path:', path);
-
-    // upload to public bucket
-    const { data: up, error: upErr } = await sb.storage
-      .from('business-assets')
-      .upload(path, file, { upsert: false });
-    if (upErr) {
-      console.error('Upload error for', file.name, upErr);
-      continue;
-    }
-    console.log('File uploaded successfully:', file.name);
-
-    // get public URL
-    const { data: pub } = sb.storage
-      .from('business-assets')
-      .getPublicUrl(path);
-
-    const publicUrl = pub?.publicUrl;
-    if (!publicUrl) {
-      console.error('No public URL for', file.name);
-      continue;
-    }
-    console.log('Public URL:', publicUrl);
-
-    const { error: insErr } = await sb
-      .from('business_media')
-      .insert({
-        business_id: currentBusinessId,
-        url: publicUrl,
-        file_path: path
-      });
-
-    if (insErr) {
-      console.error('Insert media error for', file.name, insErr);
-    } else {
-      console.log('Media inserted successfully for', file.name);
-    }
-  }
-
-  // 3) Reset local state & reload
-  removedMediaIds.clear();
-  newFiles = [];
-  await loadExistingGallery(currentBusinessId);
-}
-
-// ---- Main Form Functions ----
-async function preloadEdit() {
-  console.log('Starting preloadEdit...');
+  // Fetch business data - getMyBusiness might return business with media
+  let business = await getMyBusiness();
   
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) {
-    console.log('No user found, redirecting to auth');
-    return location.assign('/auth.html');
-  }
-
-  console.log('User found:', user.id);
-
-  // Fix 406 error by properly handling the query and error response
-  // Try with explicit headers and proper error handling
-  let biz, bizError;
-  try {
-    const result = await sb
-      .from('businesses')
-      .select('*')
-      .eq('owner_id', user.id)
-      .maybeSingle();
-    biz = result.data;
-    bizError = result.error;
-  } catch (err) {
-    console.error('[owner-form] Query exception:', err);
-    bizError = err;
-    biz = null;
+  // If business doesn't have media, fetch it separately
+  if (business && (!business.media || business.media.length === 0)) {
+    try {
+      const { apiRequest } = await import('/js/api.js');
+      const businessResponse = await apiRequest('/business/me', { method: 'GET' });
+      if (businessResponse && businessResponse.media) {
+        business.media = businessResponse.media;
+      }
+    } catch (err) {
+      console.warn('[owner-form] Could not fetch media separately:', err);
+    }
   }
   
-  if (bizError) {
-    console.error('[owner-form] Error loading business:', bizError);
-    // Check if it's a 406 error specifically
-    if (bizError.code === 'PGRST301' || bizError.message?.includes('406') || bizError.message?.includes('Not Acceptable')) {
-      console.warn('[owner-form] 406 error detected, trying alternative query...');
-      // Try a simpler query
-      const altResult = await sb
-        .from('businesses')
-        .select('id, name, owner_id')
-        .eq('owner_id', user.id)
-        .maybeSingle();
-      if (!altResult.error && altResult.data) {
-        // If we got a partial result, try to get full data by ID
-        const fullResult = await sb
-          .from('businesses')
-          .select('*')
-          .eq('id', altResult.data.id)
-          .single();
-        if (!fullResult.error) {
-          biz = fullResult.data;
-          bizError = null;
+  console.log('[owner-form] Raw business data from API:', business);
+  console.log('[owner-form] Business media:', business?.media?.length || 0, 'items');
+  
+  if (!business) {
+    // CREATE mode - check if we have signup data to pre-populate
+    const signupDataStr = localStorage.getItem('chamber122_signup_data');
+    if (signupDataStr) {
+      try {
+        const signupData = JSON.parse(signupDataStr);
+        console.log('[owner-form] Found signup data, pre-populating form:', signupData);
+        
+        // Pre-populate form fields from signup data
+        if (signupData.name) {
+          const nameField = document.getElementById('name');
+          if (nameField) nameField.value = signupData.name;
         }
+        if (signupData.phone) {
+          const phoneField = document.getElementById('phone');
+          if (phoneField) phoneField.value = signupData.phone;
+        }
+        if (signupData.whatsapp) {
+          const whatsappField = document.getElementById('whatsapp');
+          if (whatsappField) whatsappField.value = signupData.whatsapp;
+        }
+        if (signupData.website) {
+          const websiteField = document.getElementById('website');
+          if (websiteField) websiteField.value = signupData.website;
+        }
+        if (signupData.instagram) {
+          const instagramField = document.getElementById('instagram');
+          if (instagramField) instagramField.value = signupData.instagram;
+        }
+        if (signupData.country) {
+          const countryField = document.getElementById('country');
+          if (countryField) countryField.value = signupData.country;
+        }
+        if (signupData.city) {
+          const cityField = document.getElementById('city');
+          if (cityField) cityField.value = signupData.city;
+        }
+        if (signupData.description) {
+          const descField = document.getElementById('description');
+          if (descField) descField.value = signupData.description;
+        }
+        if (signupData.story) {
+          const storyField = document.getElementById('story');
+          if (storyField) storyField.value = signupData.story;
+        }
+        if (signupData.industry || signupData.category) {
+          const industryField = document.getElementById('industry') || document.getElementById('category');
+          if (industryField) industryField.value = signupData.industry || signupData.category;
+        }
+        
+        // Handle logo from signup data
+        if (signupData.logo) {
+          console.log('[owner-form] Signup data includes logo:', signupData.logo);
+          // Show a message that logo was uploaded during signup
+          const logoInput = document.getElementById('logo');
+          if (logoInput) {
+            const logoStatus = document.createElement('div');
+            logoStatus.style.cssText = 'margin-top: 8px; padding: 8px; background: #10b98120; border: 1px solid #10b981; border-radius: 4px; color: #10b981; font-size: 14px;';
+            logoStatus.textContent = `✓ Logo uploaded during signup: ${signupData.logo.name || 'logo file'}`;
+            logoInput.parentNode?.appendChild(logoStatus);
+          }
+        }
+        
+        // Handle gallery from signup data
+        if (signupData.gallery && signupData.gallery.length > 0) {
+          console.log('[owner-form] Signup data includes gallery:', signupData.gallery.length, 'images');
+          const galleryStatus = document.createElement('div');
+          galleryStatus.style.cssText = 'margin-top: 8px; padding: 8px; background: #10b98120; border: 1px solid #10b981; border-radius: 4px; color: #10b981; font-size: 14px;';
+          galleryStatus.textContent = `✓ ${signupData.gallery.length} gallery image(s) uploaded during signup`;
+          const galleryInput = document.getElementById('gallery');
+          if (galleryInput) {
+            galleryInput.parentNode?.appendChild(galleryStatus);
+          }
+        }
+        
+        // Handle documents from signup data
+        if (signupData.documents) {
+          console.log('[owner-form] Signup data includes documents:', Object.keys(signupData.documents).length);
+          const docTypes = {
+            'license': 'License',
+            'iban': 'IBAN Certificate',
+            'articles': 'Articles of Incorporation',
+            'signature_auth': 'Signature Authorization',
+            'civil_id_front': 'Civil ID Front',
+            'civil_id_back': 'Civil ID Back',
+            'owner_proof': 'Owner Proof'
+          };
+          
+          for (const [docType, docLabel] of Object.entries(docTypes)) {
+            if (signupData.documents[docType]) {
+              const doc = signupData.documents[docType];
+              const docInput = document.getElementById(`${docType}-file`) || document.getElementById(`${docType.replace('_', '-')}-file`);
+              if (docInput) {
+                const docStatus = document.createElement('div');
+                docStatus.style.cssText = 'margin-top: 8px; padding: 8px; background: #10b98120; border: 1px solid #10b981; border-radius: 4px; color: #10b981; font-size: 14px;';
+                docStatus.textContent = `✓ ${docLabel} uploaded during signup: ${doc.name || 'file'}`;
+                docInput.parentNode?.appendChild(docStatus);
+              }
+            }
+          }
+        }
+        
+        // Clear signup data after using it (one-time use)
+        localStorage.removeItem('chamber122_signup_data');
+        console.log('[owner-form] ✅ Form pre-populated from signup data (including logo, gallery, and documents)');
+      } catch (err) {
+        console.error('[owner-form] Error parsing signup data:', err);
+        localStorage.removeItem('chamber122_signup_data');
       }
     }
     
-    if (bizError && !biz) {
-      alert('Error loading business profile: ' + (bizError.message || bizError.code || 'Unknown error'));
-      console.error('[owner-form] Full error:', bizError);
-      return;
-    }
-  }
-  
-  if (!biz) {
-    console.log('No business found for user - creating new business...');
-    // Try to create a business if it doesn't exist
-    const { data: newBiz, error: createError } = await sb
-      .from('businesses')
-      .insert({ owner_id: user.id, name: 'My Business' })
-      .select()
-      .single();
-    
-    if (createError || !newBiz) {
-      console.error('[owner-form] Error creating business:', createError);
-      alert('Unable to create business profile. Please contact support.');
-      return;
-    }
-    
-    console.log('[owner-form] Created new business:', newBiz.id);
-    // Use the newly created business
-    const bizToUse = newBiz;
-    currentBusinessId = bizToUse.id;
-    
-    // Fill form with empty/default values
-    const fieldMap = {
-      name: 'name',
-      phone: 'phone', 
-      whatsapp: 'whatsapp',
-      website: 'website',
-      instagram: 'instagram',
-      country: 'country',
-      city: 'city',
-      area: 'area',
-      block: 'block',
-      street: 'street',
-      floor: 'floor',
-      office_no: 'office_no',
-      industry: 'industry',
-      description: 'description',
-      story: 'story'
-    };
-    
-    Object.entries(fieldMap).forEach(([col, id]) => {
-      const el = document.getElementById(id);
-      if (el && bizToUse[col] != null) el.value = bizToUse[col];
-    });
-    
-    await loadExistingGallery(currentBusinessId);
-    wireGalleryInputs();
+    // Setup handlers
+    setupLogoPreview();
+    setupGalleryPreview();
     setupSaveHandler();
     return;
   }
 
-  console.log('Business found:', biz.id, biz.name);
-  currentBusinessId = biz.id;
+  // EDIT mode
+  currentBusinessId = business.id;
+  
+  console.log('[owner-form] Editing business ID:', currentBusinessId);
 
-  // Fill your text inputs here
+  // Fill form fields - handle both 'name' and 'business_name' fields
   const fieldMap = {
     name: 'name',
     phone: 'phone', 
@@ -411,669 +429,556 @@ async function preloadEdit() {
 
   Object.entries(fieldMap).forEach(([col, id]) => {
     const el = document.getElementById(id);
-    if (el && biz[col] != null) el.value = biz[col];
-  });
-
-  // Logo preview
-  const logoPreview = document.getElementById('logoPreview');
-  if (logoPreview) {
-    if (biz.logo_url) {
-      // Ensure logo_url is a full URL (handle both full URLs and relative paths)
-      let logoUrl = biz.logo_url;
-      if (logoUrl && !logoUrl.startsWith('http://') && !logoUrl.startsWith('https://')) {
-        // If it's a relative path or just a filename, construct the full URL
-        // Check if it's a Supabase storage URL pattern
-        if (logoUrl.includes('business-assets') || logoUrl.includes('supabase.co')) {
-          // Already a storage URL, use as is
-        } else {
-          // Try to get public URL from storage
-          const pathMatch = logoUrl.match(/([^\/]+)\/([^\/]+\.(png|jpg|jpeg|gif|webp))/i);
-          if (pathMatch) {
-            const { data } = sb.storage.from('business-assets').getPublicUrl(logoUrl);
-            logoUrl = data?.publicUrl || biz.logo_url;
+    if (el) {
+      // For name field, check both 'name' and 'business_name'
+      if (col === 'name') {
+        const value = business.name || business.business_name || '';
+        el.value = value; // Always set, even if empty
+      } else if (col === 'industry') {
+        // Special handling for industry SELECT dropdown
+        let value = business.industry || business.category || '';
+        
+        // Handle objects (like industry might be an object)
+        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+          value = value.name || value.value || value.label || '';
+        }
+        
+        value = safeTrim(String(value || ''));
+        
+        // For SELECT elements, check if the value exists as an option
+        if (el.tagName === 'SELECT') {
+          // Try to find matching option by value
+          const option = Array.from(el.options).find(opt => 
+            opt.value === value || opt.text === value
+          );
+          
+          if (option) {
+            el.value = option.value;
+          } else if (value) {
+            // If value doesn't match, try to find partial match
+            const partialMatch = Array.from(el.options).find(opt => 
+              opt.value.toLowerCase().includes(value.toLowerCase()) ||
+              opt.text.toLowerCase().includes(value.toLowerCase())
+            );
+            if (partialMatch) {
+              el.value = partialMatch.value;
+            } else {
+              console.warn('[owner-form] Industry value not found in options:', value);
+              // Keep default/empty selection
+            }
           }
-        }
-      }
-      
-      console.log('[owner-form] Setting logo preview URL:', logoUrl);
-      logoPreview.src = logoUrl;
-      logoPreview.style.display = 'block';
-      logoPreview.style.visibility = 'visible';
-      logoPreview.style.opacity = '1';
-      logoPreview.style.width = 'auto';
-      logoPreview.style.height = 'auto';
-      logoPreview.style.maxWidth = '100%';
-      logoPreview.style.maxHeight = '100%';
-      
-      logoPreview.onload = () => {
-        console.log('[owner-form] Logo preview loaded successfully from:', logoUrl);
-      };
-      logoPreview.onerror = (e) => {
-        console.error('[owner-form] Failed to load logo:', logoUrl, e);
-        // Try alternative URL construction
-        if (logoUrl !== biz.logo_url) {
-          console.log('[owner-form] Trying original URL:', biz.logo_url);
-          logoPreview.src = biz.logo_url;
         } else {
-          logoPreview.alt = 'Logo failed to load';
-          logoPreview.style.display = 'none';
+          // For input fields, just set the value
+          el.value = value;
         }
-      };
-    } else {
-      console.log('[owner-form] No logo URL in business data');
-      logoPreview.src = '';
-      logoPreview.alt = 'No logo uploaded';
-      logoPreview.style.display = 'none';
-    }
-  } else {
-    console.warn('[owner-form] Logo preview element not found');
-  }
-
-  // Load existing gallery
-  await loadExistingGallery(currentBusinessId);
-
-  // Wire up gallery inputs
-  wireGalleryInputs();
-
-  // Logo handler
-  const logoInput = document.getElementById('logo');
-  if (logoInput) {
-    logoInput.addEventListener('change', e => {
-      const f = e.target.files?.[0]; 
-      if (!f) {
-        console.log('[owner-form] No file selected');
-        return;
-      }
-      console.log('[owner-form] Logo file selected:', f.name, f.type);
-      const logoPreview = document.getElementById('logoPreview');
-      if (logoPreview) {
-        // Clean up previous object URL if any
-        if (logoPreview.dataset.objectUrl) {
-          URL.revokeObjectURL(logoPreview.dataset.objectUrl);
-        }
-        
-        const objectUrl = URL.createObjectURL(f);
-        logoPreview.src = objectUrl;
-        logoPreview.dataset.objectUrl = objectUrl;
-        logoPreview.style.display = 'block';
-        logoPreview.style.visibility = 'visible';
-        logoPreview.style.opacity = '1';
-        logoPreview.alt = 'Logo preview';
-        console.log('[owner-form] Logo preview updated');
-        
-        logoPreview.onload = () => {
-          console.log('[owner-form] Logo preview loaded from file');
-        };
-        logoPreview.onerror = () => {
-          console.error('[owner-form] Failed to load logo preview from file');
-        };
       } else {
-        console.error('[owner-form] Logo preview element not found');
+        // Get the value from business object
+        let value = business[col];
+        
+        // Handle objects (like industry might be an object)
+        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+          value = value.name || value.value || value.label || '';
+        }
+        
+        // Convert to string and handle null/undefined - use safeTrim
+        if (value != null && value !== '') {
+          el.value = safeTrim(value);
+        } else {
+          // Set empty string if field is null/undefined to clear the field
+          el.value = '';
+        }
       }
-    });
-  } else {
-    console.warn('[owner-form] Logo input element not found');
-  }
-
-  // Setup save handler
-  setupSaveHandler();
-  
-  // Setup real-time subscription for profile updates
-  setupRealtimeUpdates(currentBusinessId);
-}
-
-// Setup save handler function (only once)
-let saveHandlerSetup = false;
-
-function setupSaveHandler() {
-  if (saveHandlerSetup) {
-    console.log('[owner-form] Save handler already setup, skipping');
-    return;
-  }
-  
-  const saveBtn = document.getElementById('saveBtn');
-  const form = document.getElementById('biz-form');
-  
-  if (!saveBtn || !form) {
-    console.error('[owner-form] Save button or form not found!');
-    return;
-  }
-  
-  // Add event listeners (only once)
-  saveBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    console.log('[owner-form] Save button clicked');
-    saveProfile(e);
+    }
   });
   
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    console.log('[owner-form] Form submitted');
-    saveProfile(e);
-  });
-  
-  saveHandlerSetup = true;
-  console.log('[owner-form] Save handler setup complete');
-}
-
-// Setup real-time updates for profile changes
-function setupRealtimeUpdates(businessId) {
-  if (!businessId) return;
-  
-  // Subscribe to business updates
-  const businessChannel = sb
-    .channel(`business:${businessId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'businesses',
-        filter: `id=eq.${businessId}`
-      },
-      (payload) => {
-        console.log('[owner-form] Business updated via real-time:', payload);
-        // Reload the form data
-        window.location.reload();
-      }
-    )
-    .subscribe();
-  
-  // Subscribe to events for this business
-  const eventsChannel = sb
-    .channel(`business-events:${businessId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'events',
-        filter: `business_id=eq.${businessId}`
-      },
-      (payload) => {
-        console.log('[owner-form] Event changed for business:', payload);
-        // Trigger page refresh or update UI
-        if (window.updateEventsDisplay) {
-          window.updateEventsDisplay();
-        }
-      }
-    )
-    .subscribe();
-  
-  // Subscribe to bulletins for this business
-  const bulletinsChannel = sb
-    .channel(`business-bulletins:${businessId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'bulletins',
-        filter: `business_id=eq.${businessId}`
-      },
-      (payload) => {
-        console.log('[owner-form] Bulletin changed for business:', payload);
-        // Trigger page refresh or update UI
-        if (window.updateBulletinsDisplay) {
-          window.updateBulletinsDisplay();
-        }
-      }
-    )
-    .subscribe();
-  
-  // Subscribe to registrations for this business's events/bulletins
-  const registrationsChannel = sb
-    .channel(`business-registrations:${businessId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'registrations'
-      },
-      async (payload) => {
-        console.log('[owner-form] New registration:', payload);
-        // Check if registration is for this business's events/bulletins
-        const reg = payload.new;
-        // This will be handled by checking if the item_id belongs to this business
-        if (window.updateRegistrationsDisplay) {
-          window.updateRegistrationsDisplay();
-        }
-      }
-    )
-    .subscribe();
-  
-  // Store channels for cleanup
-  window.realtimeChannels = window.realtimeChannels || [];
-  window.realtimeChannels.push(businessChannel, eventsChannel, bulletinsChannel, registrationsChannel);
-}
-
-// Save handler
-async function saveProfile(ev){
-    ev.preventDefault();
-    console.log('Save profile called');
-    
-    const updates = {
-      name: $('#name')?.value || null,
-      phone: $('#phone')?.value || null,
-      whatsapp: $('#whatsapp')?.value || null,
-      website: $('#website')?.value || null,
-      instagram: $('#instagram')?.value || null,
-      country: $('#country')?.value || null,
-      city: $('#city')?.value || null,
-      area: $('#area')?.value || null,
-      block: $('#block')?.value || null,
-      street: $('#street')?.value || null,
-      floor: $('#floor')?.value || null,
-      office_no: $('#office_no')?.value || null,
-      industry: $('#industry')?.value || null,
-      description: $('#description')?.value || null,
-      story: $('#story')?.value || null,
-      updated_at: new Date().toISOString()
-    };
-    
-    console.log('Updates to save:', updates);
-
-    // Logo upload
-    const logoEl = $('#logo');
-    if (logoEl?.files?.[0]) {
-      const f = logoEl.files[0];
-      const path = `${currentBusinessId}/logo.${getExt(f.name)}`;
-      console.log('[owner-form] Uploading logo file:', f.name, 'to path:', path);
-      alert('Uploading logo: ' + f.name);
-      
-      try { 
-        const logoUrl = await uploadPublic('business-assets', path, f);
-        updates.logo_url = logoUrl;
-        console.log('[owner-form] Logo uploaded successfully to:', logoUrl);
-        alert('Logo uploaded! URL: ' + logoUrl);
-      }
-      catch (e){ 
-        alert('Logo upload failed: ' + e.message); 
-        console.error('[owner-form] Logo upload error:', e); 
-        return; 
-      }
-    } else {
-      console.log('[owner-form] No new logo file selected - logo unchanged');
-    }
-
-    // Update business row
-    console.log('[owner-form] Updating business with ID:', currentBusinessId);
-    console.log('[owner-form] Full update payload:', updates);
-    
-    const { data: updatedBiz, error: updErr } = await sb
-      .from('businesses')
-      .update(updates)
-      .eq('id', currentBusinessId)
-      .select();
-    
-    if (updErr) { 
-      alert('Save failed: ' + updErr.message); 
-      console.error('[owner-form] Business update error:', updErr); 
-      console.error('[owner-form] Error details:', {
-        message: updErr.message,
-        code: updErr.code,
-        details: updErr.details,
-        hint: updErr.hint
-      });
-      return; 
-    }
-    
-    console.log('[owner-form] Business updated successfully!');
-    console.log('[owner-form] Updated business data:', updatedBiz);
-    
-    // Show what was saved
-    if (updatedBiz && updatedBiz[0]) {
-      alert('Saved! Logo URL in database: ' + (updatedBiz[0].logo_url || 'none'));
-    }
-
-    // Save gallery changes
-    console.log('[owner-form] Saving gallery changes...');
-    await saveGalleryChanges();
-    console.log('[owner-form] Gallery changes saved');
-
-    alert('All saved! Redirecting to owner.html...');
-    location.href = '/owner.html';
-  }
-
-document.addEventListener('DOMContentLoaded', preloadEdit);
-    country: 'country',
-    city: 'city',
-    area: 'area',
-    block: 'block',
-    street: 'street',
-    floor: 'floor',
-    office_no: 'office_no',
-    industry: 'industry',
-    description: 'description',
-    story: 'story'
+  // Log populated fields for debugging
+  const logData = {
+    name: business.name || business.business_name || '(empty)',
+    phone: business.phone || '(empty)',
+    whatsapp: business.whatsapp || '(empty)',
+    website: business.website || '(empty)',
+    instagram: business.instagram || '(empty)',
+    country: business.country || '(empty)',
+    city: business.city || '(empty)',
+    area: business.area || '(empty)',
+    block: business.block || '(empty)',
+    street: business.street || '(empty)',
+    floor: business.floor || '(empty)',
+    office_no: business.office_no || '(empty)',
+    industry: (typeof business.industry === 'object' && business.industry !== null) 
+      ? (business.industry.name || business.industry.value || JSON.stringify(business.industry))
+      : (business.industry || business.category || '(empty)'),
+    description: business.description ? 'Yes (' + business.description.length + ' chars)' : 'No',
+    story: business.story ? 'Yes (' + business.story.length + ' chars)' : 'No'
   };
-
-  Object.entries(fieldMap).forEach(([col, id]) => {
-    const el = document.getElementById(id);
-    if (el && biz[col] != null) el.value = biz[col];
-  });
-
-  // Logo preview
-  const logoPreview = document.getElementById('logoPreview');
-  if (logoPreview) {
-    if (biz.logo_url) {
-      // Ensure logo_url is a full URL (handle both full URLs and relative paths)
-      let logoUrl = biz.logo_url;
-      if (logoUrl && !logoUrl.startsWith('http://') && !logoUrl.startsWith('https://')) {
-        // If it's a relative path or just a filename, construct the full URL
-        // Check if it's a Supabase storage URL pattern
-        if (logoUrl.includes('business-assets') || logoUrl.includes('supabase.co')) {
-          // Already a storage URL, use as is
-        } else {
-          // Try to get public URL from storage
-          const pathMatch = logoUrl.match(/([^\/]+)\/([^\/]+\.(png|jpg|jpeg|gif|webp))/i);
-          if (pathMatch) {
-            const { data } = sb.storage.from('business-assets').getPublicUrl(logoUrl);
-            logoUrl = data?.publicUrl || biz.logo_url;
-          }
-        }
+  console.log('[owner-form] Form fields populated:', logData);
+  
+  // Also log what was actually set in form fields
+  setTimeout(() => {
+    const actualValues = {};
+    Object.values(fieldMap).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        actualValues[id] = el.value || '(empty)';
       }
-      
-      console.log('[owner-form] Setting logo preview URL:', logoUrl);
-      logoPreview.src = logoUrl;
+    });
+    console.log('[owner-form] Actual form field values:', actualValues);
+  }, 100);
+
+  // Logo preview - filter out blob URLs
+  const logoPreview = document.getElementById('logoPreview');
+  if (logoPreview && business.logo_url) {
+    // Don't use blob URLs - they're temporary and can't be loaded
+    if (business.logo_url.startsWith('blob:')) {
+      console.warn('[owner-form] Skipping blob URL for logo:', business.logo_url);
+    } else {
+      // Ensure logo preview container is visible
+      const logoPreviewContainer = logoPreview.closest('.logo-preview-container') || 
+                                   logoPreview.parentElement;
+      if (logoPreviewContainer) {
+        logoPreviewContainer.style.display = 'block';
+      }
+      logoPreview.src = business.logo_url;
       logoPreview.style.display = 'block';
       logoPreview.style.visibility = 'visible';
       logoPreview.style.opacity = '1';
-      logoPreview.style.width = 'auto';
-      logoPreview.style.height = 'auto';
-      logoPreview.style.maxWidth = '100%';
-      logoPreview.style.maxHeight = '100%';
-      
-      logoPreview.onload = () => {
-        console.log('[owner-form] Logo preview loaded successfully from:', logoUrl);
-      };
-      logoPreview.onerror = (e) => {
-        console.error('[owner-form] Failed to load logo:', logoUrl, e);
-        // Try alternative URL construction
-        if (logoUrl !== biz.logo_url) {
-          console.log('[owner-form] Trying original URL:', biz.logo_url);
-          logoPreview.src = biz.logo_url;
-        } else {
-          logoPreview.alt = 'Logo failed to load';
-          logoPreview.style.display = 'none';
-        }
-      };
-    } else {
-      console.log('[owner-form] No logo URL in business data');
-      logoPreview.src = '';
-      logoPreview.alt = 'No logo uploaded';
-      logoPreview.style.display = 'none';
+      console.log('[owner-form] Logo preview set:', business.logo_url);
     }
-  } else {
-    console.warn('[owner-form] Logo preview element not found');
+  } else if (logoPreview) {
+    console.log('[owner-form] No logo URL found for business');
   }
 
   // Load existing gallery
   await loadExistingGallery(currentBusinessId);
-
-  // Wire up gallery inputs
-  wireGalleryInputs();
-
-  // Logo handler
-  const logoInput = document.getElementById('logo');
-  if (logoInput) {
-    logoInput.addEventListener('change', e => {
-      const f = e.target.files?.[0]; 
-      if (!f) {
-        console.log('[owner-form] No file selected');
-        return;
-      }
-      console.log('[owner-form] Logo file selected:', f.name, f.type);
-      const logoPreview = document.getElementById('logoPreview');
-      if (logoPreview) {
-        // Clean up previous object URL if any
-        if (logoPreview.dataset.objectUrl) {
-          URL.revokeObjectURL(logoPreview.dataset.objectUrl);
-        }
-        
-        const objectUrl = URL.createObjectURL(f);
-        logoPreview.src = objectUrl;
-        logoPreview.dataset.objectUrl = objectUrl;
-        logoPreview.style.display = 'block';
-        logoPreview.style.visibility = 'visible';
-        logoPreview.style.opacity = '1';
-        logoPreview.alt = 'Logo preview';
-        console.log('[owner-form] Logo preview updated');
-        
-        logoPreview.onload = () => {
-          console.log('[owner-form] Logo preview loaded from file');
-        };
-        logoPreview.onerror = () => {
-          console.error('[owner-form] Failed to load logo preview from file');
-        };
-      } else {
-        console.error('[owner-form] Logo preview element not found');
-      }
-    });
-  } else {
-    console.warn('[owner-form] Logo input element not found');
+  
+  // Ensure gallery preview container is visible if there are images
+  const galleryPreview = document.getElementById('galleryPreview');
+  if (galleryPreview && (existingMedia.length > 0 || newFiles.length > 0)) {
+    const galleryContainer = galleryPreview.closest('.gallery-preview-container') || 
+                             galleryPreview.parentElement;
+    if (galleryContainer) {
+      galleryContainer.style.display = 'block';
+    }
+    galleryPreview.style.display = 'grid';
+    console.log('[owner-form] Gallery preview container made visible');
   }
 
-  // Setup save handler
+  // Load and display existing documents
+  await loadExistingDocuments(business);
+
+  // Setup handlers
+  setupLogoPreview();
+  setupGalleryPreview();
   setupSaveHandler();
-  
-  // Setup real-time subscription for profile updates
-  setupRealtimeUpdates(currentBusinessId);
 }
 
-// Setup save handler function (only once)
+// Load and display existing documents
+async function loadExistingDocuments(business) {
+  try {
+    // Get media from business object or fetch separately
+    let media = business.media || [];
+    
+    // If no media in business object, fetch it
+    if (!media || media.length === 0) {
+      try {
+        const { apiRequest } = await import('/js/api.js');
+        const response = await apiRequest('/business/me', { method: 'GET' });
+        media = response?.media || response?.business?.media || [];
+        console.log('[owner-form] Fetched media separately:', media.length, 'items');
+      } catch (err) {
+        console.warn('[owner-form] Could not fetch media:', err);
+        media = [];
+      }
+    }
+    
+    // Map document types to their input IDs and status elements
+    const docMapping = {
+      'license': { inputId: 'license-file', statusId: 'license-status' },
+      'iban': { inputId: 'iban-file', statusId: 'iban-status' },
+      'articles': { inputId: 'articles-file', statusId: 'articles-status' },
+      'signature_auth': { inputId: 'signature-file', statusId: 'signature-status' },
+      'civil_id_front': { inputId: 'civil-id-front-file', statusId: 'civil-id-front-status' },
+      'civil_id_back': { inputId: 'civil-id-back-file', statusId: 'civil-id-back-status' },
+      'owner_proof': { inputId: 'owner-proof-file', statusId: 'owner-proof-status' }
+    };
+
+    // Filter documents (exclude gallery and logo)
+    const documents = media.filter(m => {
+      const docType = (m.document_type || m.type || m.kind || '').toLowerCase();
+      return docType && docType !== 'gallery' && docType !== 'logo' && docMapping[docType];
+    });
+
+    console.log('[owner-form] Found existing documents:', documents.length);
+    console.log('[owner-form] Document types:', documents.map(d => d.document_type || d.type || d.kind));
+
+    // Display each document
+    documents.forEach(doc => {
+      const docType = (doc.document_type || doc.type || doc.kind || '').toLowerCase();
+      const mapping = docMapping[docType];
+      
+      if (mapping) {
+        const statusEl = document.getElementById(mapping.statusId);
+        const fileUrl = doc.public_url || doc.url || doc.publicUrl || doc.path;
+        const fileName = doc.file_name || doc.name || `${docType}.pdf`;
+        
+        if (statusEl && fileUrl && !fileUrl.startsWith('blob:')) {
+          // Show document status with link to view
+          const fullUrl = fileUrl.startsWith('http') ? fileUrl : `http://localhost:4000${fileUrl}`;
+          statusEl.innerHTML = `
+            <span style="color: #10b981;">✓ Uploaded: </span>
+            <a href="${fullUrl}" target="_blank" style="color: #3b82f6; text-decoration: underline;">
+              ${fileName}
+            </a>
+            <span style="color: #9ca3af; font-size: 12px;"> (Click to view)</span>
+            <br>
+            <span style="color: #9ca3af; font-size: 11px;">You can upload a new file to replace this document.</span>
+          `;
+          statusEl.style.display = 'block';
+          console.log(`[owner-form] Displayed document: ${docType} - ${fileName}`);
+        }
+      }
+    });
+
+    // Show "No file uploaded" for documents that don't exist
+    Object.entries(docMapping).forEach(([docType, mapping]) => {
+      const hasDoc = documents.some(d => {
+        const dType = (d.document_type || d.type || d.kind || '').toLowerCase();
+        return dType === docType;
+      });
+      
+      if (!hasDoc) {
+        const statusEl = document.getElementById(mapping.statusId);
+        if (statusEl && !statusEl.innerHTML.trim()) {
+          statusEl.innerHTML = '<span style="color: #9ca3af;">No file uploaded</span>';
+          statusEl.style.display = 'block';
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('[owner-form] Error loading existing documents:', error);
+  }
+}
+
+// Setup save handler
 let saveHandlerSetup = false;
 
 function setupSaveHandler() {
-  if (saveHandlerSetup) {
-    console.log('[owner-form] Save handler already setup, skipping');
-    return;
-  }
+  if (saveHandlerSetup) return;
   
   const saveBtn = document.getElementById('saveBtn');
   const form = document.getElementById('biz-form');
   
-  if (!saveBtn || !form) {
-    console.error('[owner-form] Save button or form not found!');
-    return;
-  }
+  if (!saveBtn || !form) return;
   
-  // Add event listeners (only once)
   saveBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    console.log('[owner-form] Save button clicked');
     saveProfile(e);
   });
   
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    console.log('[owner-form] Form submitted');
     saveProfile(e);
   });
   
   saveHandlerSetup = true;
-  console.log('[owner-form] Save handler setup complete');
 }
 
-// Setup real-time updates for profile changes
-function setupRealtimeUpdates(businessId) {
-  if (!businessId) return;
+// Save profile using FormData
+async function saveProfile(ev) {
+  ev.preventDefault();
   
-  // Subscribe to business updates
-  const businessChannel = sb
-    .channel(`business:${businessId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'businesses',
-        filter: `id=eq.${businessId}`
-      },
-      (payload) => {
-        console.log('[owner-form] Business updated via real-time:', payload);
-        // Reload the form data
-        window.location.reload();
-      }
-    )
-    .subscribe();
-  
-  // Subscribe to events for this business
-  const eventsChannel = sb
-    .channel(`business-events:${businessId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'events',
-        filter: `business_id=eq.${businessId}`
-      },
-      (payload) => {
-        console.log('[owner-form] Event changed for business:', payload);
-        // Trigger page refresh or update UI
-        if (window.updateEventsDisplay) {
-          window.updateEventsDisplay();
-        }
-      }
-    )
-    .subscribe();
-  
-  // Subscribe to bulletins for this business
-  const bulletinsChannel = sb
-    .channel(`business-bulletins:${businessId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'bulletins',
-        filter: `business_id=eq.${businessId}`
-      },
-      (payload) => {
-        console.log('[owner-form] Bulletin changed for business:', payload);
-        // Trigger page refresh or update UI
-        if (window.updateBulletinsDisplay) {
-          window.updateBulletinsDisplay();
-        }
-      }
-    )
-    .subscribe();
-  
-  // Subscribe to registrations for this business's events/bulletins
-  const registrationsChannel = sb
-    .channel(`business-registrations:${businessId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'registrations'
-      },
-      async (payload) => {
-        console.log('[owner-form] New registration:', payload);
-        // Check if registration is for this business's events/bulletins
-        const reg = payload.new;
-        // This will be handled by checking if the item_id belongs to this business
-        if (window.updateRegistrationsDisplay) {
-          window.updateRegistrationsDisplay();
-        }
-      }
-    )
-    .subscribe();
-  
-  // Store channels for cleanup
-  window.realtimeChannels = window.realtimeChannels || [];
-  window.realtimeChannels.push(businessChannel, eventsChannel, bulletinsChannel, registrationsChannel);
-}
-
-// Save handler
-async function saveProfile(ev){
-    ev.preventDefault();
-    console.log('Save profile called');
-    
-    const updates = {
-      name: $('#name')?.value || null,
-      phone: $('#phone')?.value || null,
-      whatsapp: $('#whatsapp')?.value || null,
-      website: $('#website')?.value || null,
-      instagram: $('#instagram')?.value || null,
-      country: $('#country')?.value || null,
-      city: $('#city')?.value || null,
-      area: $('#area')?.value || null,
-      block: $('#block')?.value || null,
-      street: $('#street')?.value || null,
-      floor: $('#floor')?.value || null,
-      office_no: $('#office_no')?.value || null,
-      industry: $('#industry')?.value || null,
-      description: $('#description')?.value || null,
-      story: $('#story')?.value || null,
-      updated_at: new Date().toISOString()
-    };
-    
-    console.log('Updates to save:', updates);
-
-    // Logo upload
-    const logoEl = $('#logo');
-    if (logoEl?.files?.[0]) {
-      const f = logoEl.files[0];
-      const path = `${currentBusinessId}/logo.${getExt(f.name)}`;
-      console.log('[owner-form] Uploading logo file:', f.name, 'to path:', path);
-      alert('Uploading logo: ' + f.name);
-      
-      try { 
-        const logoUrl = await uploadPublic('business-assets', path, f);
-        updates.logo_url = logoUrl;
-        console.log('[owner-form] Logo uploaded successfully to:', logoUrl);
-        alert('Logo uploaded! URL: ' + logoUrl);
-      }
-      catch (e){ 
-        alert('Logo upload failed: ' + e.message); 
-        console.error('[owner-form] Logo upload error:', e); 
-        return; 
-      }
-    } else {
-      console.log('[owner-form] No new logo file selected - logo unchanged');
-    }
-
-    // Update business row
-    console.log('[owner-form] Updating business with ID:', currentBusinessId);
-    console.log('[owner-form] Full update payload:', updates);
-    
-    const { data: updatedBiz, error: updErr } = await sb
-      .from('businesses')
-      .update(updates)
-      .eq('id', currentBusinessId)
-      .select();
-    
-    if (updErr) { 
-      alert('Save failed: ' + updErr.message); 
-      console.error('[owner-form] Business update error:', updErr); 
-      console.error('[owner-form] Error details:', {
-        message: updErr.message,
-        code: updErr.code,
-        details: updErr.details,
-        hint: updErr.hint
-      });
-      return; 
-    }
-    
-    console.log('[owner-form] Business updated successfully!');
-    console.log('[owner-form] Updated business data:', updatedBiz);
-    
-    // Show what was saved
-    if (updatedBiz && updatedBiz[0]) {
-      alert('Saved! Logo URL in database: ' + (updatedBiz[0].logo_url || 'none'));
-    }
-
-    // Save gallery changes
-    console.log('[owner-form] Saving gallery changes...');
-    await saveGalleryChanges();
-    console.log('[owner-form] Gallery changes saved');
-
-    alert('All saved! Redirecting to owner.html...');
-    location.href = '/owner.html';
+  const saveBtn = document.getElementById('saveBtn');
+  const originalText = saveBtn?.textContent;
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
   }
+
+  try {
+    const form = document.getElementById('biz-form');
+    const fd = new FormData(form);
+    
+    // Add text fields - use safeTrim for all values
+    // Note: $ is getElementById, not jQuery, so use $('name') not $('#name')
+    const nameEl = $('name');
+    const nameValue = nameEl ? safeTrim(nameEl.value) : '';
+    fd.append('business_name', nameValue);
+    fd.append('name', nameValue);
+    
+    const phoneEl = $('phone');
+    fd.append('phone', phoneEl ? safeTrim(phoneEl.value) : '');
+    
+    const whatsappEl = $('whatsapp');
+    fd.append('whatsapp', whatsappEl ? safeTrim(whatsappEl.value) : '');
+    
+    const websiteEl = $('website');
+    fd.append('website', websiteEl ? safeTrim(websiteEl.value) : '');
+    
+    const instagramEl = $('instagram');
+    fd.append('instagram', instagramEl ? safeTrim(instagramEl.value) : '');
+    
+    const countryEl = $('country');
+    fd.append('country', countryEl ? (safeTrim(countryEl.value) || 'Kuwait') : 'Kuwait');
+    
+    const cityEl = $('city');
+    fd.append('city', cityEl ? safeTrim(cityEl.value) : '');
+    
+    const areaEl = $('area');
+    fd.append('area', areaEl ? safeTrim(areaEl.value) : '');
+    
+    const blockEl = $('block');
+    fd.append('block', blockEl ? safeTrim(blockEl.value) : '');
+    
+    const streetEl = $('street');
+    fd.append('street', streetEl ? safeTrim(streetEl.value) : '');
+    
+    const floorEl = $('floor');
+    fd.append('floor', floorEl ? safeTrim(floorEl.value) : '');
+    
+    const officeNoEl = $('office_no');
+    fd.append('office_no', officeNoEl ? safeTrim(officeNoEl.value) : '');
+    
+    // Handle industry dropdown - ensure it's a string value, not an object
+    const industryEl = $('industry');
+    let industryValue = '';
+    if (industryEl) {
+      if (industryEl.tagName === 'SELECT') {
+        // For select dropdowns, get the selected option's value
+        industryValue = safeTrim(industryEl.value);
+      } else {
+        // For input fields
+        industryValue = safeTrim(industryEl.value);
+      }
+    }
+    fd.append('industry', industryValue);
+    fd.append('category', industryValue);
+    
+    const descriptionEl = $('description');
+    fd.append('description', descriptionEl ? safeTrim(descriptionEl.value) : '');
+    
+    const storyEl = $('story');
+    fd.append('story', storyEl ? safeTrim(storyEl.value) : '');
+    
+    console.log('[owner-form] Form values being sent:', {
+      name: nameValue,
+      phone: phoneEl?.value,
+      industry: industryValue,
+      description: descriptionEl?.value?.substring(0, 50)
+    });
+    
+    // Add logo file if selected (check both input and preview data)
+    const logoInput = document.getElementById('logo');
+    let logoFile = null;
+    
+    if (logoInput?.files?.[0]) {
+      logoFile = logoInput.files[0];
+    } else {
+      // Check if logo was selected but file input was reset (check preview)
+      const logoPreview = document.getElementById('logoPreview');
+      if (logoPreview?.dataset?.objectUrl) {
+        // Try to get file from the blob URL
+        try {
+          const response = await fetch(logoPreview.dataset.objectUrl);
+          const blob = await response.blob();
+          const fileName = logoPreview.alt || 'logo.png';
+          logoFile = new File([blob], fileName, { type: blob.type });
+        } catch (err) {
+          console.warn('[owner-form] Could not get logo file from preview:', err);
+        }
+      }
+    }
+    
+    if (logoFile) {
+      console.log('[owner-form] Adding logo file to FormData:', logoFile.name, logoFile.size, 'bytes');
+      fd.append('logo', logoFile);
+    } else {
+      console.log('[owner-form] No logo file to upload');
+    }
+    
+    // Add gallery files (max 5)
+    const galleryInput = document.getElementById('galleryFiles');
+    if (galleryInput?.files?.length > 0) {
+      Array.from(galleryInput.files).slice(0, 5).forEach(f => {
+        fd.append('gallery[]', f);
+      });
+    }
+    
+    // Also add newFiles that were selected but not yet in input
+    newFiles.slice(0, 5).forEach(f => {
+      fd.append('gallery[]', f);
+    });
+    
+    // Add document files
+    const documentTypes = [
+      { id: 'license-file', key: 'license' },
+      { id: 'iban-file', key: 'iban' },
+      { id: 'articles-file', key: 'articles' },
+      { id: 'signature-file', key: 'signature_auth' },
+      { id: 'civil-id-front-file', key: 'civil_id_front' },
+      { id: 'civil-id-back-file', key: 'civil_id_back' },
+      { id: 'owner-proof-file', key: 'owner_proof' }
+    ];
+    
+    const uploadedDocuments = {};
+    for (const { id, key } of documentTypes) {
+      const input = document.getElementById(id);
+      if (input?.files?.[0]) {
+        const file = input.files[0];
+        console.log(`[owner-form] Adding document: ${key}`, file.name);
+        fd.append(key, file);
+        uploadedDocuments[key] = file;
+      }
+    }
+    
+    // Log FormData contents for debugging
+    console.log('[owner-form] FormData contents:');
+    for (const [key, value] of fd.entries()) {
+      if (value instanceof File) {
+        console.log(`  ${key}: [File] ${value.name} (${value.size} bytes)`);
+      } else {
+        console.log(`  ${key}: ${value}`);
+      }
+    }
+    
+    // Send FormData to backend
+    const token = localStorage.getItem('session_token');
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    console.log('[owner-form] Sending PUT request to /api/businesses/me');
+    const response = await fetch('/api/businesses/me', {
+      method: 'PUT',
+      credentials: 'include',
+      headers,
+      body: fd
+    });
+    
+    console.log('[owner-form] Response status:', response.status, response.statusText);
+    
+    if (!response.ok) {
+      let errorMessage = 'Failed to save profile';
+      try {
+        const errorText = await response.text();
+        console.error('[owner-form] Error response text:', errorText);
+        try {
+          const error = JSON.parse(errorText);
+          errorMessage = error?.error || error?.message || response.statusText || 'Failed to save profile';
+        } catch (parseError) {
+          // If JSON parsing fails, use the text as error message
+          errorMessage = errorText || response.statusText || 'Failed to save profile';
+        }
+        // Ensure error message is a string
+        if (typeof errorMessage !== 'string') {
+          errorMessage = String(errorMessage);
+        }
+      } catch (e) {
+        console.error('[owner-form] Error parsing response:', e);
+        errorMessage = response.statusText || 'Failed to save profile';
+      }
+      throw new Error(errorMessage);
+    }
+    
+    const result = await response.json();
+    console.log('[owner-form] Profile saved successfully:', result);
+    console.log('[owner-form] Updated business data:', result.business);
+    
+    // Mark account as updated after fixing documents (for admin dashboard)
+    try {
+      const user = await getCurrentUser();
+      if (user && user.id) {
+        markAccountUpdatedAfterIssue(user.id);
+      }
+    } catch (err) {
+      console.warn('[owner-form] Could not mark account as updated:', err);
+    }
+    
+    // Extract document URLs from backend response and sync to admin dashboard
+    const documentsWithUrls = {};
+    const media = result.media || [];
+    
+    // Map uploaded document files to their URLs from backend response
+    for (const [docType, file] of Object.entries(uploadedDocuments)) {
+      // Find the media item with matching document_type
+      const mediaItem = media.find(m => 
+        (m.document_type || m.type || m.kind) === docType
+      );
+      
+      if (mediaItem) {
+        const fileUrl = mediaItem.public_url || mediaItem.url || mediaItem.publicUrl || mediaItem.path;
+        documentsWithUrls[docType] = {
+          url: fileUrl,
+          name: file.name,
+          size: file.size,
+          signedUrl: fileUrl,
+          path: fileUrl
+        };
+        console.log(`[owner-form] Document ${docType} URL from backend:`, fileUrl);
+      } else {
+        console.warn(`[owner-form] Could not find media item for document type: ${docType}`);
+      }
+    }
+    
+    // Sync profile and document updates to admin dashboard
+    try {
+      const { interceptSignup } = await import('/js/signup-to-admin.js');
+      const user = await getCurrentUser();
+      const business = result.business;
+      
+      if (user && business) {
+        // Update user profile in admin system with uploaded document URLs
+        interceptSignup({
+          id: user.id,
+          email: user.email,
+          name: business.name || business.business_name || '',
+          phone: business.phone || '',
+          business_name: business.name || business.business_name || '',
+          industry: business.industry || business.category || '',
+          city: business.city || '',
+          country: business.country || 'Kuwait',
+          created_at: business.created_at || new Date().toISOString()
+        }, documentsWithUrls);
+        
+        console.log('[owner-form] Profile and documents synced to admin dashboard');
+      }
+    } catch (adminError) {
+      console.error('[owner-form] Error syncing to admin dashboard:', adminError);
+      // Don't fail the save if admin sync fails
+    }
+    
+    // Mark account as updated after fixing documents (for admin dashboard)
+    try {
+      const user = await getCurrentUser();
+      if (user && user.id) {
+        markAccountUpdatedAfterIssue(user.id);
+      }
+    } catch (err) {
+      console.warn('[owner-form] Could not mark account as updated:', err);
+    }
+    
+    // Clear any cached API responses before redirecting
+    if ('caches' in window) {
+      caches.keys().then(names => {
+        names.forEach(name => caches.delete(name));
+      });
+    }
+    
+    alert('Profile saved successfully! Redirecting to profile...');
+    
+    // Always redirect to owner.html with cache-busting parameter to force reload
+    // Use location.replace to prevent back button issues
+    window.location.replace(`/owner.html?updated=${Date.now()}`);
+  } catch (err) {
+    console.error('[owner-form] Save error:', err);
+    alert('Save failed: ' + (err.message || 'Unknown error'));
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = originalText || 'Save';
+    }
+  }
+}
 
 document.addEventListener('DOMContentLoaded', preloadEdit);

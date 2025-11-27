@@ -1,13 +1,65 @@
-// Database seeding and cleanup for E2E tests
+// Database seeding and cleanup for E2E tests - Updated for new backend API
 import 'dotenv/config';
-import { createClient } from '@supabase/supabase-js';
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import bcrypt from 'bcrypt';
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE!;
-const testMarker = process.env.TEST_DATA_MARKER || 'ch122_e2e_test';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DB_FILE = path.join(__dirname, '../../db.json');
+const API_BASE = process.env.BASE_URL || 'http://localhost:4000';
 
-// Create service role client (bypasses RLS)
-const supabase = createClient(supabaseUrl, serviceRoleKey);
+// Helper to read database
+async function readDB() {
+  try {
+    const data = await fs.readFile(DB_FILE, 'utf-8');
+    return JSON.parse(data);
+  } catch (error) {
+    // If file doesn't exist, return empty structure
+    return {
+      users: [],
+      businesses: [],
+      events: [],
+      bulletins: []
+    };
+  }
+}
+
+// Helper to write database
+async function writeDB(data: any) {
+  await fs.writeFile(DB_FILE, JSON.stringify(data, null, 2));
+}
+
+// Helper to create user via API
+async function createUserViaAPI(email: string, password: string) {
+  const res = await fetch(`${API_BASE}/api/auth/signup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(error.error || `HTTP ${res.status}`);
+  }
+  
+  return res.json();
+}
+
+// Helper to find user by email
+async function findUserByEmail(email: string) {
+  const db = await readDB();
+  return db.users.find((u: any) => u.email === email);
+}
+
+// Helper to find business by owner email
+async function findBusinessByOwnerEmail(email: string) {
+  const db = await readDB();
+  const user = await findUserByEmail(email);
+  if (!user) return null;
+  return db.businesses.find((b: any) => b.owner_id === user.id);
+}
 
 async function seed() {
   console.log('🌱 Seeding E2E test data...');
@@ -16,106 +68,116 @@ async function seed() {
     // Clean existing test data first
     await clean();
     
-    // Create test users via auth
-    const { data: adminUser, error: adminError } = await supabase.auth.admin.createUser({
-      email: process.env.ADMIN_EMAIL!,
-      password: process.env.ADMIN_PASSWORD!,
-      email_confirm: true,
-    });
+    const db = await readDB();
     
-    if (adminError) throw adminError;
+    // Create test users via API
+    console.log('Creating admin user...');
+    const adminResult = await createUserViaAPI(
+      process.env.ADMIN_EMAIL!,
+      process.env.ADMIN_PASSWORD!
+    );
+    const adminUser = adminResult.user;
     
-    const { data: pendingUser, error: pendingError } = await supabase.auth.admin.createUser({
+    // Update admin user role in database directly
+    const adminDbUser = await findUserByEmail(process.env.ADMIN_EMAIL!);
+    if (adminDbUser) {
+      adminDbUser.role = 'admin';
+      await writeDB(db);
+    }
+    
+    console.log('Creating pending MSME user...');
+    const pendingResult = await createUserViaAPI(
+      process.env.MSME_PENDING_EMAIL!,
+      process.env.MSME_PENDING_PASSWORD!
+    );
+    const pendingUser = pendingResult.user;
+    
+    console.log('Creating approved MSME user...');
+    const approvedResult = await createUserViaAPI(
+      process.env.MSME_APPROVED_EMAIL!,
+      process.env.MSME_APPROVED_PASSWORD!
+    );
+    const approvedUser = approvedResult.user;
+    
+    // Create test businesses directly in database
+    const updatedDb = await readDB();
+    
+    // Create pending business
+    const pendingBusiness = {
+      id: `business_${Date.now()}_pending`,
+      owner_id: pendingUser.id,
+      business_name: 'Test Pending MSME',
+      industry: 'Technology',
+      description: 'A test pending MSME for E2E testing',
+      phone: '+96512345678',
       email: process.env.MSME_PENDING_EMAIL!,
-      password: process.env.MSME_PENDING_PASSWORD!,
-      email_confirm: true,
-    });
+      country: 'Kuwait',
+      city: 'Kuwait City',
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    updatedDb.businesses.push(pendingBusiness);
     
-    if (pendingError) throw pendingError;
-    
-    const { data: approvedUser, error: approvedError } = await supabase.auth.admin.createUser({
+    // Create approved business
+    const approvedBusiness = {
+      id: `business_${Date.now()}_approved`,
+      owner_id: approvedUser.id,
+      business_name: 'Test Approved MSME',
+      industry: 'Food & Beverage',
+      description: 'A test approved MSME for E2E testing',
+      story: 'This is a comprehensive description of our test approved MSME business.',
+      phone: '+96587654321',
       email: process.env.MSME_APPROVED_EMAIL!,
-      password: process.env.MSME_APPROVED_PASSWORD!,
-      email_confirm: true,
-    });
+      country: 'Kuwait',
+      city: 'Kuwait City',
+      website: 'https://testapproved.com',
+      whatsapp: '+96587654321',
+      status: 'approved',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    updatedDb.businesses.push(approvedBusiness);
     
-    if (approvedError) throw approvedError;
-    
-    // Create test accounts
-    const { error: pendingAccountError } = await supabase
-      .from('accounts')
-      .insert({
-        owner_user_id: pendingUser.user.id,
-        name: 'Test Pending MSME',
-        category: 'Technology',
-        type: 'Company',
-        about_short: 'A test pending MSME for E2E testing',
-        phone: '+96512345678',
-        email: process.env.MSME_PENDING_EMAIL!,
-        country: 'Kuwait',
-        city: 'Kuwait City',
-        status: 'pending',
-        profile_completeness: 45, // Incomplete
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-    
-    if (pendingAccountError) throw pendingAccountError;
-    
-    const { error: approvedAccountError } = await supabase
-      .from('accounts')
-      .insert({
-        owner_user_id: approvedUser.user.id,
-        name: 'Test Approved MSME',
-        category: 'Food & Beverage',
-        type: 'Company',
-        about_short: 'A test approved MSME for E2E testing',
-        about_full: 'This is a comprehensive description of our test approved MSME business.',
-        phone: '+96587654321',
-        email: process.env.MSME_APPROVED_EMAIL!,
-        country: 'Kuwait',
-        city: 'Kuwait City',
-        website: 'https://testapproved.com',
-        whatsapp: '+96587654321',
-        status: 'approved',
-        profile_completeness: 95, // Complete
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-    
-    if (approvedAccountError) throw approvedAccountError;
+    await writeDB(updatedDb);
     
     // Create some public content
-    const { data: approvedAccount } = await supabase
-      .from('accounts')
-      .select('id')
-      .eq('owner_user_id', approvedUser.user.id)
-      .single();
+    const finalDb = await readDB();
+    const approvedBiz = finalDb.businesses.find((b: any) => b.owner_id === approvedUser.id);
     
-    if (approvedAccount) {
+    if (approvedBiz) {
       // Create a published event
-      await supabase.from('events').insert({
-        account_id: approvedAccount.id,
+      const testEvent = {
+        id: `event_${Date.now()}_test`,
+        owner_id: approvedUser.id,
+        business_id: approvedBiz.id,
         title: 'Test Public Event',
         description: 'A test event for E2E testing',
         location: 'Kuwait City',
-        starts_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+        start_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
         status: 'published',
-        views_count: 0,
+        is_published: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      });
+      };
+      finalDb.events.push(testEvent);
       
       // Create a published bulletin
-      await supabase.from('bulletins').insert({
-        account_id: approvedAccount.id,
+      const testBulletin = {
+        id: `bulletin_${Date.now()}_test`,
+        owner_id: approvedUser.id,
+        business_id: approvedBiz.id,
         title: 'Test Public Bulletin',
         content: 'A test bulletin post for E2E testing',
+        body: 'A test bulletin post for E2E testing',
         status: 'published',
-        views_count: 0,
+        is_published: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      });
+      };
+      finalDb.bulletins.push(testBulletin);
+      
+      await writeDB(finalDb);
     }
     
     console.log('✅ E2E test data seeded successfully');
@@ -130,6 +192,8 @@ async function clean() {
   console.log('🧹 Cleaning E2E test data...');
   
   try {
+    const db = await readDB();
+    
     // Get test user emails
     const testEmails = [
       process.env.ADMIN_EMAIL!,
@@ -137,40 +201,39 @@ async function clean() {
       process.env.MSME_APPROVED_EMAIL!,
     ];
     
-    // Delete accounts first (due to foreign key constraints)
-    const { data: accounts } = await supabase
-      .from('accounts')
-      .select('id, owner_user_id')
-      .in('email', testEmails);
+    // Find and remove test users and their businesses
+    const testUserIds: string[] = [];
+    const testBusinessIds: string[] = [];
     
-    if (accounts && accounts.length > 0) {
-      const accountIds = accounts.map(a => a.id);
-      const userIds = accounts.map(a => a.owner_user_id);
-      
-      // Delete related content
-      await supabase.from('events').delete().in('account_id', accountIds);
-      await supabase.from('bulletins').delete().in('account_id', accountIds);
-      await supabase.from('content_views').delete().in('account_id', accountIds);
-      
-      // Delete accounts
-      await supabase.from('accounts').delete().in('id', accountIds);
-      
-      // Delete auth users
-      for (const userId of userIds) {
-        await supabase.auth.admin.deleteUser(userId);
+    // Remove users and collect their IDs
+    db.users = db.users.filter((user: any) => {
+      if (testEmails.includes(user.email)) {
+        testUserIds.push(user.id);
+        return false; // Remove user
       }
-    }
+      return true; // Keep user
+    });
     
-    // Clean up guest submissions
-    await supabase
-      .from('event_suggestions')
-      .delete()
-      .eq('submitter_email', process.env.GUEST_EMAIL!);
+    // Remove businesses owned by test users
+    db.businesses = db.businesses.filter((business: any) => {
+      if (testUserIds.includes(business.owner_id)) {
+        testBusinessIds.push(business.id);
+        return false; // Remove business
+      }
+      return true; // Keep business
+    });
     
-    await supabase
-      .from('bulletin_submissions')
-      .delete()
-      .eq('submitter_email', process.env.GUEST_EMAIL!);
+    // Remove events owned by test users
+    db.events = db.events.filter((event: any) => {
+      return !testUserIds.includes(event.owner_id);
+    });
+    
+    // Remove bulletins owned by test users
+    db.bulletins = db.bulletins.filter((bulletin: any) => {
+      return !testUserIds.includes(bulletin.owner_id);
+    });
+    
+    await writeDB(db);
     
     console.log('✅ E2E test data cleaned successfully');
     

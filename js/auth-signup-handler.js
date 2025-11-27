@@ -130,13 +130,19 @@ async function handleCompleteSignup(e) {
 
 function collectSignupFormData() {
   return {
-    name: document.getElementById('signup-name')?.value?.trim(),
-    category: document.getElementById('signup-category')?.value,
-    country: document.getElementById('signup-country')?.value,
+    name: document.getElementById('signup-name')?.value?.trim() || 
+          document.getElementById('signup-business-name')?.value?.trim() ||
+          document.getElementById('signup-legal-name')?.value?.trim(),
+    category: document.getElementById('signup-category')?.value || 
+              document.getElementById('signup-industry')?.value,
+    country: document.getElementById('signup-country')?.value || 'Kuwait',
     city: document.getElementById('signup-city')?.value?.trim(),
     description: document.getElementById('signup-desc')?.value?.trim(),
     whatsapp: document.getElementById('signup-whatsapp')?.value?.trim(),
+    phone: document.getElementById('signup-phone')?.value?.trim(),
     email: document.getElementById('signup-email')?.value?.trim(),
+    industry: document.getElementById('signup-industry')?.value || 
+              document.getElementById('signup-category')?.value,
     // Add other form fields as needed
   };
 }
@@ -158,18 +164,220 @@ async function completeSignupProcess(user, formData = null) {
       formData = collectSignupFormData();
     }
     
-    // Complete the business signup
+    // Get logo and gallery files from state
+    const { state } = await import('./signup-with-documents.js');
+    const logoFile = state.uploaded.logo?.file || null;
+    const galleryFiles = state.galleryFiles || [];
+    
+    // Complete the business signup (this uploads logo and gallery)
     const business = await onCompleteSignup({
       ...formData,
       owner_id: user.id,
-      email: user.email
+      email: user.email,
+      logo_file: logoFile, // Pass logo file
+      gallery_files: galleryFiles // Pass gallery files
     });
     
-    // Show success message
-    alert('Account created successfully! Welcome to Chamber122.');
+    console.log('[signup] Business created:', business?.id, business?.name);
     
-    // Redirect to owner activities
-    window.location.href = '/owner.html';
+    // Store signup form data in localStorage for pre-populating owner-form
+    try {
+      const signupData = {
+        ...formData,
+        logo_file: logoFile ? { name: logoFile.name, size: logoFile.size, type: logoFile.type } : null,
+        gallery_files_count: galleryFiles.length,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('chamber122_signup_data', JSON.stringify(signupData));
+      console.log('[signup] Stored signup data for pre-population:', signupData);
+    } catch (err) {
+      console.warn('[signup] Could not store signup data:', err);
+    }
+    
+    // Upload documents to backend and get their URLs
+    const { state } = await import('./signup-with-documents.js');
+    const { uploadFile } = await import('./api.js');
+    const uploadedDocuments = {};
+    
+    // Upload documents that were stored in state
+    const docTypes = ['license', 'iban', 'articles', 'signature_auth', 'civil_id_front', 'civil_id_back', 'owner_proof'];
+    
+    for (const docType of docTypes) {
+      if (state.uploaded[docType]) {
+        try {
+          // Get the file from state
+          let file = null;
+          
+          // Try to get file object directly
+          if (state.uploaded[docType].file) {
+            file = state.uploaded[docType].file;
+          } else {
+            // Try to get from file input
+            const inputId = `${docType}-file` || `${docType.replace('_', '-')}-file`;
+            const input = document.getElementById(inputId);
+            if (input?.files?.[0]) {
+              file = input.files[0];
+            } else if (state.uploaded[docType].fallbackKey) {
+              // Get from sessionStorage
+              const fileData = sessionStorage.getItem(state.uploaded[docType].fallbackKey);
+              if (fileData) {
+                const parsed = JSON.parse(fileData);
+                if (parsed.localUrl) {
+                  const response = await fetch(parsed.localUrl);
+                  const blob = await response.blob();
+                  file = new File([blob], parsed.name, { type: parsed.type });
+                }
+              }
+            }
+          }
+          
+          if (file) {
+            console.log(`[signup] Uploading document: ${docType}`, file.name);
+            try {
+              const uploadResult = await uploadFile(file, docType, business?.id);
+              const fileUrl = uploadResult.publicUrl || uploadResult.public_url || uploadResult.url || uploadResult.path;
+              
+              // Ensure we have a real URL (not blob)
+              if (fileUrl && !fileUrl.startsWith('blob:') && fileUrl !== '#') {
+                uploadedDocuments[docType] = {
+                  url: fileUrl,
+                  name: file.name,
+                  size: file.size,
+                  signedUrl: fileUrl,
+                  path: fileUrl,
+                  publicUrl: fileUrl,
+                  public_url: fileUrl,
+                  file: file // Keep file reference for admin system
+                };
+                console.log(`[signup] ✅ Document uploaded successfully: ${docType} -> ${fileUrl}`);
+              } else {
+                console.warn(`[signup] ⚠️ Document upload returned invalid URL for ${docType}:`, fileUrl);
+                // Still save with file info, URL will be added later
+                uploadedDocuments[docType] = {
+                  name: file.name,
+                  size: file.size,
+                  file: file
+                };
+              }
+            } catch (uploadErr) {
+              console.error(`[signup] Error uploading ${docType}:`, uploadErr);
+              // Save file info even if upload fails - admin can see it was attempted
+              uploadedDocuments[docType] = {
+                name: file.name,
+                size: file.size,
+                file: file,
+                uploadError: uploadErr.message
+              };
+            }
+          }
+        } catch (err) {
+          console.error(`[signup] Error uploading document ${docType}:`, err);
+          // Still save to admin with whatever data we have
+          uploadedDocuments[docType] = state.uploaded[docType];
+        }
+      }
+    }
+    
+    // Save to admin system (localStorage) with uploaded document URLs
+    try {
+      const { interceptSignup } = await import('./signup-to-admin.js');
+      
+      // Prepare documents data - prioritize uploaded URLs with real URLs
+      const documents = {};
+      const docTypes = ['license', 'iban', 'articles', 'signature_auth', 'civil_id_front', 'civil_id_back', 'owner_proof'];
+      
+      for (const docType of docTypes) {
+        // Prefer uploaded document with real URL, then uploaded without URL, then state
+        const uploaded = uploadedDocuments[docType];
+        const stateDoc = state.uploaded[docType];
+        
+        if (uploaded) {
+          // If uploaded has a real URL, use it
+          if (uploaded.url && !uploaded.url.startsWith('blob:') && uploaded.url !== '#') {
+            documents[docType] = uploaded;
+            console.log(`[signup] ✅ Using uploaded document with URL for ${docType}:`, uploaded.url.substring(0, 50));
+          } else if (uploaded.file) {
+            // Has file but no URL yet - save file info (IMPORTANT: This ensures it shows in admin dashboard)
+            documents[docType] = uploaded;
+            console.log(`[signup] ✅ Using uploaded document with file for ${docType} (file: ${uploaded.file.name}, URL will be added later)`);
+          } else {
+            // Fallback to state
+            documents[docType] = stateDoc;
+            if (stateDoc) {
+              console.log(`[signup] Using state document for ${docType} (from state)`);
+            }
+          }
+        } else if (stateDoc) {
+          // IMPORTANT: Save documents from state even if they only have file objects
+          // This ensures they appear in admin dashboard immediately
+          documents[docType] = stateDoc;
+          console.log(`[signup] ✅ Using state document for ${docType}:`, {
+            hasFile: !!(stateDoc.file),
+            hasUrl: !!(stateDoc.url || stateDoc.signedUrl),
+            fileName: stateDoc.file?.name || stateDoc.name || 'unknown'
+          });
+        }
+      }
+      
+      const docCount = Object.keys(documents).filter(k => documents[k]).length;
+      console.log('[signup] 📋 Saving to admin system with documents:', docCount, 'documents');
+      console.log('[signup] Document types:', Object.keys(documents).filter(k => documents[k]));
+      console.log('[signup] Document details:', Object.entries(documents).map(([k, v]) => ({
+        type: k,
+        hasFile: !!(v?.file),
+        hasUrl: !!(v?.url || v?.signedUrl || v?.publicUrl),
+        fileName: v?.file?.name || v?.name || 'unknown'
+      })));
+      
+      // Save user and documents to admin system
+      const savedUser = interceptSignup({
+        id: user.id || `user_${Date.now()}`,
+        email: user.email,
+        name: formData.name || user.user_metadata?.full_name || '',
+        phone: formData.phone || formData.whatsapp || '',
+        business_name: formData.name || business?.name || '',
+        industry: formData.category || formData.industry || '',
+        city: formData.city || '',
+        country: formData.country || 'Kuwait',
+        business_id: business?.id || null,
+        created_at: new Date().toISOString()
+      }, documents);
+      
+      console.log('[signup] ✅ User and documents saved to admin system. User ID:', savedUser?.id);
+      console.log('[signup] Documents saved:', Object.keys(documents).filter(k => documents[k]).map(k => {
+        const doc = documents[k];
+        return `${k}: ${doc?.url && !doc.url.startsWith('blob:') ? '✅ has URL' : doc?.file ? '📄 has file' : '❌ missing'}`;
+      }));
+      
+      // Force admin dashboard refresh if it's open (same tab)
+      window.dispatchEvent(new CustomEvent('userSignup', { detail: savedUser }));
+      if (docCount > 0) {
+        window.dispatchEvent(new CustomEvent('documentsUpdated', { detail: Object.values(documents).filter(d => d) }));
+      }
+      
+      console.log('[signup] Saved to admin system successfully');
+    } catch (adminError) {
+      console.error('[signup] Could not save to admin system:', adminError);
+      // Don't fail the signup if admin save fails
+    }
+    
+    // Store signup form data for pre-population in owner-form
+    try {
+      const signupData = {
+        ...formData,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('chamber122_signup_data', JSON.stringify(signupData));
+      console.log('[signup] Stored signup data for pre-population in owner-form');
+    } catch (err) {
+      console.warn('[signup] Could not store signup data:', err);
+    }
+    
+    // Show success message
+    alert('Account created successfully! Please complete your business profile...');
+    
+    // Redirect to owner-form to complete/edit profile
+    window.location.href = '/owner-form.html';
     
   } catch (error) {
     console.error('Complete signup process error:', error);

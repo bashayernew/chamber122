@@ -410,7 +410,7 @@ class ComplianceManager {
   }
 
   checkAllDocumentsUploaded() {
-    const requiredDocuments = ['license', 'incorporation', 'signature_auth', 'iban'];
+    const requiredDocuments = ['license', 'articles', 'signature_auth', 'iban', 'civil_id_front', 'civil_id_back', 'owner_proof'];
     const uploadedCount = requiredDocuments.filter(doc => this.documents[doc]).length;
     
     const submitButton = document.getElementById('submit-review');

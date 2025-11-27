@@ -3,7 +3,7 @@
  * Handles authentication gating for restricted actions
  */
 
-import { isFullyLoggedIn } from './supabase.js';
+import { getCurrentUser, getMyBusiness } from './api.js';
 import { openLoginRequiredModal } from './modal-login-required.js';
 
 /**
@@ -20,40 +20,66 @@ function go(url) {
  */
 async function gateAndRoute(kind) {
   try {
-    const authState = await isFullyLoggedIn();
+    // Check authentication via GET /api/auth/me
+    const user = await getCurrentUser();
     
-    if (!authState.authed) {
-      // Not authenticated - show login required modal
-      return openLoginRequiredModal({
-        reason: kind,
-        onGuestContinue: () => {
-          // Route to guest form or page with guest parameter
-          const targetPage = kind === 'event' ? 'events' : 'bulletin';
-          go(`${targetPage}.html?guest=1`);
-        }
-      });
+    if (!user) {
+      // Not authenticated - redirect to login
+      window.location.href = '/auth.html#login';
+      return;
     }
     
-    if (authState.fully) {
-      // Fully logged in - open modal directly on current page
-      if (kind === 'event') {
-        // Import and call the openEventForm function
-        const { openEventForm } = await import('./events.js?v=3');
-        return openEventForm();
-      } else if (kind === 'bulletin') {
-        // For bulletin, redirect to owner activities for now
-        return go('owner.html');
+    // Check if user has a business profile
+    const business = await getMyBusiness();
+    
+    if (!business) {
+      // No business profile - alert and redirect to create one
+      if (confirm('You need to create a business profile before creating events. Would you like to create one now?')) {
+        window.location.href = '/owner-form.html';
       }
+      return;
     }
     
-    // Authenticated but not fully logged in - go to profile completion
-    return go('owner.html');
+    // User is authenticated and has business - open modal directly on current page
+    if (kind === 'event') {
+      // First try: Use global openEventForm function (should be available from events.js)
+      if (typeof window.openEventForm === 'function') {
+        return window.openEventForm();
+      }
+      // Second try: Open modal directly by ID
+      const modal = document.getElementById('event-form-modal');
+      if (modal) {
+        modal.style.display = 'flex';
+        return;
+      }
+      // Last resort: Try dynamic import (may fail if module not loaded)
+      try {
+        const eventsModule = await import('/js/events.js');
+        if (eventsModule.openEventForm) {
+          return eventsModule.openEventForm();
+        }
+      } catch (importErr) {
+        console.warn('[gating] events.js not available, using direct modal access');
+      }
+      // Final fallback
+      alert('Event form not available. Please refresh the page.');
+    } else if (kind === 'bulletin') {
+      // For bulletin, open bulletin form
+      if (window.openBulletinForm) {
+        return window.openBulletinForm();
+      }
+      // Fallback: redirect to owner activities
+      return go('owner.html');
+    }
     
   } catch (error) {
     console.error('Gating error:', error);
     alert('Error checking authentication. Please try again.');
   }
 }
+
+// Export gateAndRoute for use in other modules
+export { gateAndRoute };
 
 /**
  * Setup gating for add event button
@@ -131,23 +157,24 @@ export function initGating() {
  */
 export async function checkPermission(action) {
   try {
-    const authState = await isFullyLoggedIn();
+    const user = await getCurrentUser();
+    const isAuthenticated = !!user;
     
     switch (action) {
       case 'add_event':
       case 'add_bulletin':
         return {
-          allowed: authState.authed,
-          fullyLoggedIn: authState.fully,
-          requiresAuth: !authState.authed,
-          requiresCompletion: authState.authed && !authState.fully
+          allowed: isAuthenticated,
+          fullyLoggedIn: isAuthenticated, // With normal backend, authenticated = fully logged in
+          requiresAuth: !isAuthenticated,
+          requiresCompletion: false
         };
       
       case 'admin':
         return {
-          allowed: authState.authed && authState.user?.app_metadata?.role === 'admin',
-          requiresAuth: !authState.authed,
-          requiresAdmin: authState.authed && authState.user?.app_metadata?.role !== 'admin'
+          allowed: isAuthenticated && user?.role === 'admin',
+          requiresAuth: !isAuthenticated,
+          requiresAdmin: isAuthenticated && user?.role !== 'admin'
         };
       
       default:

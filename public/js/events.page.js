@@ -1,7 +1,6 @@
-// Events page controller
-import { listEventsPublic, toast, createEvent, getOwnerBusinessId, uploadEventCover } from './api.js';
-import { requireAuthOrPrompt } from './auth-guard.js';
-// Removed Supabase import - using API instead
+// Events page controller - Using localStorage only (no backend, no API)
+import { getPublicEvents, createEvent } from '/js/api.js';
+import { getCurrentUser } from '/js/auth-localstorage.js';
 
 let allEvents = [];
 let filteredEvents = [];
@@ -22,24 +21,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
 });
 
-// Load events from API
+// Load events from localStorage
 async function loadEvents() {
   try {
-    loadingState.classList.remove('hidden');
-    emptyState.classList.add('hidden');
-    eventsGrid.classList.add('hidden');
-    eventsList.classList.add('hidden');
+    if (loadingState) loadingState.classList.remove('hidden');
+    if (emptyState) emptyState.classList.add('hidden');
+    if (eventsGrid) eventsGrid.classList.add('hidden');
+    if (eventsList) eventsList.classList.add('hidden');
 
-    allEvents = await listEventsPublic();
+    allEvents = await getPublicEvents();
     filteredEvents = [...allEvents];
     
     displayEvents();
   } catch (error) {
     console.error('Error loading events:', error);
-    toast('Failed to load events. Please try again.', 'error');
     showEmptyState();
   } finally {
-    loadingState.classList.add('hidden');
+    if (loadingState) loadingState.classList.add('hidden');
   }
 }
 
@@ -59,9 +57,10 @@ function displayEvents() {
 
 // Display events in grid view
 function displayGridView() {
+  if (!eventsGrid) return;
   eventsGrid.innerHTML = '';
   eventsGrid.classList.remove('hidden');
-  eventsList.classList.add('hidden');
+  if (eventsList) eventsList.classList.add('hidden');
 
   filteredEvents.forEach(event => {
     const eventCard = createEventCard(event);
@@ -71,9 +70,10 @@ function displayGridView() {
 
 // Display events in list view
 function displayListView() {
+  if (!eventsList) return;
   eventsList.innerHTML = '';
   eventsList.classList.remove('hidden');
-  eventsGrid.classList.add('hidden');
+  if (eventsGrid) eventsGrid.classList.add('hidden');
 
   filteredEvents.forEach(event => {
     const eventItem = createEventListItem(event);
@@ -86,11 +86,11 @@ function createEventCard(event) {
   const card = document.createElement('div');
   card.className = 'bg-zinc-800 rounded-lg overflow-hidden border border-zinc-700 hover:border-zinc-600 transition-colors';
 
-  const title = (event.title ?? '').toString();
-  const description = (event.description ?? '').toString();
-  const location = (event.location ?? '').toString();
+  const title = (event.title || '').toString();
+  const description = (event.description || '').toString();
+  const location = (event.location || '').toString();
   // Normalize type field
-  const eventType = event.type ?? event.kind ?? 'event';
+  const eventType = event.type || event.kind || 'event';
   const coverUrl = event.cover_image_url || 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=500&h=300&fit=crop';
   
   // Format date range
@@ -100,34 +100,34 @@ function createEventCard(event) {
 
   card.innerHTML = `
     <div class="relative">
-      <img src="${coverUrl}" alt="${title}" class="w-full h-48 object-cover">
+      <img src="${coverUrl}" alt="${escapeHtml(title)}" class="w-full h-48 object-cover">
       <div class="absolute top-3 left-3">
         <span class="bg-primary text-white px-2 py-1 rounded text-xs font-medium">
-          ${eventType.charAt(0).toUpperCase() + eventType.slice(1)}
+          ${escapeHtml(eventType.charAt(0).toUpperCase() + eventType.slice(1))}
         </span>
       </div>
     </div>
     <div class="p-4">
-      <h3 class="text-lg font-semibold text-white mb-2 line-clamp-2">${title || 'Untitled Event'}</h3>
+      <h3 class="text-lg font-semibold text-white mb-2 line-clamp-2">${escapeHtml(title || 'Untitled Event')}</h3>
       <div class="space-y-2 mb-3">
         <div class="flex items-center text-sm text-zinc-400">
           <i class="fas fa-calendar w-4 mr-2"></i>
-          <span>${dateStr}</span>
+          <span>${escapeHtml(dateStr)}</span>
         </div>
         ${location ? `
           <div class="flex items-center text-sm text-zinc-400">
             <i class="fas fa-map-marker-alt w-4 mr-2"></i>
-            <span>${location}</span>
+            <span>${escapeHtml(location)}</span>
           </div>
         ` : ''}
       </div>
-      <p class="text-zinc-300 text-sm line-clamp-3 mb-4">${description || 'No description available.'}</p>
+      <p class="text-zinc-300 text-sm line-clamp-3 mb-4">${escapeHtml(description || 'No description available.')}</p>
       <div class="flex justify-between items-center">
         <button onclick="showEventDetails('${event.id}')" class="text-primary hover:text-primary/80 text-sm font-medium">
           View Details
         </button>
         ${event.link ? `
-          <a href="${event.link}" target="_blank" class="bg-primary text-white px-3 py-1 rounded text-sm hover:bg-primary/90">
+          <a href="${escapeHtml(event.link)}" target="_blank" class="bg-primary text-white px-3 py-1 rounded text-sm hover:bg-primary/90">
             Register
           </a>
         ` : ''}
@@ -143,11 +143,11 @@ function createEventListItem(event) {
   const item = document.createElement('div');
   item.className = 'bg-zinc-800 rounded-lg p-4 border border-zinc-700 hover:border-zinc-600 transition-colors';
 
-  const title = (event.title ?? '').toString();
-  const description = (event.description ?? '').toString();
-  const location = (event.location ?? '').toString();
+  const title = (event.title || '').toString();
+  const description = (event.description || '').toString();
+  const location = (event.location || '').toString();
   // Normalize type field
-  const eventType = event.type ?? event.kind ?? 'event';
+  const eventType = event.type || event.kind || 'event';
   const coverUrl = event.cover_image_url || 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=200&h=120&fit=crop';
   
   const startDate = event.start_at ? new Date(event.start_at) : new Date();
@@ -156,30 +156,30 @@ function createEventListItem(event) {
 
   item.innerHTML = `
     <div class="flex gap-4">
-      <img src="${coverUrl}" alt="${title}" class="w-32 h-20 object-cover rounded">
+      <img src="${coverUrl}" alt="${escapeHtml(title)}" class="w-32 h-20 object-cover rounded">
       <div class="flex-1">
         <div class="flex items-start justify-between mb-2">
-          <h3 class="text-lg font-semibold text-white">${title || 'Untitled Event'}</h3>
+          <h3 class="text-lg font-semibold text-white">${escapeHtml(title || 'Untitled Event')}</h3>
           <span class="bg-primary text-white px-2 py-1 rounded text-xs font-medium">
-            ${eventType.charAt(0).toUpperCase() + eventType.slice(1)}
+            ${escapeHtml(eventType.charAt(0).toUpperCase() + eventType.slice(1))}
           </span>
         </div>
         <div class="flex items-center text-sm text-zinc-400 mb-2">
           <i class="fas fa-calendar w-4 mr-2"></i>
-          <span>${dateStr}</span>
+          <span>${escapeHtml(dateStr)}</span>
           ${location ? `
             <span class="mx-2">•</span>
             <i class="fas fa-map-marker-alt w-4 mr-1"></i>
-            <span>${location}</span>
+            <span>${escapeHtml(location)}</span>
           ` : ''}
         </div>
-        <p class="text-zinc-300 text-sm line-clamp-2 mb-3">${description || 'No description available.'}</p>
+        <p class="text-zinc-300 text-sm line-clamp-2 mb-3">${escapeHtml(description || 'No description available.')}</p>
         <div class="flex justify-between items-center">
           <button onclick="showEventDetails('${event.id}')" class="text-primary hover:text-primary/80 text-sm font-medium">
             View Details
           </button>
           ${event.link ? `
-            <a href="${event.link}" target="_blank" class="bg-primary text-white px-3 py-1 rounded text-sm hover:bg-primary/90">
+            <a href="${escapeHtml(event.link)}" target="_blank" class="bg-primary text-white px-3 py-1 rounded text-sm hover:bg-primary/90">
               Register
           </a>
           ` : ''}
@@ -189,6 +189,14 @@ function createEventListItem(event) {
   `;
 
   return item;
+}
+
+// Escape HTML helper
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 // Format date range
@@ -215,34 +223,33 @@ function formatDateRange(startDate, endDate) {
 
 // Show empty state
 function showEmptyState() {
-  emptyState.classList.remove('hidden');
-  eventsGrid.classList.add('hidden');
-  eventsList.classList.add('hidden');
+  if (emptyState) emptyState.classList.remove('hidden');
+  if (eventsGrid) eventsGrid.classList.add('hidden');
+  if (eventsList) eventsList.classList.add('hidden');
 }
 
 // Filter events based on search and type
 function filterEvents() {
-  const searchTerm = searchInput?.value?.toLowerCase() || '';
-  const typeFilterValue = typeFilter?.value || '';
+  const searchTerm = (searchInput && searchInput.value) ? searchInput.value.toLowerCase() : '';
+  const typeFilterValue = (typeFilter && typeFilter.value) ? typeFilter.value : '';
 
   filteredEvents = allEvents.filter(event => {
-    const title = (event.title ?? '').toString().toLowerCase();
-    const description = (event.description ?? '').toString().toLowerCase();
-    const location = (event.location ?? '').toString().toLowerCase();
+    const title = (event.title || '').toString().toLowerCase();
+    const description = (event.description || '').toString().toLowerCase();
+    const location = (event.location || '').toString().toLowerCase();
     
     const matchesSearch = !searchTerm || 
       title.includes(searchTerm) || 
       description.includes(searchTerm) || 
       location.includes(searchTerm);
     
-    const matchesType = !typeFilterValue || (event.type ?? event.kind) === typeFilterValue;
+    const matchesType = !typeFilterValue || (event.type || event.kind) === typeFilterValue;
     
     return matchesSearch && matchesType;
   });
 
   displayEvents();
 }
-
 
 // Setup event listeners
 function setupEventListeners() {
@@ -262,88 +269,76 @@ function setupEventListeners() {
     });
   }
 
-  // Create Event button with auth guard
+  // Create Event button
   const createBtn = document.getElementById('create-event-btn');
-  createBtn?.addEventListener('click', async () => {
-    try {
-      await requireAuthOrPrompt();
-      // If we get here, user is authenticated
+  if (createBtn) {
+    createBtn.addEventListener('click', async () => {
+      const user = getCurrentUser();
+      if (!user) {
+        alert('Please log in to create events');
+        window.location.href = '/auth.html#login';
+        return;
+      }
       openEventForm();
-    } catch (e) {
-      if (e?.message !== 'AUTH_REQUIRED') console.error(e);
-    }
-  });
+    });
+  }
 
   // Modal close handlers
   const closeBtn = document.getElementById('close-event-form');
   const cancelBtn = document.getElementById('cancel-event-form');
   const modal = document.getElementById('event-form-modal');
   
-  closeBtn?.addEventListener('click', () => {
-    modal.style.display = 'none';
-  });
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      if (modal) modal.style.display = 'none';
+    });
+  }
   
-  cancelBtn?.addEventListener('click', () => {
-    modal.style.display = 'none';
-  });
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      if (modal) modal.style.display = 'none';
+    });
+  }
   
   // Close modal when clicking outside
-  modal?.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      modal.style.display = 'none';
-    }
-  });
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+  }
 
   // Event form submission
   const eventForm = document.getElementById('event-form');
-  eventForm?.addEventListener('submit', handleEventFormSubmit);
+  if (eventForm) {
+    eventForm.addEventListener('submit', handleEventFormSubmit);
+  }
 }
 
 // Load businesses for the dropdown
 async function loadBusinessesForForm() {
   try {
-    // Get user from API instead of Supabase
-    const { getCurrentUser } = await import('/js/api.js');
-    const user = await getCurrentUser();
-    if (!user?.id) return;
+    const user = getCurrentUser();
+    if (!user || !user.id) return;
 
-    // Get businesses from API
-    const { api } = await import('/js/api.js');
-    let businesses = [];
-    try {
-      const response = await api.get('/businesses/owner');
-      if (response.ok && response.businesses) {
-        businesses = response.businesses;
-      } else if (response.business) {
-        // Single business response
-        businesses = [response.business];
-      }
-    } catch (error) {
-      console.error('Error loading businesses:', error);
-      // Fallback: try to get from localStorage
-      try {
-        const stored = localStorage.getItem('chamber122_user_businesses');
-        if (stored) {
-          businesses = JSON.parse(stored);
-        }
-      } catch (e) {
-        console.warn('Could not load businesses from localStorage:', e);
-      }
-    }
+    // Get user's business from localStorage
+    const { getBusinessByOwner } = await import('/js/auth-localstorage.js');
+    const business = getBusinessByOwner(user.id);
 
     const select = document.getElementById('event-business-select');
-    if (select && businesses) {
+    if (select) {
       // Clear existing options except the first one
       select.innerHTML = '<option value="">Select your business...</option>';
       
-      businesses.forEach(business => {
+      if (business) {
         const option = document.createElement('option');
         option.value = business.id;
-        option.textContent = business.name;
+        option.textContent = business.name || business.business_name || 'My Business';
         select.appendChild(option);
-      });
+      }
       
-      console.log('[events] loaded', businesses.length, 'businesses for form');
+      console.log('[events] loaded business for form');
     }
   } catch (error) {
     console.error('Error loading businesses for form:', error);
@@ -365,37 +360,40 @@ async function openEventForm() {
 async function handleEventFormSubmit(e) {
   e.preventDefault();
   
-  // Check if account is suspended
-  const { isAccountSuspended } = await import('/js/api.js');
-  if (await isAccountSuspended()) {
-    toast('Your account has been suspended. You cannot post events. Please contact support if you have any questions or would like to appeal this decision.', 'error');
-    return;
-  }
-  
   try {
     // Get business ID from form selection
-    const businessId = document.getElementById('event-business-select')?.value;
+    const businessSelect = document.getElementById('event-business-select');
+    const businessId = businessSelect && businessSelect.value ? businessSelect.value : null;
+    
     if (!businessId) {
-      toast('Please select a business first', 'error');
+      alert('Please select a business first');
       return;
     }
 
     // Get form data
-    const title = document.getElementById('event-title').value.trim();
-    const description = document.getElementById('event-description').value.trim();
-    const type = document.getElementById('event-type').value;
-    const startAt = document.getElementById('event-start').value;
-    const endAt = document.getElementById('event-end').value;
-    const location = document.getElementById('event-location').value.trim();
-    const link = document.getElementById('event-link').value.trim();
+    const titleEl = document.getElementById('event-title');
+    const descriptionEl = document.getElementById('event-description');
+    const typeEl = document.getElementById('event-type');
+    const startEl = document.getElementById('event-start');
+    const endEl = document.getElementById('event-end');
+    const locationEl = document.getElementById('event-location');
+    const linkEl = document.getElementById('event-link');
+
+    const title = titleEl && titleEl.value ? titleEl.value.trim() : '';
+    const description = descriptionEl && descriptionEl.value ? descriptionEl.value.trim() : '';
+    const type = typeEl && typeEl.value ? typeEl.value : 'event';
+    const startAt = startEl && startEl.value ? startEl.value : '';
+    const endAt = endEl && endEl.value ? endEl.value : '';
+    const location = locationEl && locationEl.value ? locationEl.value.trim() : '';
+    const link = linkEl && linkEl.value ? linkEl.value.trim() : '';
 
     // Validate required fields
     if (!title) {
-      toast('Title is required', 'error');
+      alert('Title is required');
       return;
     }
     if (!startAt) {
-      toast('Start date and time is required', 'error');
+      alert('Start date and time is required');
       return;
     }
 
@@ -407,16 +405,14 @@ async function handleEventFormSubmit(e) {
     const coverFileInput = document.getElementById('event-cover');
     let cover_image_url = null;
     
-    if (coverFileInput && coverFileInput.files && coverFileInput.files[0]) {
-      console.log('[events] starting cover image upload for businessId:', businessId);
-      const uploadResult = await uploadEventCover(coverFileInput.files[0], businessId);
-      cover_image_url = uploadResult.url;
-      
-      if (uploadResult.usedFallback) {
-        console.warn('[events] used data URL fallback for cover image');
-      } else {
-        console.log('[events] cover image uploaded successfully:', cover_image_url);
-      }
+    if (coverFileInput && coverFileInput.files && coverFileInput.files.length > 0) {
+      const file = coverFileInput.files[0];
+      // Convert to base64
+      const reader = new FileReader();
+      cover_image_url = await new Promise((resolve) => {
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+      });
     }
 
     // Create event data
@@ -436,25 +432,27 @@ async function handleEventFormSubmit(e) {
     };
 
     // Create event
-    const eventId = await createEvent(eventData);
-    console.log('[events] create success with row id:', eventId, 'and cover_image_url:', cover_image_url);
+    await createEvent(eventData);
+    console.log('[events] Event created successfully');
     
-    toast('Event created successfully!', 'success');
+    alert('Event created successfully!');
     
     // Close modal and refresh events
-    document.getElementById('event-form-modal').style.display = 'none';
-    eventForm.reset();
+    const modal = document.getElementById('event-form-modal');
+    if (modal) modal.style.display = 'none';
+    const eventForm = document.getElementById('event-form');
+    if (eventForm) eventForm.reset();
     await loadEvents();
     
   } catch (error) {
     console.error('Error creating event:', error);
-    toast(`Failed to create event: ${error.message}`, 'error');
+    alert('Failed to create event: ' + (error.message || 'Please try again'));
   }
 }
 
 // Show event details (placeholder)
 function showEventDetails(eventId) {
-  toast('Event details modal would open here', 'info');
+  alert('Event details: ' + eventId);
 }
 
 // Make functions globally available

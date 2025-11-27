@@ -18,7 +18,7 @@
     </div>
 
     <script type="module">
-        import { supabase } from '/assets/js/supabase-client.global.js';
+        import { getEventById } from '/js/api.js';
 
         async function loadEventDetails() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -36,13 +36,9 @@
             }
 
             try {
-                const { data: event, error } = await supabase
-                    .from('events')
-                    .select('*')
-                    .eq('id', eventId)
-                    .single();
+                const event = await getEventById(eventId);
 
-                if (error || !event) {
+                if (!event) {
                     throw new Error('Event not found');
                 }
 

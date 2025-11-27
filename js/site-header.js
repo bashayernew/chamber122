@@ -50,7 +50,7 @@ function renderLoggedIn(container, { user, profile }){
     <header class="topbar">
       <div class="brand"><a href="/index.html">Chamber122</a></div>
       <div class="userbox dropdown" id="user-dropdown">
-        <a href="/dashboard.html" class="btn">Dashboard</a>
+        <a href="/registrations.html" class="btn">Registrations</a>
         <div class="btn" id="avatar-btn" aria-haspopup="true" aria-expanded="false">
           ${avatar}<span class="hide-sm">@${(user?.email||'').split('@')[0]}</span>
         </div>
