@@ -140,7 +140,11 @@ const adminDashboard = {
     const users = allUsers; // Show all users including admin
     const nonAdminUsers = users.filter(u => u.role !== 'admin');
     
-    const tbody = document.getElementById('users-table-body');
+    const container = document.getElementById('users-container') || document.getElementById('users-table-body');
+    if (!container) {
+      console.error('[admin] Users container not found');
+      return;
+    }
     
     // Update stats (exclude admin from counts)
     const total = nonAdminUsers.length;
@@ -170,35 +174,60 @@ const adminDashboard = {
     
     // Apply status filter
     if (filterStatus !== 'all') {
-      filteredUsers = filteredUsers.filter(u => (u.status || 'pending') === filterStatus);
+      if (filterStatus === 'admin') {
+        filteredUsers = filteredUsers.filter(u => u.role === 'admin');
+      } else {
+        filteredUsers = filteredUsers.filter(u => (u.status || 'pending') === filterStatus);
+      }
     }
     
-    // Render users
+    // Render users in card format
     if (filteredUsers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">No users found.</td></tr>';
+      container.innerHTML = '<div style="text-align: center; padding: 40px; color: #6b7280;">No users found.</div>';
       return;
     }
     
-    tbody.innerHTML = filteredUsers.map(user => {
+    const businesses = getAllBusinesses();
+    
+    container.innerHTML = filteredUsers.map(user => {
+      const business = businesses.find(b => b.owner_id === user.id);
       const statusClass = user.status === 'approved' ? 'status-approved' : 
                          user.status === 'suspended' ? 'status-suspended' : 'status-pending';
       const roleBadge = user.role === 'admin' ? '<span class="badge badge-admin">Admin</span>' : '';
       const createdDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A';
+      const updatedDate = user.updated_at ? new Date(user.updated_at).toLocaleDateString() : 'N/A';
       
       return `
-        <tr>
-          <td>${user.email} ${roleBadge}</td>
-          <td>${user.role || 'msme'}</td>
-          <td><span class="status-badge ${statusClass}">${user.status || 'pending'}</span></td>
-          <td>${createdDate}</td>
-          <td class="actions-cell">
-            ${user.role !== 'admin' && user.status !== 'approved' ? `<button onclick="adminDashboard.approveUser('${user.id}')" class="btn-action btn-approve" title="Approve"><i class="fas fa-check"></i></button>` : ''}
-            ${user.role !== 'admin' && user.status !== 'suspended' ? `<button onclick="adminDashboard.suspendUser('${user.id}')" class="btn-action btn-suspend" title="Suspend"><i class="fas fa-ban"></i></button>` : ''}
-            ${user.role !== 'admin' ? `<button onclick="adminDashboard.deleteUser('${user.id}')" class="btn-action btn-delete" title="Delete"><i class="fas fa-trash"></i></button>` : ''}
-            ${user.role !== 'admin' ? `<button onclick="adminDashboard.viewUserDocuments('${user.id}', '${user.email}')" class="btn-action btn-view" title="View Documents"><i class="fas fa-file"></i></button>` : ''}
-            <button onclick="adminDashboard.sendMessageToUser('${user.id}', '${user.email}')" class="btn-action btn-message" title="Send Message"><i class="fas fa-envelope"></i></button>
-          </td>
-        </tr>
+        <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 24px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <h3 style="margin: 0; color: #fff; font-size: 18px;">${user.email || 'No email'}</h3>
+                ${roleBadge}
+                <span class="status-badge ${statusClass}">${user.status || 'pending'}</span>
+              </div>
+              <div style="color: #6b7280; font-size: 14px; margin-bottom: 12px;">
+                <div><strong>Role:</strong> ${user.role || 'msme'}</div>
+                ${user.name ? `<div><strong>Name:</strong> ${user.name}</div>` : ''}
+                ${user.phone ? `<div><strong>Phone:</strong> ${user.phone}</div>` : ''}
+                ${business ? `<div><strong>Business:</strong> ${business.name || business.business_name || 'N/A'}</div>` : ''}
+                ${user.business_name ? `<div><strong>Business Name:</strong> ${user.business_name}</div>` : ''}
+                ${user.industry ? `<div><strong>Industry:</strong> ${user.industry}</div>` : ''}
+                ${user.city ? `<div><strong>City:</strong> ${user.city}</div>` : ''}
+                ${user.country ? `<div><strong>Country:</strong> ${user.country}</div>` : ''}
+                <div><strong>Created:</strong> ${createdDate}</div>
+                ${updatedDate !== 'N/A' ? `<div><strong>Updated:</strong> ${updatedDate}</div>` : ''}
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              ${user.role !== 'admin' && user.status !== 'approved' ? `<button onclick="adminDashboard.approveUser('${user.id}')" class="btn-action btn-approve" title="Approve" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #10b981; color: #fff;"><i class="fas fa-check"></i> Approve</button>` : ''}
+              ${user.role !== 'admin' && user.status !== 'suspended' ? `<button onclick="adminDashboard.suspendUser('${user.id}')" class="btn-action btn-suspend" title="Suspend" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #ef4444; color: #fff;"><i class="fas fa-ban"></i> Suspend</button>` : ''}
+              ${user.role !== 'admin' ? `<button onclick="adminDashboard.viewUserDocuments('${user.id}', '${user.email}')" class="btn-action btn-view" title="View Documents" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #3b82f6; color: #fff;"><i class="fas fa-file"></i> Documents</button>` : ''}
+              <button onclick="adminDashboard.sendMessageToUser('${user.id}', '${user.email}')" class="btn-action btn-message" title="Send Message" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #f2c64b; color: #111;"><i class="fas fa-envelope"></i> Message</button>
+              ${user.role !== 'admin' ? `<button onclick="adminDashboard.deleteUser('${user.id}')" class="btn-action btn-delete" title="Delete" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #dc2626; color: #fff;"><i class="fas fa-trash"></i> Delete</button>` : ''}
+            </div>
+          </div>
+        </div>
       `;
     }).join('');
   },
