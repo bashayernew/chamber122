@@ -1132,6 +1132,19 @@ const adminDashboard = {
 // Make adminDashboard globally available
 window.adminDashboard = adminDashboard;
 
+// Debug function to check localStorage
+window.debugAdmin = function() {
+  console.log('=== ADMIN DASHBOARD DEBUG ===');
+  const users = getAllUsers();
+  const businesses = getAllBusinesses();
+  const documents = JSON.parse(localStorage.getItem('chamber122_documents') || '[]');
+  console.log('Users:', users.length, users);
+  console.log('Businesses:', businesses.length);
+  console.log('Documents:', documents.length);
+  console.log('localStorage keys:', Object.keys(localStorage).filter(k => k.includes('chamber122')));
+  return { users, businesses, documents };
+};
+
 // Initialize on page load
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
