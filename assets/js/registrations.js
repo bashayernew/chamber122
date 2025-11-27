@@ -211,6 +211,29 @@ export function renderRegistrations(container, registrations) {
           ` : ''}
         </div>
         
+        <!-- Message Response Section -->
+        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #2a2a2a;">
+          <div style="color: #fff; font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-comment"></i> Send Message to ${reg.name}
+          </div>
+          <form class="registration-message-form" data-registration-id="${reg.id || reg.event_id || reg.bulletin_id}" data-registrant-email="${reg.email}" style="display: flex; gap: 8px;">
+            <input 
+              type="text" 
+              class="message-input" 
+              placeholder="Type your message..." 
+              required 
+              style="flex: 1; padding: 10px 14px; background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 8px; color: #fff; font-size: 14px;"
+            />
+            <button 
+              type="submit" 
+              class="send-message-btn"
+              style="padding: 10px 20px; background: #0095f6; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; white-space: nowrap;"
+            >
+              <i class="fas fa-paper-plane"></i> Send
+            </button>
+          </form>
+          <div class="message-status" style="margin-top: 8px; font-size: 12px; display: none;"></div>
+        </div>
       </div>
     `;
   }).join('');
