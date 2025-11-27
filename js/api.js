@@ -163,7 +163,14 @@ export async function getPublicEvents() {
   try {
     const stored = localStorage.getItem('chamber122_events');
     const events = stored ? JSON.parse(stored) : [];
-    const filtered = events.filter(e => e.status === 'published' || e.is_published);
+    // Only show events that are explicitly published (both status and is_published must be true)
+    const filtered = events.filter(e => {
+      // Must have status === 'published' AND is_published === true
+      const isPublished = (e.status === 'published') && (e.is_published === true);
+      // Exclude drafts, pending, and suspended
+      const notDraft = e.status !== 'draft' && e.status !== 'pending' && e.status !== 'suspended';
+      return isPublished && notDraft;
+    });
     
     // Enrich events with business information if missing
     const enriched = filtered.map(event => {
@@ -304,8 +311,13 @@ export async function updateEventStatus(eventId, status) {
     }
     
     events[eventIndex].status = status;
-    events[eventIndex].is_published = status === 'published';
+    events[eventIndex].is_published = (status === 'published');
     events[eventIndex].updated_at = new Date().toISOString();
+    
+    // If setting to draft, ensure is_published is false
+    if (status === 'draft' || status === 'pending') {
+      events[eventIndex].is_published = false;
+    }
     
     localStorage.setItem('chamber122_events', JSON.stringify(events));
     return events[eventIndex];
@@ -373,18 +385,13 @@ export async function getPublicBulletins() {
       return [];
     }
     
-    // Filter published bulletins, but also include those without explicit status (for backwards compatibility)
+    // Only show bulletins that are explicitly published (both status and is_published must be true)
     const published = bulletins.filter(b => {
-      // If status is explicitly set, check it
-      if (b.status !== undefined) {
-        return b.status === 'published';
-      }
-      // If is_published is set, check it
-      if (b.is_published !== undefined) {
-        return b.is_published === true;
-      }
-      // If neither is set, assume published (for backwards compatibility)
-      return true;
+      // Must have status === 'published' AND is_published === true
+      const isPublished = (b.status === 'published') && (b.is_published === true);
+      // Exclude drafts, pending, and suspended
+      const notDraft = b.status !== 'draft' && b.status !== 'pending' && b.status !== 'suspended';
+      return isPublished && notDraft;
     });
     console.log('[api] getPublicBulletins: Total:', bulletins.length, 'Published:', published.length);
     return published;
@@ -479,8 +486,13 @@ export async function updateBulletinStatus(bulletinId, status) {
     }
     
     bulletins[bulletinIndex].status = status;
-    bulletins[bulletinIndex].is_published = status === 'published';
+    bulletins[bulletinIndex].is_published = (status === 'published');
     bulletins[bulletinIndex].updated_at = new Date().toISOString();
+    
+    // If setting to draft, ensure is_published is false
+    if (status === 'draft' || status === 'pending') {
+      bulletins[bulletinIndex].is_published = false;
+    }
     
     localStorage.setItem('chamber122_bulletins', JSON.stringify(bulletins));
     return bulletins[bulletinIndex];
