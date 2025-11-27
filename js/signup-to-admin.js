@@ -8,22 +8,26 @@ import { saveUsers, saveDocuments, getAllUsers } from './admin-auth.js';
 /**
  * Save user signup data to admin system
  */
-export function saveSignupToAdmin(userData) {
+export async function saveSignupToAdmin(userData) {
   try {
+    const { getAllUsers, saveUsers } = await import('./auth-localstorage.js');
     const users = getAllUsers();
+    
+    console.log('[signup-to-admin] Saving user:', userData.email, 'Current users count:', users.length);
     
     // Check if user already exists
     const existingIndex = users.findIndex(u => u.email === userData.email || u.id === userData.id);
     
     const userRecord = {
-      id: userData.id || `user_${Date.now()}`,
+      id: userData.id || `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       email: userData.email,
-      name: userData.name || userData.full_name || '',
+      name: userData.name || userData.full_name || userData.business_name || '',
       phone: userData.phone || '',
-      business_name: userData.business_name || userData.display_name || userData.legal_name || '',
+      business_name: userData.business_name || userData.display_name || userData.legal_name || userData.name || '',
       industry: userData.industry || userData.category || '',
       city: userData.city || '',
       country: userData.country || 'Kuwait',
+      role: userData.role || 'msme',
       status: 'pending', // All new signups start as pending
       created_at: userData.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -31,14 +35,16 @@ export function saveSignupToAdmin(userData) {
     
     if (existingIndex !== -1) {
       // Update existing user
-      users[existingIndex] = { ...users[existingIndex], ...userRecord };
+      users[existingIndex] = { ...users[existingIndex], ...userRecord, updated_at: new Date().toISOString() };
+      console.log('[signup-to-admin] Updated existing user:', userRecord.email);
     } else {
       // Add new user
       users.push(userRecord);
+      console.log('[signup-to-admin] Added new user:', userRecord.email);
     }
     
     saveUsers(users);
-    console.log('[signup-to-admin] User saved to admin system:', userRecord.email);
+    console.log('[signup-to-admin] ✅ User saved to admin system. Total users:', users.length);
     
     // Dispatch custom event to notify admin dashboard (same tab)
     window.dispatchEvent(new CustomEvent('userSignup', { detail: userRecord }));

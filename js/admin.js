@@ -135,27 +135,36 @@ const adminDashboard = {
   
   // Users Management
   loadUsers() {
-    const allUsers = getAllUsers();
-    // Filter out admin from stats but show in list
-    const users = allUsers; // Show all users including admin
-    const nonAdminUsers = users.filter(u => u.role !== 'admin');
-    
-    const container = document.getElementById('users-container');
-    if (!container) {
-      console.error('[admin] Users container not found');
-      return;
-    }
-    
-    // Update stats (exclude admin from counts)
-    const total = nonAdminUsers.length;
-    const pending = nonAdminUsers.filter(u => u.status === 'pending').length;
-    const approved = nonAdminUsers.filter(u => u.status === 'approved').length;
-    const suspended = nonAdminUsers.filter(u => u.status === 'suspended').length;
-    
-    document.getElementById('stat-total-users').textContent = total;
-    document.getElementById('stat-pending-users').textContent = pending;
-    document.getElementById('stat-approved-users').textContent = approved;
-    document.getElementById('stat-suspended-users').textContent = suspended;
+    try {
+      console.log('[admin] Loading users...');
+      const allUsers = getAllUsers();
+      console.log('[admin] Found users in localStorage:', allUsers.length, allUsers);
+      
+      // Filter out admin from stats but show in list
+      const users = allUsers; // Show all users including admin
+      const nonAdminUsers = users.filter(u => u.role !== 'admin');
+      
+      const container = document.getElementById('users-container');
+      if (!container) {
+        console.error('[admin] Users container not found');
+        return;
+      }
+      
+      // Update stats (exclude admin from counts)
+      const total = nonAdminUsers.length;
+      const pending = nonAdminUsers.filter(u => (u.status || 'pending') === 'pending').length;
+      const approved = nonAdminUsers.filter(u => (u.status || 'pending') === 'approved').length;
+      const suspended = nonAdminUsers.filter(u => (u.status || 'pending') === 'suspended').length;
+      
+      const statTotal = document.getElementById('stat-total-users');
+      const statPending = document.getElementById('stat-pending-users');
+      const statApproved = document.getElementById('stat-approved-users');
+      const statSuspended = document.getElementById('stat-suspended-users');
+      
+      if (statTotal) statTotal.textContent = total;
+      if (statPending) statPending.textContent = pending;
+      if (statApproved) statApproved.textContent = approved;
+      if (statSuspended) statSuspended.textContent = suspended;
     
     // Apply search and filter
     const searchTerm = (document.getElementById('users-search')?.value || '').toLowerCase();
@@ -177,55 +186,108 @@ const adminDashboard = {
       filteredUsers = filteredUsers.filter(u => (u.status || 'pending') === filterStatus);
     }
     
-    // Render users in card format with all details
+    console.log('[admin] Filtered users:', filteredUsers.length);
+    
+    // Render users in card format with all details (matching the design shown)
     if (filteredUsers.length === 0) {
       container.innerHTML = '<div style="text-align: center; padding: 40px; color: #6b7280;">No users found.</div>';
       return;
     }
     
     const businesses = getAllBusinesses();
+    const allDocuments = JSON.parse(localStorage.getItem('chamber122_documents') || '[]');
     
     container.innerHTML = filteredUsers.map(user => {
       const business = businesses.find(b => b.owner_id === user.id);
       const statusClass = user.status === 'approved' ? 'status-approved' : 
                          user.status === 'suspended' ? 'status-suspended' : 'status-pending';
+      const statusText = user.status || 'pending';
       const roleBadge = user.role === 'admin' ? '<span class="badge badge-admin">Admin</span>' : '';
       const createdDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A';
       const updatedDate = user.updated_at ? new Date(user.updated_at).toLocaleDateString() : 'N/A';
       
+      // Get user documents
+      const userDocs = allDocuments.filter(d => 
+        (d.user_id === user.id || d.userId === user.id)
+      );
+      
+      // Get documents from signup data
+      const signupData = JSON.parse(localStorage.getItem(`chamber122_signup_data_${user.id}`) || localStorage.getItem('chamber122_signup_data') || '{}');
+      const signupDocs = signupData.documents || {};
+      
+      // Combine all document types
+      const allDocTypes = ['civil_id_front', 'civil_id_back', 'owner_proof', 'license', 'iban', 'articles', 'signature_auth'];
+      const hasDocuments = userDocs.length > 0 || Object.keys(signupDocs).length > 0;
+      
       return `
-        <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 24px; margin-bottom: 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+        <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px;">
             <div style="flex: 1;">
-              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                <h3 style="margin: 0; color: #fff; font-size: 18px; font-weight: 600;">${user.email || 'No email'}</h3>
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                <h3 style="margin: 0; color: #1a1a1a; font-size: 20px; font-weight: 600;">${user.name || user.email || 'No name'}</h3>
                 ${roleBadge}
-                <span class="status-badge ${statusClass}">${user.status || 'pending'}</span>
+                <span class="status-badge ${statusClass}">${statusText}</span>
+                ${statusText === 'pending' ? '<span style="background: #f59e0b; color: #111; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">NEEDS UPDATE</span>' : ''}
               </div>
-              <div style="color: #9ca3af; font-size: 14px; line-height: 1.8;">
-                <div><strong style="color: #d1d5db;">Role:</strong> <span style="color: #9ca3af;">${user.role || 'msme'}</span></div>
-                ${user.name ? `<div><strong style="color: #d1d5db;">Name:</strong> <span style="color: #9ca3af;">${user.name}</span></div>` : ''}
-                ${user.phone ? `<div><strong style="color: #d1d5db;">Phone:</strong> <span style="color: #9ca3af;">${user.phone}</span></div>` : ''}
-                ${business ? `<div><strong style="color: #d1d5db;">Business:</strong> <span style="color: #9ca3af;">${business.name || business.business_name || 'N/A'}</span></div>` : ''}
-                ${user.business_name ? `<div><strong style="color: #d1d5db;">Business Name:</strong> <span style="color: #9ca3af;">${user.business_name}</span></div>` : ''}
-                ${user.industry ? `<div><strong style="color: #d1d5db;">Industry:</strong> <span style="color: #9ca3af;">${user.industry}</span></div>` : ''}
-                ${user.city ? `<div><strong style="color: #d1d5db;">City:</strong> <span style="color: #9ca3af;">${user.city}</span></div>` : ''}
-                ${user.country ? `<div><strong style="color: #d1d5db;">Country:</strong> <span style="color: #9ca3af;">${user.country}</span></div>` : ''}
-                <div><strong style="color: #d1d5db;">Created:</strong> <span style="color: #9ca3af;">${createdDate}</span></div>
-                ${updatedDate !== 'N/A' ? `<div><strong style="color: #d1d5db;">Updated:</strong> <span style="color: #9ca3af;">${updatedDate}</span></div>` : ''}
+              <div style="color: #4b5563; font-size: 14px; line-height: 2;">
+                <div><strong style="color: #1a1a1a;">Name:</strong> ${user.name || user.email || 'N/A'}</div>
+                <div><strong style="color: #1a1a1a;">Email:</strong> ${user.email || 'N/A'}</div>
+                ${user.phone ? `<div><strong style="color: #1a1a1a;">Phone:</strong> ${user.phone}</div>` : ''}
+                <div><strong style="color: #1a1a1a;">User ID:</strong> <span style="font-family: monospace; font-size: 12px;">${user.id}</span></div>
+                <div><strong style="color: #1a1a1a;">Created:</strong> ${createdDate}</div>
+                ${user.industry ? `<div><strong style="color: #1a1a1a;">Industry:</strong> ${user.industry}</div>` : ''}
+                ${user.city ? `<div><strong style="color: #1a1a1a;">City:</strong> ${user.city}</div>` : ''}
+                ${business ? `<div><strong style="color: #1a1a1a;">Business:</strong> ${business.name || business.business_name || 'N/A'}</div>` : ''}
               </div>
             </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: start;">
-              ${user.role !== 'admin' && user.status !== 'approved' ? `<button onclick="adminDashboard.approveUser('${user.id}')" class="btn-action btn-approve" title="Approve" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #10b981; color: #fff; font-size: 13px;"><i class="fas fa-check"></i> Approve</button>` : ''}
-              ${user.role !== 'admin' && user.status !== 'suspended' ? `<button onclick="adminDashboard.suspendUser('${user.id}')" class="btn-action btn-suspend" title="Suspend" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #ef4444; color: #fff; font-size: 13px;"><i class="fas fa-ban"></i> Suspend</button>` : ''}
-              ${user.role !== 'admin' ? `<button onclick="adminDashboard.viewUserDocuments('${user.id}', '${user.email}')" class="btn-action btn-view" title="View Documents" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #3b82f6; color: #fff; font-size: 13px;"><i class="fas fa-file"></i> Documents</button>` : ''}
-              <button onclick="adminDashboard.sendMessageToUser('${user.id}', '${user.email}')" class="btn-action btn-message" title="Send Message" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #f2c64b; color: #111; font-size: 13px;"><i class="fas fa-envelope"></i> Message</button>
-              ${user.role !== 'admin' ? `<button onclick="adminDashboard.deleteUser('${user.id}')" class="btn-action btn-delete" title="Delete" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #dc2626; color: #fff; font-size: 13px;"><i class="fas fa-trash"></i> Delete</button>` : ''}
+              ${user.role !== 'admin' && user.status !== 'approved' ? `<button onclick="adminDashboard.approveUser('${user.id}')" class="btn-action btn-approve" title="Approve" style="padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; background: #10b981; color: #fff; font-size: 14px; font-weight: 600;"><i class="fas fa-check"></i> Approve</button>` : ''}
+              ${user.role !== 'admin' && user.status !== 'suspended' ? `<button onclick="adminDashboard.suspendUser('${user.id}')" class="btn-action btn-suspend" title="Suspend" style="padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; background: #ef4444; color: #fff; font-size: 14px; font-weight: 600;"><i class="fas fa-ban"></i> Suspend</button>` : ''}
+              ${user.role !== 'admin' ? `<button onclick="adminDashboard.viewUserDocuments('${user.id}', '${user.email}')" class="btn-action btn-view" title="View Documents" style="padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; background: #3b82f6; color: #fff; font-size: 14px; font-weight: 600;"><i class="fas fa-eye"></i> View Details</button>` : ''}
+              ${user.role !== 'admin' ? `<button onclick="adminDashboard.deleteUser('${user.id}')" class="btn-action btn-delete" title="Delete" style="padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; background: #dc2626; color: #fff; font-size: 14px; font-weight: 600;"><i class="fas fa-trash"></i> Delete</button>` : ''}
             </div>
           </div>
+          
+          ${hasDocuments ? `
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <h4 style="color: #1a1a1a; font-size: 16px; font-weight: 600; margin-bottom: 12px;">Documents:</h4>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                ${allDocTypes.map(docType => {
+                  const doc = userDocs.find(d => (d.kind || d.type) === docType) || 
+                             (signupDocs[docType] ? { kind: docType, file_url: signupDocs[docType].url || signupDocs[docType].base64 || '', file_name: signupDocs[docType].name || `${docType}.pdf` } : null);
+                  if (!doc) return '';
+                  
+                  const docUrl = doc.file_url || doc.url || '';
+                  const hasValidUrl = docUrl && (docUrl.startsWith('data:') || docUrl.startsWith('http') || docUrl.startsWith('/'));
+                  
+                  return `
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f0fdf4; border-radius: 8px; border: 1px solid #bbf7d0;">
+                      <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fas fa-check-circle" style="color: #10b981; font-size: 18px;"></i>
+                        <span style="color: #1a1a1a; font-weight: 500; text-transform: capitalize;">${docType.replace(/_/g, ' ')}</span>
+                      </div>
+                      <div style="display: flex; gap: 8px;">
+                        ${hasValidUrl ? `<button onclick="adminDashboard.viewDocument('${user.id}', '${docType}', ${JSON.stringify(docUrl)})" style="color: #3b82f6; background: none; border: none; cursor: pointer; font-weight: 600; padding: 4px 8px;">View</button>` : '<span style="color: #6b7280; font-size: 12px;">Pending</span>'}
+                        <button onclick="adminDashboard.reportDocument('${user.id}', '${user.email}', '${docType}')" style="background: #f59e0b; color: #fff; border: none; border-radius: 6px; padding: 4px 12px; cursor: pointer; font-weight: 600; font-size: 12px;">Report Issue</button>
+                      </div>
+                    </div>
+                  `;
+                }).filter(html => html).join('')}
+              </div>
+            </div>
+          ` : ''}
         </div>
       `;
     }).join('');
+    
+    console.log('[admin] Users rendered successfully');
+    } catch (error) {
+      console.error('[admin] Error loading users:', error);
+      const container = document.getElementById('users-container');
+      if (container) {
+        container.innerHTML = `<div style="text-align: center; padding: 40px; color: #ef4444;">Error loading users: ${error.message}</div>`;
+      }
+    }
   },
   
   approveUser(userId) {
