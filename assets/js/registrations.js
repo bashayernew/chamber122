@@ -223,13 +223,52 @@ export function renderRegistrations(container, registrations) {
 // Make updateRegistrationStatus available globally
 window.updateRegistrationStatus = async function(registrationId, status) {
   try {
-    // TODO: Implement registration status update endpoint
-    // For now, just reload registrations
-    console.log('[registrations] Status update not yet implemented with backend API');
+    // Update registration status in localStorage
+    const eventRegistrationsStr = localStorage.getItem('chamber122_event_registrations');
+    const bulletinRegistrationsStr = localStorage.getItem('chamber122_bulletin_registrations');
     
-    // Reload registrations
-    if (window.reloadRegistrations) {
-      await window.reloadRegistrations();
+    let updated = false;
+    
+    // Update event registration
+    if (eventRegistrationsStr) {
+      try {
+        const registrations = JSON.parse(eventRegistrationsStr);
+        const index = registrations.findIndex(r => r.id === registrationId);
+        if (index !== -1) {
+          registrations[index].status = status;
+          registrations[index].updated_at = new Date().toISOString();
+          localStorage.setItem('chamber122_event_registrations', JSON.stringify(registrations));
+          updated = true;
+        }
+      } catch (e) {
+        console.warn('[registrations] Error updating event registration:', e);
+      }
+    }
+    
+    // Update bulletin registration
+    if (!updated && bulletinRegistrationsStr) {
+      try {
+        const registrations = JSON.parse(bulletinRegistrationsStr);
+        const index = registrations.findIndex(r => r.id === registrationId);
+        if (index !== -1) {
+          registrations[index].status = status;
+          registrations[index].updated_at = new Date().toISOString();
+          localStorage.setItem('chamber122_bulletin_registrations', JSON.stringify(registrations));
+          updated = true;
+        }
+      } catch (e) {
+        console.warn('[registrations] Error updating bulletin registration:', e);
+      }
+    }
+    
+    if (updated) {
+      console.log('[registrations] Registration status updated:', registrationId, status);
+      // Reload registrations
+      if (window.reloadRegistrations) {
+        await window.reloadRegistrations();
+      }
+    } else {
+      console.warn('[registrations] Registration not found:', registrationId);
     }
   } catch (error) {
     console.error('Error updating registration status:', error);

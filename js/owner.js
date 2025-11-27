@@ -223,31 +223,41 @@ async function loadAndDisplayBusiness(businessId = null) {
       locationEl.textContent = locationText;
     }
     
-    // Logo - check multiple possible IDs
+    // Logo - check multiple possible IDs and ensure it displays
     const logoEl = document.getElementById('biz-logo') || document.getElementById('logo') || $('logo');
     const logoUrl = business.logo_url || business.logo || null;
-    if (logoEl && logoUrl && !logoUrl.startsWith('blob:')) {
-      // Don't use blob URLs - they're temporary
-      if (logoEl.tagName === 'IMG') {
-        logoEl.src = logoUrl;
-        logoEl.alt = business.name || business.business_name || 'Business logo';
-        logoEl.style.display = 'block';
-        logoEl.style.visibility = 'visible';
-        logoEl.style.opacity = '1';
-        logoEl.style.width = 'auto';
-        logoEl.style.height = 'auto';
-        logoEl.style.maxWidth = '200px';
-        logoEl.style.maxHeight = '120px';
-        logoEl.style.borderRadius = '8px';
-        console.log('[owner] Logo set on img element:', logoUrl.substring(0, 50) + '...');
+    console.log('[owner] Logo element found:', !!logoEl, 'Logo URL:', !!logoUrl);
+    
+    if (logoEl) {
+      if (logoUrl && !logoUrl.startsWith('blob:')) {
+        // Don't use blob URLs - they're temporary
+        if (logoEl.tagName === 'IMG') {
+          logoEl.src = logoUrl;
+          logoEl.alt = business.name || business.business_name || 'Business logo';
+          logoEl.style.display = 'block';
+          logoEl.style.visibility = 'visible';
+          logoEl.style.opacity = '1';
+          logoEl.style.width = 'auto';
+          logoEl.style.height = 'auto';
+          logoEl.style.maxWidth = '200px';
+          logoEl.style.maxHeight = '120px';
+          logoEl.style.borderRadius = '8px';
+          logoEl.style.objectFit = 'contain';
+          console.log('[owner] Logo set on img element:', logoUrl.substring(0, 50) + '...');
+        } else {
+          logoEl.innerHTML = `<img src="${logoUrl}" alt="Business logo" style="max-width: 200px; max-height: 120px; border-radius: 8px; display: block; object-fit: contain;">`;
+          console.log('[owner] Logo HTML set');
+        }
       } else {
-        logoEl.innerHTML = `<img src="${logoUrl}" alt="Business logo" style="max-width: 200px; max-height: 120px; border-radius: 8px; display: block;">`;
-        console.log('[owner] Logo HTML set');
+        // No logo - hide the element or show placeholder
+        if (logoEl.tagName === 'IMG') {
+          logoEl.style.display = 'none';
+        }
+        console.log('[owner] No valid logo URL found. Logo URL:', logoUrl);
+        console.log('[owner] Business object keys:', Object.keys(business));
       }
-    } else if (logoEl) {
-      console.log('[owner] No valid logo URL found. Logo URL:', logoUrl);
-      console.log('[owner] Business object keys:', Object.keys(business));
-      console.log('[owner] Logo element found:', logoEl.tagName, logoEl.id);
+    } else {
+      console.warn('[owner] Logo element not found in DOM');
     } else {
       console.log('[owner] Logo element not found. Tried: biz-logo, logo');
     }

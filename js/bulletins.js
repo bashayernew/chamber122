@@ -560,7 +560,7 @@ function renderBulletins() {
     const isActive = (!startDate || new Date(startDate) <= now) && (!endDate || new Date(endDate) >= now);
 
     return `
-      <div class="bulletin-card" style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;overflow:hidden;transition:all 0.2s ease;height:100%;position:relative;" data-bulletin-id="${bulletin.id}">
+      <div class="bulletin-card" style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;overflow:hidden;transition:all 0.2s ease;height:100%;position:relative;cursor:pointer;" data-bulletin-id="${bulletin.id}">
         <!-- Business Profile Header (TOP) -->
         ${businessName ? `
           <div onclick="event.stopPropagation(); window.location.href='/owner.html?businessId=${businessId || ''}'" style="padding: 12px 16px; background: #0f0f0f; border-bottom: 1px solid #2a2a2a; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#151515'" onmouseout="this.style.background='#0f0f0f'">
