@@ -3,15 +3,394 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Redirecting to Admin Dashboard...</title>
-  <meta http-equiv="refresh" content="0; url=admin-login.html">
-  <script>
-    // Immediate redirect
-    window.location.href = 'admin-login.html';
-  </script>
+  <title>Admin Dashboard | Chamber122</title>
+  <meta name="description" content="Admin dashboard for managing users, MSMEs, events, and bulletins">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/header.css?v=1">
+  <link rel="stylesheet" href="/css/style.css?v=17">
+  <link rel="stylesheet" href="/css/admin.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-  <p>Redirecting to admin login...</p>
-  <p>If you are not redirected automatically, <a href="admin-login.html">click here</a>.</p>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/index.html" class="logo site-logo">
+        <img src="/images/logo.png" alt="Chamber122 Logo">
+      </a>
+      <div class="nav-menu">
+        <a href="/index.html" class="nav-link" data-i18n="nav.home">Home</a>
+        <a href="/directory.html" class="nav-link" data-i18n="nav.directory">Directory</a>
+        <a href="/events.html" class="nav-link" data-i18n="nav.events">Events</a>
+        <a href="/bulletin.html" class="nav-link" data-i18n="nav.bulletin">Bulletin</a>
+        <a href="/about.html" class="nav-link" data-i18n="nav.about">About</a>
+        <a href="/contact.html" class="nav-link" data-i18n="nav.contact">Contact</a>
+      </div>
+      <div class="nav-actions">
+        <span id="auth-slot">
+          <a class="btn" href="/auth.html#login">Login</a>
+          <a class="btn primary" href="/auth.html#signup">Sign Up & Get Listed</a>
+        </span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Admin Dashboard -->
+  <main class="admin-dashboard-container">
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <aside class="admin-sidebar">
+        <div class="admin-sidebar-header">
+          <h2><i class="fas fa-shield-alt"></i> Admin Panel</h2>
+        </div>
+        <nav class="admin-sidebar-nav">
+          <a href="#users" class="admin-nav-item active" data-section="users">
+            <i class="fas fa-users"></i> Users
+          </a>
+          <a href="#msmes" class="admin-nav-item" data-section="msmes">
+            <i class="fas fa-building"></i> MSMEs
+          </a>
+          <a href="#events" class="admin-nav-item" data-section="events">
+            <i class="fas fa-calendar-alt"></i> Events
+          </a>
+          <a href="#bulletins" class="admin-nav-item" data-section="bulletins">
+            <i class="fas fa-bullhorn"></i> Bulletins
+          </a>
+          <a href="#messages" class="admin-nav-item" data-section="messages">
+            <i class="fas fa-envelope"></i> Messages
+          </a>
+          <a href="#documents" class="admin-nav-item" data-section="documents">
+            <i class="fas fa-file-alt"></i> Documents
+          </a>
+          <a href="#settings" class="admin-nav-item" data-section="settings">
+            <i class="fas fa-cog"></i> Settings
+          </a>
+        </nav>
+        <div class="admin-sidebar-footer">
+          <button onclick="adminDashboard.logout()" class="btn-logout">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <div class="admin-content">
+        <!-- Users Section -->
+        <section id="section-users" class="admin-section active">
+          <div class="admin-section-header">
+            <h1><i class="fas fa-users"></i> Users Management</h1>
+            <div class="admin-stats">
+              <div class="stat-card">
+                <div class="stat-value" id="stat-total-users">0</div>
+                <div class="stat-label">Total Users</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="stat-pending-users">0</div>
+                <div class="stat-label">Pending</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="stat-approved-users">0</div>
+                <div class="stat-label">Approved</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="stat-suspended-users">0</div>
+                <div class="stat-label">Suspended</div>
+              </div>
+            </div>
+          </div>
+          <div class="admin-filters">
+            <input type="text" id="users-search" placeholder="Search users by email..." class="admin-search">
+            <select id="users-filter" class="admin-filter">
+              <option value="all">All Users</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="suspended">Suspended</option>
+              <option value="admin">Admins</option>
+            </select>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="users-table-body">
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: 40px; color: #6b7280;">
+                    <i class="fas fa-spinner fa-spin"></i> Loading users...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- MSMEs Section -->
+        <section id="section-msmes" class="admin-section">
+          <div class="admin-section-header">
+            <h1><i class="fas fa-building"></i> MSMEs Management</h1>
+            <div class="admin-stats">
+              <div class="stat-card">
+                <div class="stat-value" id="stat-total-msmes">0</div>
+                <div class="stat-label">Total MSMEs</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="stat-pending-msmes">0</div>
+                <div class="stat-label">Pending</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="stat-approved-msmes">0</div>
+                <div class="stat-label">Approved</div>
+              </div>
+            </div>
+          </div>
+          <div class="admin-filters">
+            <input type="text" id="msmes-search" placeholder="Search MSMEs by name..." class="admin-search">
+            <select id="msmes-filter" class="admin-filter">
+              <option value="all">All MSMEs</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Business Name</th>
+                  <th>Owner</th>
+                  <th>Industry</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="msmes-table-body">
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">
+                    <i class="fas fa-spinner fa-spin"></i> Loading MSMEs...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Events Section -->
+        <section id="section-events" class="admin-section">
+          <div class="admin-section-header">
+            <h1><i class="fas fa-calendar-alt"></i> Events Management</h1>
+            <div class="admin-stats">
+              <div class="stat-card">
+                <div class="stat-value" id="stat-total-events">0</div>
+                <div class="stat-label">Total Events</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="stat-pending-events">0</div>
+                <div class="stat-label">Pending</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="stat-published-events">0</div>
+                <div class="stat-label">Published</div>
+              </div>
+            </div>
+          </div>
+          <div class="admin-filters">
+            <input type="text" id="events-search" placeholder="Search events..." class="admin-search">
+            <select id="events-filter" class="admin-filter">
+              <option value="all">All Events</option>
+              <option value="pending">Pending</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+            </select>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Business</th>
+                  <th>Start Date</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="events-table-body">
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">
+                    <i class="fas fa-spinner fa-spin"></i> Loading events...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Bulletins Section -->
+        <section id="section-bulletins" class="admin-section">
+          <div class="admin-section-header">
+            <h1><i class="fas fa-bullhorn"></i> Bulletins Management</h1>
+            <div class="admin-stats">
+              <div class="stat-card">
+                <div class="stat-value" id="stat-total-bulletins">0</div>
+                <div class="stat-label">Total Bulletins</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="stat-pending-bulletins">0</div>
+                <div class="stat-label">Pending</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="stat-published-bulletins">0</div>
+                <div class="stat-label">Published</div>
+              </div>
+            </div>
+          </div>
+          <div class="admin-filters">
+            <input type="text" id="bulletins-search" placeholder="Search bulletins..." class="admin-search">
+            <select id="bulletins-filter" class="admin-filter">
+              <option value="all">All Bulletins</option>
+              <option value="pending">Pending</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+            </select>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Business</th>
+                  <th>Deadline</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="bulletins-table-body">
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">
+                    <i class="fas fa-spinner fa-spin"></i> Loading bulletins...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Messages Section -->
+        <section id="section-messages" class="admin-section">
+          <div class="admin-section-header">
+            <h1><i class="fas fa-envelope"></i> Messages Management</h1>
+          </div>
+          <div class="admin-filters">
+            <input type="text" id="messages-search" placeholder="Search messages..." class="admin-search">
+            <select id="messages-filter" class="admin-filter">
+              <option value="all">All Messages</option>
+              <option value="admin-to-user">Admin → User</option>
+              <option value="user-to-admin">User → Admin</option>
+              <option value="user-to-user">User → User</option>
+            </select>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Subject</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="messages-table-body">
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: 40px; color: #6b7280;">
+                    <i class="fas fa-spinner fa-spin"></i> Loading messages...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Documents Section -->
+        <section id="section-documents" class="admin-section">
+          <div class="admin-section-header">
+            <h1><i class="fas fa-file-alt"></i> Documents Management</h1>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Document Type</th>
+                  <th>Uploaded</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="documents-table-body">
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: 40px; color: #6b7280;">
+                    No documents uploaded yet.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Settings Section -->
+        <section id="section-settings" class="admin-section">
+          <div class="admin-section-header">
+            <h1><i class="fas fa-cog"></i> Settings</h1>
+          </div>
+          <div class="admin-settings">
+            <div class="settings-card">
+              <h3>System Information</h3>
+              <div class="settings-item">
+                <label>Total Users:</label>
+                <span id="settings-total-users">0</span>
+              </div>
+              <div class="settings-item">
+                <label>Total MSMEs:</label>
+                <span id="settings-total-msmes">0</span>
+              </div>
+              <div class="settings-item">
+                <label>Total Events:</label>
+                <span id="settings-total-events">0</span>
+              </div>
+              <div class="settings-item">
+                <label>Total Bulletins:</label>
+                <span id="settings-total-bulletins">0</span>
+              </div>
+            </div>
+            <div class="settings-card">
+              <h3>Data Management</h3>
+              <button onclick="adminDashboard.exportData()" class="btn-admin">
+                <i class="fas fa-download"></i> Export All Data
+              </button>
+              <button onclick="adminDashboard.clearAllData()" class="btn-admin btn-danger">
+                <i class="fas fa-trash"></i> Clear All Data (Danger)
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script type="module" src="/js/auth-localstorage.js"></script>
+  <script type="module" src="/public/js/header-auth-slot.js"></script>
+  <script type="module" src="/js/admin.js"></script>
 </body>
 </html>

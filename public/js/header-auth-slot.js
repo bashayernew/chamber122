@@ -98,6 +98,7 @@ function renderSignedOut(slot) {
 }
 
 function renderSignedIn(slot, user) {
+  const isAdminUser = user.role === 'admin';
   console.log('[auth-slot] renderSignedIn called with:', { user: user ? user.email : 'none' });
   const name = user.name || user.email || 'Account';
   const avatarUrl = user.avatar_url || '';
@@ -115,6 +116,7 @@ function renderSignedIn(slot, user) {
         ${avatar}<span class="hide-sm">@${(user.email || '').split('@')[0]}</span>
       </button>
       <div id="auth-menu" class="dropdown" style="position:absolute;right:0;top:calc(100% + 6px);display:none;background:var(--ui-1,#101321);border:1px solid var(--border-2,#232744);border-radius:12px;min-width:200px;z-index:1000;padding:8px">
+        ${isAdminUser ? `<a class="btn" style="width:100%;margin:4px 0;background:#f2c64b20;color:#f2c64b;border:1px solid #f2c64b;" href="/admin.html"><i class="fas fa-shield-alt"></i> Admin Dashboard</a>` : ''}
         <a class="btn" style="width:100%;margin:4px 0" href="/registrations.html">Registrations</a>
         <a class="btn" style="width:100%;margin:4px 0;display:flex;justify-content:space-between;align-items:center;" href="/inbox.html">
           <span><i class="fas fa-inbox"></i> Inbox</span>

@@ -67,6 +67,29 @@ export function getCurrentSession() {
   }
 }
 
+// Ensure admin account exists (called on module load)
+function ensureAdminAccount() {
+  const users = getAllUsers();
+  const adminExists = users.some(u => u.role === 'admin');
+  
+  if (!adminExists) {
+    const adminUser = {
+      id: generateId(),
+      email: 'admin@admin.com',
+      password: 'admin123',
+      role: 'admin',
+      status: 'approved',
+      created_at: new Date().toISOString()
+    };
+    users.push(adminUser);
+    saveUsers(users);
+    console.log('[auth] Auto-created admin account: admin@admin.com / admin123');
+  }
+}
+
+// Initialize admin account check
+ensureAdminAccount();
+
 // Get current user
 export function getCurrentUser() {
   const session = getCurrentSession();
