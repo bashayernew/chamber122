@@ -53,22 +53,34 @@ function initials(name) {
 // Count unread messages for the current user
 function getUnreadMessageCount(userId) {
   try {
-    const inboxMessages = JSON.parse(localStorage.getItem('ch122_inbox_messages') || '[]');
+    let unreadCount = 0;
     
-    // Filter messages for this user
+    // Count admin messages
+    const inboxMessages = JSON.parse(localStorage.getItem('ch122_inbox_messages') || '[]');
     const userMessages = inboxMessages.filter(m => 
       (m.toUserId === userId || m.user_id === userId) && m.from === 'admin'
     );
     
-    // Count unread messages (messages without read_at timestamp)
-    const unreadCount = userMessages.filter(m => {
+    const adminUnread = userMessages.filter(m => {
       const hasReadAt = m.read_at && m.read_at.trim() !== '';
       const isExplicitlyUnread = m.unread === true;
       const isNotExplicitlyRead = m.unread !== false;
       
-      // Message is unread if it doesn't have read_at timestamp
       return !hasReadAt && (isExplicitlyUnread || isNotExplicitlyRead);
     }).length;
+    unreadCount += adminUnread;
+    
+    // Count user-to-user messages
+    try {
+      const userMessages = JSON.parse(localStorage.getItem('ch122_user_messages') || '[]');
+      const userUnread = userMessages.filter(m => 
+        m.toUserId === userId && 
+        (!m.read_at || m.unread === true)
+      ).length;
+      unreadCount += userUnread;
+    } catch (err) {
+      console.warn('[header-auth-slot] Error counting user messages:', err);
+    }
     
     return unreadCount;
   } catch (error) {
