@@ -191,15 +191,9 @@ function escapeHtml(text) {
 // Download attachment (generates signed URL)
 async function downloadAttachment(attachmentPath) {
   try {
-    const supabase = await getSupabase();
-    const { data, error } = await supabase.storage
-      .from('bulletin-attachments')
-      .createSignedUrl(attachmentPath, 3600); // 1 hour expiry
-
-    if (error) throw error;
-
-    // Open in new tab
-    window.open(data.signedUrl, '_blank');
+    // Try to get from API or localStorage
+    console.warn('[bulletin] Attachment download not available without backend');
+    alert('Attachment download requires backend server. Please contact support.');
   } catch (error) {
     console.error('Error downloading attachment:', error);
     showError('Failed to download attachment. Please try again.');
@@ -234,13 +228,6 @@ function showLoading() {
       </div>
     `;
   }
-}
-
-// Escape HTML to prevent XSS
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 // Download attachment (generates signed URL)

@@ -229,12 +229,57 @@ async function displayNewestMSMEs() {
   try {
     // Fetch businesses from API
     const response = await fetch('/api/businesses/public');
-    const data = await response.json();
     
     let businesses = [];
-    if (data.ok && data.businesses) {
-      businesses = data.businesses;
-      console.log(`[main] Loaded ${businesses.length} businesses for newest section`);
+    
+    // Check if response is OK before parsing JSON
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.warn('[main] API endpoint not available (404), using localStorage fallback');
+        // Try localStorage fallback
+        try {
+          const stored = localStorage.getItem('chamber122_businesses');
+          if (stored) {
+            businesses = JSON.parse(stored);
+            console.log(`[main] Loaded ${businesses.length} businesses from localStorage`);
+          } else {
+            // Try getting from users in localStorage
+            const users = JSON.parse(localStorage.getItem('chamber122_users') || '[]');
+            businesses = users
+              .filter(u => (u.status === 'approved' || !u.status) && u.business_name)
+              .map(u => ({
+                id: u.id,
+                name: u.business_name,
+                description: u.description || '',
+                category: u.industry || u.category || 'Other',
+                status: 'approved'
+              }));
+            console.log(`[main] Loaded ${businesses.length} businesses from users in localStorage`);
+          }
+        } catch (e) {
+          console.warn('[main] Error reading from localStorage:', e);
+          businesses = [];
+        }
+      } else {
+        throw new Error(`HTTP ${response.status}`);
+      }
+    } else {
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Response is not JSON');
+      }
+      
+      const data = await response.json();
+      if (data.ok && data.businesses) {
+        businesses = data.businesses;
+        // Store in localStorage for fallback
+        try {
+          localStorage.setItem('chamber122_businesses', JSON.stringify(businesses));
+        } catch (e) {
+          console.warn('[main] Could not store in localStorage:', e);
+        }
+        console.log(`[main] Loaded ${businesses.length} businesses for newest section`);
+      }
     }
     
     // Get the 4 most recent businesses

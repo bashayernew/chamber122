@@ -671,13 +671,38 @@ async function loadBulletins() {
   try {
     const result = await getPublicBulletins();
     bulletins = Array.isArray(result) ? result : (result?.bulletins || []);
+    
+    // Store in localStorage for fallback
+    if (bulletins.length > 0) {
+      try {
+        localStorage.setItem('chamber122_bulletins', JSON.stringify(bulletins));
+      } catch (e) {
+        console.warn('[bulletins] Could not store in localStorage:', e);
+      }
+    }
+    
     filteredBulletins = [];
     filterBulletins(); // Apply filters and render
   } catch (error) {
     console.error('[bulletins] Error loading bulletins:', error);
+    
+    // Try localStorage fallback
+    try {
+      const stored = localStorage.getItem('chamber122_bulletins');
+      if (stored) {
+        bulletins = JSON.parse(stored);
+        console.log(`[bulletins] Loaded ${bulletins.length} bulletins from localStorage fallback`);
+        filteredBulletins = [];
+        filterBulletins(); // Apply filters and render
+        return;
+      }
+    } catch (e) {
+      console.warn('[bulletins] Error reading from localStorage:', e);
+    }
+    
     const container = document.getElementById('bulletin-grid');
     if (container) {
-      container.innerHTML = '<div class="no-bulletins" style="text-align:center;padding:40px;color:#a0a0a0;">Failed to load bulletins. Please try again later.</div>';
+      container.innerHTML = '<div class="no-bulletins" style="text-align:center;padding:40px;color:#a0a0a0;">No bulletins available. Be the first to post one!</div>';
     }
   }
 }
