@@ -906,13 +906,206 @@
       }
     }
 
+    // Show user chat interface
+    async function showUserChat(messagesId) {
+      try {
+        const cache = window.userMessagesCache && window.userMessagesCache[messagesId];
+        if (!cache) {
+          console.warn('[inbox] Chat cache not found for:', messagesId);
+          return;
+        }
+        
+        const { messages, userId, userName, userLogo } = cache;
+        const user = await getCurrentUser();
+        if (!user) return;
+        
+        // Update chat header
+        const headerAvatar = document.getElementById('chat-header-avatar');
+        const headerInitial = document.getElementById('chat-header-initial');
+        const headerName = document.getElementById('chat-header-name');
+        
+        if (headerAvatar && headerInitial) {
+          if (userLogo) {
+            headerAvatar.innerHTML = `<img src="${userLogo}" alt="${userName}">`;
+          } else {
+            headerInitial.textContent = userName.charAt(0).toUpperCase();
+            headerAvatar.innerHTML = `<span>${userName.charAt(0).toUpperCase()}</span>`;
+          }
+        }
+        if (headerName) {
+          headerName.textContent = userName;
+        }
+        
+        // Show chat input
+        const chatInputContainer = document.getElementById('chat-input-container');
+        if (chatInputContainer) {
+          chatInputContainer.style.display = 'flex';
+          chatInputContainer.setAttribute('data-chat-user-id', userId);
+        }
+        
+        // Render messages in chat format
+        const detailContent = document.getElementById('message-detail-content');
+        if (!detailContent) return;
+        
+        // Sort messages by date (oldest first for chat)
+        const sortedMessages = [...messages].sort((a, b) => {
+          const dateA = new Date(a.created_at || 0);
+          const dateB = new Date(b.created_at || 0);
+          return dateA - dateB;
+        });
+        
+        // Mark messages as read
+        const { markMessageAsRead } = await import('/js/messaging.js');
+        sortedMessages.forEach(msg => {
+          if (msg.toUserId === user.id && !msg.read_at) {
+            markMessageAsRead(msg.id);
+          }
+        });
+        
+        // Render chat messages
+        if (sortedMessages.length === 0) {
+          detailContent.innerHTML = `
+            <div style="text-align: center; color: #6b7280; padding: 40px;">
+              <i class="fas fa-comments" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+              <p>No messages yet. Start the conversation!</p>
+            </div>
+          `;
+        } else {
+          detailContent.innerHTML = sortedMessages.map(msg => {
+            const isSent = msg.fromUserId === user.id;
+            const messageTime = formatTime(msg.created_at);
+            const messageBody = msg.body || msg.subject || '';
+            
+            return `
+              <div class="chat-message ${isSent ? 'sent' : 'received'}">
+                <div class="chat-message-bubble">
+                  ${escapeHtml(messageBody)}
+                  <div class="chat-message-time">${messageTime}</div>
+                </div>
+              </div>
+            `;
+          }).join('');
+          
+          // Scroll to bottom
+          detailContent.scrollTop = detailContent.scrollHeight;
+        }
+        
+        // Show chat view
+        const detailContainer = document.getElementById('message-detail');
+        if (detailContainer) {
+          detailContainer.style.display = 'block';
+        }
+        
+        // Reload conversations to update unread count
+        loadConversations();
+      } catch (err) {
+        console.error('[inbox] Error showing user chat:', err);
+      }
+    }
+    
+    // Send chat message
+    async function sendChatMessage() {
+      const chatInput = document.getElementById('chat-input');
+      const chatInputContainer = document.getElementById('chat-input-container');
+      const sendBtn = document.getElementById('chat-send-btn');
+      
+      if (!chatInput || !chatInputContainer || !sendBtn) return;
+      
+      const messageText = chatInput.value.trim();
+      if (!messageText) return;
+      
+      const toUserId = chatInputContainer.getAttribute('data-chat-user-id');
+      if (!toUserId) {
+        alert('Unable to send message. Please refresh the page.');
+        return;
+      }
+      
+      try {
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        const { sendMessage } = await import('/js/messaging.js');
+        await sendMessage(toUserId, 'Message', messageText);
+        
+        // Clear input
+        chatInput.value = '';
+        
+        // Reload chat to show new message
+        const messagesId = Object.keys(window.userMessagesCache || {}).find(id => {
+          return window.userMessagesCache[id].userId === toUserId;
+        });
+        if (messagesId) {
+          // Reload messages from localStorage
+          const { getMessagesForUser } = await import('/js/messaging.js');
+          const user = await getCurrentUser();
+          const allMessages = getMessagesForUser(user.id);
+          const conversationMessages = allMessages.filter(m => 
+            (m.fromUserId === user.id && m.toUserId === toUserId) ||
+            (m.fromUserId === toUserId && m.toUserId === user.id)
+          );
+          
+          window.userMessagesCache[messagesId].messages = conversationMessages;
+          await showUserChat(messagesId);
+        }
+        
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+      } catch (err) {
+        console.error('[inbox] Error sending message:', err);
+        alert('Failed to send message: ' + (err.message || 'Please try again'));
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+      }
+    }
+    
+    // Check URL for chat parameter
+    function checkUrlForChat() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const chatUserId = urlParams.get('chat');
+      if (chatUserId) {
+        // Find conversation for this user
+        setTimeout(() => {
+          const conversations = document.querySelectorAll('.conversation-item[data-user-id]');
+          for (const conv of conversations) {
+            if (conv.getAttribute('data-user-id') === chatUserId) {
+              const messagesId = conv.getAttribute('data-messages-id');
+              if (messagesId) {
+                showUserChat(messagesId);
+                break;
+              }
+            }
+          }
+        }, 500);
+      }
+    }
+
     window.showAdminMessageDetail = showAdminMessageDetail;
     window.showAdminMessageDetailFromDataId = showAdminMessageDetailFromDataId;
     window.showAdminMessageDetailFromClick = showAdminMessageDetailFromClick;
     window.hideMessageDetail = hideMessageDetail;
+    window.showUserChat = showUserChat;
+    window.sendChatMessage = sendChatMessage;
 
     document.addEventListener('DOMContentLoaded', () => {
       loadConversations();
+      checkUrlForChat();
+      
+      // Handle Enter key in chat input
+      const chatInput = document.getElementById('chat-input');
+      if (chatInput) {
+        chatInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendChatMessage();
+          }
+        });
+        
+        // Auto-resize textarea
+        chatInput.addEventListener('input', () => {
+          chatInput.style.height = 'auto';
+          chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+        });
+      }
     });
   </script>
 </body>
