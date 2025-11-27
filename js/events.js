@@ -59,7 +59,7 @@ async function loadEvents() {
       return;
     }
 
-    console.log('[events] loaded', data?.length || 0, 'items');
+    console.log('[events] loaded', (data && data.length) ? data.length : 0, 'items');
     if (data && data.length > 0) {
       console.log('[events] First event:', data[0]);
     }
@@ -247,7 +247,7 @@ function setupEventListeners() {
   const previewImg = qs('#event-image-preview-img');
   if (fileInput && previewContainer && previewImg) {
     fileInput.addEventListener('change', (e) => {
-      const file = e.target.files?.[0];
+      const file = e.target.files && e.target.files.length > 0 ? e.target.files[0] : null;
       if (file) {
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -283,7 +283,7 @@ function setupEventListeners() {
     const editId = form.dataset.editId || new URLSearchParams(window.location.search).get('edit');
     const isEditMode = !!editId;
     
-    if (fileInput?.files?.[0]) {
+    if (fileInput && fileInput.files && fileInput.files.length > 0) {
       try {
         const { uploadFile } = await import('./api.js');
         const uploadResult = await uploadFile(fileInput.files[0], 'event_image');
@@ -486,9 +486,12 @@ window.showEventDetails = async function(eventId) {
     const submitBtn = modal.querySelector('#submit-registration');
     if (submitBtn) {
       submitBtn.addEventListener('click', async () => {
-        const name = modal.querySelector('#reg-name')?.value?.trim();
-        const email = modal.querySelector('#reg-email')?.value?.trim();
-        const phone = modal.querySelector('#reg-phone')?.value?.trim();
+        const nameEl = modal.querySelector('#reg-name');
+        const emailEl = modal.querySelector('#reg-email');
+        const phoneEl = modal.querySelector('#reg-phone');
+        const name = nameEl && nameEl.value ? nameEl.value.trim() : '';
+        const email = emailEl && emailEl.value ? emailEl.value.trim() : '';
+        const phone = phoneEl && phoneEl.value ? phoneEl.value.trim() : '';
 
         if (!name || !email) {
           alert('Name and email are required');
