@@ -221,8 +221,23 @@ export async function getPublicBulletins() {
   try {
     const stored = localStorage.getItem('chamber122_bulletins');
     const bulletins = stored ? JSON.parse(stored) : [];
-    return bulletins.filter(b => b.status === 'published' || b.is_published);
+    // Filter published bulletins, but also include those without explicit status (for backwards compatibility)
+    const published = bulletins.filter(b => {
+      // If status is explicitly set, check it
+      if (b.status !== undefined) {
+        return b.status === 'published';
+      }
+      // If is_published is set, check it
+      if (b.is_published !== undefined) {
+        return b.is_published === true;
+      }
+      // If neither is set, assume published (for backwards compatibility)
+      return true;
+    });
+    console.log('[api] getPublicBulletins: Total:', bulletins.length, 'Published:', published.length);
+    return published;
   } catch (e) {
+    console.error('[api] Error loading bulletins:', e);
     return [];
   }
 }
@@ -231,22 +246,28 @@ export async function getPublicBulletins() {
 export async function createBulletin(bulletinData) {
   const user = requireAuth();
   try {
+    // Get user's business
+    const { getBusinessByOwner } = await import('./auth-localstorage.js');
+    const business = getBusinessByOwner(user.id);
+    
     const stored = localStorage.getItem('chamber122_bulletins');
     const bulletins = stored ? JSON.parse(stored) : [];
     
     const bulletin = {
       id: generateId(),
       owner_id: user.id,
-      business_id: user.business ? user.business.id : null,
-      business_name: user.business ? user.business.name : null,
+      business_id: business ? business.id : (bulletinData.business_id || null),
+      business_name: business ? (business.name || business.business_name) : (bulletinData.business_name || null),
       ...bulletinData,
-      status: 'published',
-      is_published: true,
+      status: bulletinData.status || 'published',
+      is_published: bulletinData.is_published !== undefined ? bulletinData.is_published : true,
       created_at: new Date().toISOString()
     };
     
     bulletins.push(bulletin);
-    localStorage.setItem('chamber122_bulletins', JSON.stringify(bulletin));
+    // CRITICAL FIX: Save the entire array, not just the single bulletin!
+    localStorage.setItem('chamber122_bulletins', JSON.stringify(bulletins));
+    console.log('[api] Created bulletin:', bulletin.id, 'Total bulletins:', bulletins.length);
     return { bulletin: bulletin };
   } catch (e) {
     throw new Error('Failed to create bulletin: ' + e.message);

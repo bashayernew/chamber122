@@ -224,8 +224,10 @@ async function onSubmit(e) {
     // Create bulletin data
     const bulletinData = {
       type: 'bulletin',
-      title,
-      description: body,
+      title: title,
+      body: body, // Also include body for compatibility
+      description: body, // Some places use description
+      content: body, // Some places use content
       location: null,
       start_at: start_at,
       end_at: end_at,
@@ -233,12 +235,13 @@ async function onSubmit(e) {
       contact_email: null,
       contact_phone: null,
       link: link_url,
-      status,
+      url: link_url, // Also include url for compatibility
+      status: status || 'published',
       is_published: status === 'published',
       cover_image_url: cover_image_url,
       business_id: businessId,
       category: category,
-      pinned: pinned
+      pinned: pinned || false
     };
 
     // Create bulletin using localStorage

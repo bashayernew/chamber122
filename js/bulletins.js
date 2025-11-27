@@ -686,16 +686,14 @@ async function loadBulletins() {
   } catch (error) {
     console.error('[bulletins] Error loading bulletins:', error);
     
-    // Try localStorage fallback
+    // Use localStorage directly (no API)
     try {
-      const stored = localStorage.getItem('chamber122_bulletins');
-      if (stored) {
-        bulletins = JSON.parse(stored);
-        console.log(`[bulletins] Loaded ${bulletins.length} bulletins from localStorage fallback`);
-        filteredBulletins = [];
-        filterBulletins(); // Apply filters and render
-        return;
-      }
+      const { getPublicBulletins } = await import('./api.js');
+      bulletins = await getPublicBulletins();
+      console.log(`[bulletins] Loaded ${bulletins.length} bulletins from localStorage`);
+      filteredBulletins = [];
+      filterBulletins(); // Apply filters and render
+      return;
     } catch (e) {
       console.warn('[bulletins] Error reading from localStorage:', e);
     }
