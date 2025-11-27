@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="/css/header.css?v=1">
   <script type="module" src="/public/js/header-auth-slot.js"></script>
   <link rel="stylesheet" href="/css/style.css?v=17">
-  <link rel="stylesheet" href="/css/responsive-enhancements.css">
+  <link rel="stylesheet" href="css/responsive-enhancements.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free@6.0.0/css/all.min.css" crossorigin="anonymous">
 </head>
@@ -297,7 +297,7 @@
   </div>
 
   <!-- Page-specific logic -->
-  <script src="js/main.js?v=7"></script>
+  <script type="module" src="js/main.js?v=7"></script>
   <script type="module" src="js/language-switcher.js"></script>
   <script type="module" src="./js/i18n.js"></script>
   <!-- <script type="module" src="js/config.js"></script> --> <!-- Config file not needed -->
@@ -345,13 +345,16 @@
         const cardsContainer = featuredContainer.querySelector('.featured-carousel');
         if (!cardsContainer) return;
 
-        // Fetch businesses from API
-        const response = await fetch('/api/businesses/public');
-        const data = await response.json();
+        // Load businesses from localStorage
+        const { getPublicBusinesses } = await import('/js/api.js');
+        const data = await getPublicBusinesses();
         
         let businesses = [];
-        if (data.ok && data.businesses) {
+        if (data && data.ok && data.businesses) {
           businesses = data.businesses;
+          console.log(`[home] Loaded ${businesses.length} businesses for featured section`);
+        } else if (data && Array.isArray(data)) {
+          businesses = data;
           console.log(`[home] Loaded ${businesses.length} businesses for featured section`);
         }
 

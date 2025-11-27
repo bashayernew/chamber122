@@ -1,18 +1,15 @@
-// assets/js/bulletins-public.js - Using backend API instead of Supabase
+// assets/js/bulletins-public.js - Using localStorage instead of API
 
 export async function loadPublicBulletins(limit = 12) {
   try {
     console.log('[bulletins-public] Loading bulletins...');
     
-    const res = await fetch('/api/bulletins');
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
-    }
-    
-    const { bulletins } = await res.json();
+    // Load bulletins from localStorage
+    const { getPublicBulletins } = await import('/js/api.js');
+    const bulletins = await getPublicBulletins();
     
     // Transform and filter out fake/incomplete bulletins
-    const filtered = (bulletins || [])
+    const filtered = (Array.isArray(bulletins) ? bulletins : [])
       .filter(b => {
         // Check for valid title and body
         if (!b.title || !b.body) return false;
