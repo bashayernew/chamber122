@@ -80,42 +80,28 @@ async function loadAndDisplayBusiness(businessId = null) {
     }
     
     // Status badge - ensure it shows the correct status
-    // Check both business status and user status from localStorage
+    // Check user status directly from localStorage users array
     const statusBadge = $('status-badge');
     if (statusBadge) {
       let status = (business.status || 'pending').toLowerCase();
       
-      // Also check user status from localStorage (admin dashboard state)
+      // Check user status directly from users array
       try {
         const user = getCurrentUser();
         if (user && user.id) {
-          const stateKey = 'chamber_admin_dashboard_state';
-          const stateStr = localStorage.getItem(stateKey);
-          const state = stateStr ? JSON.parse(stateStr) : {};
-          const userStatus = state.userStatuses && state.userStatuses[user.id] ? state.userStatuses[user.id] : null;
-          if (userStatus) {
-            status = userStatus.toLowerCase();
-            console.log('[owner] Using status from admin dashboard state:', status);
-          } else {
-            // Also check from users array
-            try {
-              const { getAllUsers } = await import('./auth-localstorage.js');
-              const users = getAllUsers();
-              const userData = users.find(u => u.id === user.id);
-              if (userData && userData.status) {
-                status = userData.status.toLowerCase();
-                console.log('[owner] Using status from users array:', status);
-              } else if (userData) {
-                // Default to pending if no status
-                status = 'pending';
-              }
-            } catch (err) {
-              console.debug('[owner] Could not check users array:', err);
-            }
+          const { getAllUsers } = await import('./auth-localstorage.js');
+          const users = getAllUsers();
+          const userData = users.find(u => u.id === user.id);
+          if (userData && userData.status) {
+            status = userData.status.toLowerCase();
+            console.log('[owner] Using status from user data:', status);
+          } else if (userData) {
+            // Default to pending if no status
+            status = 'pending';
           }
         }
       } catch (err) {
-        console.debug('[owner] Could not check user status from localStorage:', err);
+        console.debug('[owner] Could not check user status:', err);
       }
       
       // Set text content and styling based on status

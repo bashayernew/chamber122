@@ -142,6 +142,9 @@ const adminDashboard = {
       case 'messages':
         this.loadMessages();
         break;
+      case 'groups':
+        this.loadGroups();
+        break;
       case 'communities':
         this.loadCommunities();
         break;
@@ -817,6 +820,230 @@ const adminDashboard = {
   viewMessage(messageId) {
     // Open inbox with message
     window.location.href = `/inbox.html`;
+  },
+  
+  // Groups Management
+  async loadGroups() {
+    try {
+      const container = document.getElementById('groups-container');
+      if (!container) {
+        console.error('[admin] Groups container not found');
+        return;
+      }
+
+      container.innerHTML = '<div style="text-align: center; padding: 40px; color: #6b7280;"><i class="fas fa-spinner fa-spin"></i> Loading groups...</div>';
+
+      // Import messaging functions
+      const { getAllGroups, getGroupMessages } = await import('./messaging.js');
+      const groups = getAllGroups();
+      const users = getAllUsers();
+      
+      // Update stats
+      const total = groups.length;
+      const active = groups.filter(g => !g.status || g.status === 'active').length;
+      const suspended = groups.filter(g => g.status === 'suspended').length;
+      
+      document.getElementById('stat-total-groups').textContent = total;
+      document.getElementById('stat-active-groups').textContent = active;
+      document.getElementById('stat-suspended-groups').textContent = suspended;
+      
+      // Apply filters
+      const searchTerm = document.getElementById('groups-search')?.value.toLowerCase() || '';
+      const statusFilter = document.getElementById('groups-filter')?.value || 'all';
+      
+      let filtered = groups;
+      
+      if (searchTerm) {
+        filtered = filtered.filter(g => 
+          g.name.toLowerCase().includes(searchTerm)
+        );
+      }
+      
+      if (statusFilter !== 'all') {
+        filtered = filtered.filter(g => {
+          const groupStatus = g.status || 'active';
+          return groupStatus === statusFilter;
+        });
+      }
+      
+      if (filtered.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #6b7280;">No groups found.</div>';
+        return;
+      }
+      
+      // Render groups
+      container.innerHTML = filtered.map(group => {
+        const creator = users.find(u => u.id === group.creatorId);
+        const creatorName = creator ? (creator.name || creator.email) : 'Unknown';
+        const createdDate = group.created_at ? new Date(group.created_at).toLocaleDateString() : 'N/A';
+        const memberCount = group.memberIds ? group.memberIds.length : 0;
+        const statusClass = (group.status || 'active') === 'active' ? 'status-approved' : 'status-suspended';
+        const groupMessages = getGroupMessages(group.id);
+        const messageCount = groupMessages.length;
+        
+        return `
+          <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+              <div style="flex: 1;">
+                <h3 style="color: #fff; font-size: 1.2rem; margin: 0 0 8px 0;">${this.escapeHtml(group.name)}</h3>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;">
+                  <span class="status-badge ${statusClass}">${group.status || 'active'}</span>
+                </div>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #2a2a2a; font-size: 14px; color: #6b7280;">
+              <div><strong>Creator:</strong> ${this.escapeHtml(creatorName)}</div>
+              <div><strong>Members:</strong> ${memberCount}</div>
+              <div><strong>Messages:</strong> ${messageCount}</div>
+              <div><strong>Created:</strong> ${createdDate}</div>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 20px; padding-top: 20px; border-top: 1px solid #2a2a2a;">
+              <button onclick="adminDashboard.viewGroupMessages('${group.id}')" class="btn-action btn-view" style="padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; background: #3b82f6; color: #fff; font-size: 14px; font-weight: 600;">
+                <i class="fas fa-comments"></i> View Messages
+              </button>
+              ${(group.status || 'active') === 'active' ? 
+                `<button onclick="adminDashboard.suspendGroup('${group.id}')" class="btn-action btn-suspend" style="padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; background: #ef4444; color: #fff; font-size: 14px; font-weight: 600;">
+                  <i class="fas fa-ban"></i> Suspend
+                </button>` :
+                `<button onclick="adminDashboard.activateGroup('${group.id}')" class="btn-action btn-approve" style="padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; background: #10b981; color: #fff; font-size: 14px; font-weight: 600;">
+                  <i class="fas fa-check"></i> Activate
+                </button>`
+              }
+            </div>
+          </div>
+        `;
+      }).join('');
+    } catch (error) {
+      console.error('[admin] Error loading groups:', error);
+      const container = document.getElementById('groups-container');
+      if (container) {
+        container.innerHTML = `<div style="text-align: center; padding: 40px; color: #ef4444;">Error loading groups: ${error.message}</div>`;
+      }
+    }
+  },
+  
+  async viewGroupMessages(groupId) {
+    try {
+      const { getAllGroups, getGroupMessages } = await import('./messaging.js');
+      const { getAllUsers } = await import('./auth-localstorage.js');
+      const groups = getAllGroups();
+      const group = groups.find(g => g.id === groupId);
+      
+      if (!group) {
+        alert('Group not found');
+        return;
+      }
+      
+      const messages = getGroupMessages(groupId);
+      const users = getAllUsers();
+      
+      // Sort messages by date
+      messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      
+      let messageHtml = messages.map(msg => {
+        const sender = users.find(u => u.id === msg.fromUserId);
+        const senderName = sender ? (sender.name || sender.email) : 'Unknown';
+        const date = msg.created_at ? new Date(msg.created_at).toLocaleString() : 'N/A';
+        const isImage = msg.image_url || (msg.body && msg.body.startsWith('data:image'));
+        const isLocation = msg.location;
+        const imageUrl = msg.image_url || (msg.body && msg.body.startsWith('data:image') ? msg.body : null);
+        const textBody = isImage && imageUrl === msg.body ? '' : msg.body;
+        
+        return `
+          <div style="padding: 16px; border-bottom: 1px solid #2a2a2a;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <strong style="color: #fff;">${this.escapeHtml(senderName)}</strong>
+              <span style="color: #6b7280; font-size: 12px;">${date}</span>
+            </div>
+            ${imageUrl ? 
+              `<img src="${this.escapeHtml(imageUrl)}" style="max-width: 300px; max-height: 300px; border-radius: 8px; margin-bottom: 8px; display: block; cursor: pointer;" onclick="window.open('${this.escapeHtml(imageUrl)}', '_blank')" />` :
+              ''
+            }
+            ${isLocation ? 
+              `<div style="margin-bottom: 8px;">
+                <a href="https://www.google.com/maps?q=${this.escapeHtml(msg.location.lat)},${this.escapeHtml(msg.location.lng)}" target="_blank" style="color: #0095f6; text-decoration: none; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(255,255,255,0.1); border-radius: 6px;">
+                  <i class="fas fa-map-marker-alt"></i> <span>View Location on Map</span>
+                </a>
+              </div>` :
+              ''
+            }
+            ${textBody ? `<div style="color: #a8a8a8; white-space: pre-wrap;">${this.escapeHtml(textBody)}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+      
+      if (messages.length === 0) {
+        messageHtml = '<div style="text-align: center; padding: 40px; color: #6b7280;">No messages in this group yet.</div>';
+      }
+      
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;';
+      modal.innerHTML = `
+        <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; max-width: 800px; width: 100%; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column;">
+          <div style="padding: 24px; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="color: #fff; margin: 0;">Messages in "${this.escapeHtml(group.name)}"</h2>
+            <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="background: #2a2a2a; color: #fff; border: none; border-radius: 8px; width: 32px; height: 32px; cursor: pointer; font-size: 18px;">×</button>
+          </div>
+          <div style="overflow-y: auto; padding: 20px; flex: 1;">
+            ${messageHtml}
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    } catch (error) {
+      console.error('[admin] Error viewing group messages:', error);
+      alert('Error loading group messages: ' + error.message);
+    }
+  },
+  
+  async suspendGroup(groupId) {
+    if (!confirm('Suspend this group? Members will not be able to send messages.')) return;
+    
+    try {
+      const { getAllGroups, saveGroups } = await import('./messaging.js');
+      const groups = getAllGroups();
+      const group = groups.find(g => g.id === groupId);
+      
+      if (!group) {
+        alert('Group not found');
+        return;
+      }
+      
+      group.status = 'suspended';
+      group.updated_at = new Date().toISOString();
+      saveGroups(groups);
+      
+      alert('Group suspended successfully');
+      this.loadGroups();
+    } catch (error) {
+      console.error('[admin] Error suspending group:', error);
+      alert('Error suspending group: ' + error.message);
+    }
+  },
+  
+  async activateGroup(groupId) {
+    if (!confirm('Activate this group?')) return;
+    
+    try {
+      const { getAllGroups, saveGroups } = await import('./messaging.js');
+      const groups = getAllGroups();
+      const group = groups.find(g => g.id === groupId);
+      
+      if (!group) {
+        alert('Group not found');
+        return;
+      }
+      
+      group.status = 'active';
+      group.updated_at = new Date().toISOString();
+      saveGroups(groups);
+      
+      alert('Group activated successfully');
+      this.loadGroups();
+    } catch (error) {
+      console.error('[admin] Error activating group:', error);
+      alert('Error activating group: ' + error.message);
+    }
   },
   
   // Communities Management

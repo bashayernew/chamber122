@@ -207,6 +207,14 @@ export function getAllGroups() {
   }
 }
 
+export function saveGroups(groups) {
+  try {
+    localStorage.setItem(STORAGE_KEY_GROUPS, JSON.stringify(groups));
+  } catch (e) {
+    console.error('[messaging] Error saving groups:', e);
+  }
+}
+
 // Save groups to localStorage
 function saveGroups(groups) {
   try {
