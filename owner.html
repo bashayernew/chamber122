@@ -382,9 +382,26 @@
             // Get business owner ID from the business we're viewing
             // Get business from localStorage
             const { getBusinessById: getBusinessByIdFromAuth } = await import('/js/auth-localstorage.js');
+            const { sendMessage } = await import('/js/messaging.js');
+            const { getAllUsers } = await import('/js/auth-localstorage.js');
             const business = getBusinessByIdFromAuth(ownerId);
             if (business && business.owner_id) {
-              window.location.href = `/chat.html?userId=${business.owner_id}`;
+              // Show message modal
+              const subject = prompt('Enter message subject:', `Message about ${business.name || business.business_name || 'your business'}`);
+              if (subject) {
+                const body = prompt('Enter your message:');
+                if (body) {
+                  try {
+                    await sendMessage(business.owner_id, subject, body);
+                    alert('Message sent successfully!');
+                    // Optionally redirect to inbox
+                    window.location.href = '/inbox.html';
+                  } catch (err) {
+                    console.error('[owner] Error sending message:', err);
+                    alert('Error sending message: ' + (err.message || 'Please try again'));
+                  }
+                }
+              }
             } else {
               alert('Unable to start conversation. Please try again.');
             }

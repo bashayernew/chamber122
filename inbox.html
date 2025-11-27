@@ -228,7 +228,36 @@
           return;
         }
 
-        // Load backend conversations
+        // Load user-to-user messages from localStorage
+        let userConversations = [];
+        try {
+          const { getConversationsForUser, getAllUsers } = await import('/js/messaging.js');
+          const conversations = getConversationsForUser(user.id);
+          const allUsers = getAllUsers();
+          
+          userConversations = conversations.map(conv => {
+            const otherUser = allUsers.find(u => u.id === conv.userId);
+            return {
+              id: `user-${conv.userId}`,
+              other_participant: {
+                name: conv.userName || otherUser?.email || 'Unknown User',
+                email: conv.userEmail || otherUser?.email || '',
+                logo_url: '',
+                business_id: null,
+                userId: conv.userId
+              },
+              last_message: conv.lastMessage?.body || conv.lastMessage?.subject || 'No messages yet',
+              last_message_at: conv.lastMessageTime || new Date().toISOString(),
+              unread_count: conv.unreadCount || 0,
+              messages: conv.messages
+            };
+          });
+          console.log('[inbox] Loaded user conversations:', userConversations.length);
+        } catch (err) {
+          console.warn('[inbox] Could not load user conversations:', err);
+        }
+
+        // Load backend conversations (for compatibility)
         let backendConversations = [];
         try {
           const token = localStorage.getItem('session_token');
@@ -246,6 +275,9 @@
         } catch (err) {
           console.warn('[inbox] Could not load backend conversations:', err);
         }
+        
+        // Combine user conversations with backend conversations
+        backendConversations = [...userConversations, ...backendConversations];
 
         // Load admin messages from localStorage (both old and new format)
         let adminMessages = [];
@@ -397,6 +429,29 @@
             <div class="conversation-item" data-messages-id="${messagesId}" onclick="showAdminMessageDetailFromDataId('${messagesId}')">
               <div class="conversation-avatar">
                 <span>A</span>
+              </div>
+              <div class="conversation-content">
+                <div class="conversation-name">${escapeHtml(name)}</div>
+                <div class="conversation-preview">${escapeHtml(lastMessage)}</div>
+              </div>
+              <div class="conversation-meta">
+                ${lastMessageTime ? `<div class="conversation-time">${lastMessageTime}</div>` : ''}
+                ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+              </div>
+            </div>
+          `;
+        }
+        
+        // Handle user-to-user conversations - show message detail view
+        if (conv.id && conv.id.startsWith('user-')) {
+          const messagesId = `user-msgs-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          if (!window.userMessagesCache) window.userMessagesCache = {};
+          window.userMessagesCache[messagesId] = conv.messages || [];
+          
+          return `
+            <div class="conversation-item" data-messages-id="${messagesId}" data-user-id="${other.userId || ''}" onclick="showUserMessageDetail('${messagesId}', '${other.userId || ''}', '${escapeHtml(name)}')">
+              <div class="conversation-avatar">
+                ${logo ? `<img src="${logo}" alt="${name}">` : `<span>${name.charAt(0).toUpperCase()}</span>`}
               </div>
               <div class="conversation-content">
                 <div class="conversation-name">${escapeHtml(name)}</div>

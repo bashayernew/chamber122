@@ -27,8 +27,8 @@ export function eventCard(e, showRegistration = false) {
   return el(`
     <div style="display: block; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; overflow: hidden; transition: all 0.3s ease; cursor: pointer; height: 100%; position: relative;"
        onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.4)';"
-       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-      <a href="/event.html?id=${encodeURIComponent(e.id)}" style="text-decoration: none; color: inherit; display: block;">
+       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
+       onclick="event.stopPropagation(); if(typeof window.showEventDetails === 'function') { window.showEventDetails('${e.id}'); } else { window.location.href='/event.html?id=${encodeURIComponent(e.id)}'; }">
         ${coverImage ? `
           <div style="width: 100%; height: 180px; overflow: hidden; background: #2a2a2a;">
             <img src="${coverImage}" alt="${e.title || 'Event'}" style="width: 100%; height: 100%; object-fit: cover;">
@@ -39,7 +39,7 @@ export function eventCard(e, showRegistration = false) {
           </div>
         `}
         <div style="padding: 16px;">
-          <h3 style="color: #fff; font-size: 16px; font-weight: 600; margin: 0 0 8px 0; line-height: 1.3;">${e.title ?? 'Untitled Event'}</h3>
+          <h3 style="color: #fff; font-size: 16px; font-weight: 600; margin: 0 0 8px 0; line-height: 1.3; cursor: pointer;">${e.title ?? 'Untitled Event'}</h3>
           <div style="color: #f2c64b; font-size: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
             <i class="fas fa-clock" style="font-size: 10px;"></i>
             <span>${formatDateRange(e.start_at, e.end_at)}</span>
@@ -55,18 +55,17 @@ export function eventCard(e, showRegistration = false) {
               ${e.description.substring(0, 100)}${e.description.length > 100 ? '...' : ''}
             </p>
           ` : ''}
+          ${showRegistration && isOngoing ? `
+            <div style="margin-top: 12px;">
+              <button onclick="event.stopPropagation(); if(typeof window.showEventDetails === 'function') { window.showEventDetails('${e.id}'); } else { window.location.href='/event.html?id=${encodeURIComponent(e.id)}'; }" 
+                      style="width: 100%; padding: 10px; background: linear-gradient(135deg, #f2c64b, #f59e0b); color: #111; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                      onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 12px rgba(242,198,75,0.3)';"
+                      onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                Register Now
+              </button>
+            </div>
+          ` : ''}
         </div>
-      </a>
-      ${showRegistration && isOngoing ? `
-        <div style="padding: 0 16px 16px 16px;">
-          <button onclick="event.stopPropagation(); window.registerForEvent('${e.id}')" 
-                  style="width: 100%; padding: 10px; background: linear-gradient(135deg, #f2c64b, #f59e0b); color: #111; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
-                  onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 12px rgba(242,198,75,0.3)';"
-                  onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
-            Register Now
-          </button>
-        </div>
-      ` : ''}
     </div>
   `);
 }
