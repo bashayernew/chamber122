@@ -79,9 +79,31 @@ export function getConversationsForUser(userId) {
     (m.groupId && m.groupMembers && m.groupMembers.includes(userId))
   );
   
+  // Get all groups the user is a member of (even if no messages yet)
+  const groups = getGroupsForUser(userId);
+  
   // Group by conversation (other user ID or group ID)
   const conversationMap = new Map();
   
+  // First, add all groups the user is a member of
+  groups.forEach(group => {
+    const convKey = `group_${group.id}`;
+    if (!conversationMap.has(convKey)) {
+      conversationMap.set(convKey, {
+        userId: null,
+        groupId: group.id,
+        userName: group.name || 'Group Chat',
+        userEmail: null,
+        isGroup: true,
+        messages: [],
+        unreadCount: 0,
+        lastMessage: null,
+        lastMessageTime: null
+      });
+    }
+  });
+  
+  // Then, process messages
   userMessages.forEach(msg => {
     let convKey;
     let convName;

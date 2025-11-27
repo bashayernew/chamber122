@@ -510,6 +510,7 @@
     import { getConversationsForUser, getMessagesForUser, sendMessage, markMessageAsRead, createGroup, sendGroupMessage, getGroupMessages, getGroupsForUser, getAllGroups } from '/js/messaging.js';
 
     let currentChatUserId = null;
+    let currentChatGroupId = null;
     let conversations = [];
     let allUsers = [];
 
@@ -1129,10 +1130,16 @@
 
       try {
         const { createGroup } = await import('/js/messaging.js');
-        await createGroup(groupName, memberIds);
+        const group = await createGroup(groupName, memberIds);
         document.getElementById('create-group-modal').remove();
+        // Reload conversations to show the new group
         await loadConversations();
-        alert('Group created successfully!');
+        // Open the newly created group chat
+        if (group && group.id) {
+          setTimeout(() => {
+            openGroupChat(group.id);
+          }, 300);
+        }
       } catch (error) {
         console.error('[inbox] Error creating group:', error);
         alert('Error creating group: ' + error.message);
