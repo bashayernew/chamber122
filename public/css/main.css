@@ -47,15 +47,23 @@
 .value { color:#e6e9ef; word-break:break-word; text-decoration:none; }
 
 .gallery-grid {
-  display:grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap:.75rem;
+  display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap:1rem;
+  margin-top: 0.5rem;
 }
 .gallery-grid .ph {
-  background:#12161d; border:1px dashed #2d3440; border-radius:12px; height:120px;
+  background:#12161d; border:1px dashed #2d3440; border-radius:12px; height:200px;
   display:flex; align-items:center; justify-content:center; color:#6b7280; font-size:.9rem;
 }
 .gallery-grid img {
-  width:100%; height: 120px; object-fit:cover; border-radius:12px; border:1px solid #23252b;
+  width:100%; height: 200px; object-fit:cover; border-radius:12px; border:1px solid #23252b;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.gallery-grid img:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  z-index: 1;
+  position: relative;
 }
 
 /* Minimal editor */

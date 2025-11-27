@@ -262,10 +262,24 @@ async function loadAndDisplayBusiness(businessId = null) {
     
     // Gallery
     const galleryEl = $('gallery');
-    if (galleryEl && business.gallery_urls && business.gallery_urls.length > 0) {
-      galleryEl.innerHTML = business.gallery_urls.map((url, idx) => {
-        return `<img src="${url}" alt="Gallery image ${idx + 1}" style="max-width: 200px; max-height: 150px; border-radius: 8px; margin: 8px; object-fit: cover;">`;
-      }).join('');
+    if (galleryEl) {
+      if (business.gallery_urls && Array.isArray(business.gallery_urls) && business.gallery_urls.length > 0) {
+        const validUrls = business.gallery_urls.filter(url => url && !url.startsWith('blob:'));
+        if (validUrls.length > 0) {
+          galleryEl.innerHTML = validUrls.map((url, idx) => {
+            return `<div style="position: relative; overflow: hidden; border-radius: 8px; background: #1a1a1a; border: 1px solid #2a2a2a;">
+              <img src="${url}" alt="Gallery image ${idx + 1}" style="width: 100%; height: 200px; object-fit: cover; display: block; transition: transform 0.3s; cursor: pointer;" 
+                   onmouseover="this.style.transform='scale(1.05)'" 
+                   onmouseout="this.style.transform='scale(1)'"
+                   onclick="window.open('${url}', '_blank')">
+            </div>`;
+          }).join('');
+        } else {
+          galleryEl.innerHTML = '<p style="color: #AFAFAF; text-align: center; padding: 40px; font-size: 14px;">No gallery images available.</p>';
+        }
+      } else {
+        galleryEl.innerHTML = '<p style="color: #AFAFAF; text-align: center; padding: 40px; font-size: 14px;">No gallery images yet.</p>';
+      }
     }
     
     // Category/Industry
