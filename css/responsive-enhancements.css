@@ -1,2 +1,313 @@
-/* Responsive Enhancements - Empty file to prevent 404 errors */
-/* This file can be used for responsive design improvements if needed */
+/* Mobile Responsive Enhancements - Modern & Appealing Design */
+
+/* Base Mobile Styles (up to 768px) */
+@media (max-width: 768px) {
+  /* Header & Navigation */
+  .navbar {
+    padding: 0.5rem 1rem !important;
+    height: auto !important;
+    min-height: 60px !important;
+  }
+  
+  .nav-container {
+    flex-wrap: wrap !important;
+    gap: 0.75rem !important;
+    align-items: center !important;
+  }
+  
+  /* Logo - Much Smaller on Mobile */
+  .logo,
+  .site-logo {
+    height: 40px !important;
+    max-width: 120px !important;
+  }
+  
+  .logo img,
+  .site-logo img {
+    height: 40px !important;
+    max-width: 120px !important;
+    width: auto !important;
+    animation: none !important; /* Disable animations on mobile for performance */
+    filter: drop-shadow(0 0 8px rgba(242, 198, 75, 0.3)) !important;
+  }
+  
+  .logo img:hover,
+  .site-logo img:hover {
+    transform: none !important; /* Disable hover effects on mobile */
+  }
+  
+  /* Navigation Menu */
+  .nav-menu {
+    order: 3;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 0.5rem;
+  }
+  
+  .nav-link {
+    font-size: 0.875rem !important;
+    padding: 0.5rem 0.75rem !important;
+    font-weight: 500 !important;
+  }
+  
+  /* Auth Buttons */
+  .nav-actions {
+    order: 2;
+    margin-left: auto;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  
+  .nav-actions .btn {
+    font-size: 0.75rem !important;
+    padding: 0.5rem 0.75rem !important;
+    white-space: nowrap;
+  }
+  
+  /* User Profile in Header */
+  .account-chip {
+    font-size: 0.75rem !important;
+    padding: 0.375rem 0.625rem !important;
+  }
+  
+  /* Main Content Padding */
+  body {
+    padding-top: 80px !important; /* Adjust for smaller header */
+  }
+  
+  /* Cards & Containers */
+  .card,
+  .msme-card,
+  .event-card,
+  .bulletin-card {
+    padding: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+  
+  /* Headings */
+  h1 {
+    font-size: 1.75rem !important;
+  }
+  
+  h2 {
+    font-size: 1.5rem !important;
+  }
+  
+  h3 {
+    font-size: 1.25rem !important;
+  }
+  
+  /* Buttons */
+  .btn {
+    font-size: 0.875rem !important;
+    padding: 0.625rem 1rem !important;
+  }
+  
+  .btn-primary {
+    font-size: 0.875rem !important;
+    padding: 0.625rem 1.25rem !important;
+  }
+  
+  /* Forms */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="tel"],
+  textarea,
+  select {
+    font-size: 1rem !important; /* Prevents zoom on iOS */
+    padding: 0.75rem !important;
+  }
+  
+  /* Grids */
+  .grid,
+  .events-grid,
+  .bulletins-grid,
+  .msme-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  /* Inbox Mobile Styles */
+  .inbox-container {
+    flex-direction: column !important;
+    height: calc(100vh - 80px) !important;
+    padding: 0.5rem !important;
+  }
+  
+  .conversations-sidebar {
+    width: 100% !important;
+    max-height: 40vh !important;
+    border-right: none !important;
+    border-bottom: 1px solid #262626 !important;
+  }
+  
+  .conversations-header h2 {
+    font-size: 1.25rem !important;
+    padding: 1rem !important;
+  }
+  
+  .conversation-item {
+    padding: 0.75rem 1rem !important;
+  }
+  
+  .conversation-avatar {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 16px !important;
+  }
+  
+  .chat-area {
+    min-height: 50vh !important;
+  }
+  
+  .chat-header {
+    padding: 0.75rem 1rem !important;
+  }
+  
+  .chat-header-name {
+    font-size: 0.875rem !important;
+  }
+  
+  .chat-messages {
+    padding: 1rem !important;
+  }
+  
+  .message {
+    max-width: 85% !important;
+  }
+  
+  .message-bubble {
+    font-size: 0.875rem !important;
+    padding: 0.625rem 0.875rem !important;
+  }
+  
+  .chat-input-container {
+    padding: 0.75rem 1rem !important;
+  }
+  
+  .chat-input {
+    font-size: 0.875rem !important;
+    padding: 0.625rem 1rem !important;
+    min-height: 40px !important;
+  }
+  
+  .chat-send-btn {
+    width: 40px !important;
+    height: 40px !important;
+  }
+}
+
+/* Small Mobile (up to 480px) */
+@media (max-width: 480px) {
+  .navbar {
+    padding: 0.5rem !important;
+  }
+  
+  .logo,
+  .site-logo {
+    height: 35px !important;
+    max-width: 100px !important;
+  }
+  
+  .logo img,
+  .site-logo img {
+    height: 35px !important;
+    max-width: 100px !important;
+  }
+  
+  .nav-menu {
+    gap: 0.375rem;
+  }
+  
+  .nav-link {
+    font-size: 0.75rem !important;
+    padding: 0.375rem 0.5rem !important;
+  }
+  
+  .nav-actions .btn {
+    font-size: 0.7rem !important;
+    padding: 0.375rem 0.625rem !important;
+  }
+  
+  body {
+    padding-top: 70px !important;
+  }
+  
+  h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  h2 {
+    font-size: 1.25rem !important;
+  }
+  
+  .card,
+  .msme-card {
+    padding: 0.75rem !important;
+  }
+  
+  .conversations-sidebar {
+    max-height: 35vh !important;
+  }
+  
+  .conversation-avatar {
+    width: 40px !important;
+    height: 40px !important;
+  }
+  
+  .message {
+    max-width: 90% !important;
+  }
+}
+
+/* Tablet Styles (768px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .logo img,
+  .site-logo img {
+    height: 60px !important;
+  }
+  
+  .nav-link {
+    font-size: 0.9375rem !important;
+  }
+  
+  .grid,
+  .events-grid,
+  .bulletins-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Larger touch targets */
+  .btn,
+  .nav-link,
+  .conversation-item,
+  .chat-send-btn {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+  
+  /* Remove hover effects */
+  .logo img:hover,
+  .site-logo img:hover {
+    transform: none !important;
+  }
+}
+
+/* Landscape Mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .conversations-sidebar {
+    max-height: 50vh !important;
+  }
+  
+  .chat-area {
+    min-height: 45vh !important;
+  }
+}
