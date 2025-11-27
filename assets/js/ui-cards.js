@@ -24,22 +24,25 @@ export function eventCard(e, showRegistration = false) {
   const now = new Date();
   const isOngoing = (!e.start_at || new Date(e.start_at) <= now) && (!e.end_at || new Date(e.end_at) >= now);
   
+  // Always show business header - get business name from event or use default
+  const businessName = e.business_name || 'Unknown Business';
+  const businessId = e.business_id || '';
+  const businessLogo = e.business_logo_url || null;
+  
   return el(`
     <div style="display: block; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; overflow: hidden; transition: all 0.3s ease; cursor: pointer; height: 100%; position: relative;"
        onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.4)';"
        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
        onclick="event.stopPropagation(); if(typeof window.showEventDetails === 'function') { window.showEventDetails('${e.id}'); } else { window.location.href='/event.html?id=${encodeURIComponent(e.id)}'; }">
-      <!-- Business Profile Header (TOP) -->
-      ${e.business_name || e.business_id ? `
-        <div onclick="event.stopPropagation(); window.location.href='/owner.html?businessId=${e.business_id || ''}'" style="padding: 12px 16px; background: #0f0f0f; border-bottom: 1px solid #2a2a2a; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#151515'" onmouseout="this.style.background='#0f0f0f'">
-          ${e.business_logo_url ? `<img src="${e.business_logo_url}" alt="${e.business_name || 'Business'}" style="width: 32px; height: 32px; border-radius: 6px; object-fit: cover; border: 1px solid #2a2a2a;">` : `<div style="width: 32px; height: 32px; border-radius: 6px; background: #374151; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 14px; font-weight: 600;">${(e.business_name || 'B').charAt(0).toUpperCase()}</div>`}
-          <div style="flex: 1;">
-            <div style="color: #9ca3af; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Organized by</div>
-            <div style="color: #fff; font-size: 14px; font-weight: 600;">${e.business_name || 'Unknown Business'}</div>
-          </div>
-          <i class="fas fa-chevron-right" style="color: #6b7280; font-size: 12px;"></i>
+      <!-- Business Profile Header (TOP) - Always show -->
+      <div onclick="event.stopPropagation(); window.location.href='/owner.html?businessId=${businessId}'" style="padding: 12px 16px; background: #0f0f0f; border-bottom: 1px solid #2a2a2a; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#151515'" onmouseout="this.style.background='#0f0f0f'">
+        ${businessLogo ? `<img src="${businessLogo}" alt="${businessName}" style="width: 32px; height: 32px; border-radius: 6px; object-fit: cover; border: 1px solid #2a2a2a;">` : `<div style="width: 32px; height: 32px; border-radius: 6px; background: #374151; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 14px; font-weight: 600;">${businessName.charAt(0).toUpperCase()}</div>`}
+        <div style="flex: 1;">
+          <div style="color: #9ca3af; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Organized by</div>
+          <div style="color: #fff; font-size: 14px; font-weight: 600;">${businessName}</div>
         </div>
-      ` : ''}
+        <i class="fas fa-chevron-right" style="color: #6b7280; font-size: 12px;"></i>
+      </div>
         ${coverImage ? `
           <div style="width: 100%; height: 180px; overflow: hidden; background: #2a2a2a;">
             <img src="${coverImage}" alt="${e.title || 'Event'}" style="width: 100%; height: 100%; object-fit: cover;">
