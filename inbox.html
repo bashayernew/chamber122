@@ -52,6 +52,35 @@
       margin: 0;
     }
     
+    .create-group-btn {
+      background: #0095f6;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    
+    .create-group-btn:hover {
+      background: #1877f2;
+    }
+    
+    .group-badge {
+      background: #0095f6;
+      color: #fff;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 4px;
+      font-weight: 600;
+    }
+    
     .conversations-list {
       flex: 1;
       overflow-y: auto;
@@ -425,6 +454,9 @@
     <div class="conversations-sidebar">
       <div class="conversations-header">
         <h2>Messages</h2>
+        <button class="create-group-btn" onclick="showCreateGroupModal()" title="Create Group">
+          <i class="fas fa-users"></i> New Group
+        </button>
       </div>
       <div class="conversations-list" id="conversations-list">
         <div class="empty-state" style="text-align: center; padding: 40px; color: #a8a8a8;">
@@ -472,7 +504,7 @@
   <!-- Scripts -->
   <script type="module">
     import { getCurrentUser, getAllUsers } from '/js/auth-localstorage.js';
-    import { getConversationsForUser, getMessagesForUser, sendMessage, markMessageAsRead } from '/js/messaging.js';
+    import { getConversationsForUser, getMessagesForUser, sendMessage, markMessageAsRead, createGroup, sendGroupMessage, getGroupMessages, getGroupsForUser, getAllGroups } from '/js/messaging.js';
 
     let currentChatUserId = null;
     let conversations = [];
@@ -732,8 +764,11 @@
       const messageText = chatInput.value.trim();
       if (!messageText) return;
       
+      // Check if it's a group chat or individual chat
+      const groupId = chatInputContainer.getAttribute('data-chat-group-id');
       const toUserId = chatInputContainer.getAttribute('data-chat-user-id');
-      if (!toUserId) {
+      
+      if (!groupId && !toUserId) {
         alert('Unable to send message. Please refresh the page.');
         return;
       }
@@ -742,14 +777,21 @@
         sendBtn.disabled = true;
         sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         
-        await sendMessage(toUserId, 'Message', messageText);
+        if (groupId) {
+          // Send group message
+          await sendGroupMessage(groupId, messageText);
+          // Reload group messages
+          await loadGroupMessages(groupId);
+        } else {
+          // Send individual message
+          await sendMessage(toUserId, 'Message', messageText);
+          // Reload chat messages
+          await loadChatMessages(toUserId);
+        }
         
         // Clear input
         chatInput.value = '';
         chatInput.style.height = 'auto';
-        
-        // Reload chat messages
-        await loadChatMessages(toUserId);
         
         // Reload conversations
         await loadConversations();
