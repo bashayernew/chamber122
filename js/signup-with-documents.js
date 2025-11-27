@@ -476,11 +476,18 @@ export async function onCreateAccount(emailSelector, passwordSelector) {
   try {
     // Use localStorage-based signup (no backend, no Supabase)
     const { signup } = await import('./auth-localstorage.js');
-    const user = signup(email, password, {});
-    console.log('[signup] User signed up (localStorage):', user.id);
+    const result = signup(email, password, {});
+    console.log('[signup] User signed up (localStorage):', result.user.id);
+    console.log('[signup] User saved to localStorage. Total users:', result.user ? 1 : 0);
+    
+    // Verify user was saved
+    const { getAllUsers } = await import('./auth-localstorage.js');
+    const allUsers = getAllUsers();
+    console.log('[signup] Verification - Users in localStorage:', allUsers.length);
+    console.log('[signup] Verification - User exists:', allUsers.find(u => u.email === email.toLowerCase()));
     
     // User is immediately signed in, proceed to complete signup
-    return { requiresConfirm: false, user };
+    return { requiresConfirm: false, user: result.user };
   } catch (error) {
     console.error('Signup error:', error);
     throw error;

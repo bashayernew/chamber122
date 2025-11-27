@@ -178,23 +178,44 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       // Also save user data and documents to admin system
+      // NOTE: User is already saved by signup() in auth-localstorage.js
+      // This just updates the user with additional fields
       try {
         const { saveSignupToAdmin, saveDocumentsToAdmin } = await import('./signup-to-admin.js');
+        const { getAllUsers, updateUser } = await import('./auth-localstorage.js');
         
-        // Save user to admin system
-        const savedUser = saveSignupToAdmin({
-          id: user.id,
-          email: user.email,
-          name: fields.business_name || fields.name || user.email.split('@')[0] || '',
-          phone: fields.phone || fields.whatsapp || '',
-          business_name: fields.business_name || fields.name || '',
-          industry: fields.industry || fields.category || '',
-          city: fields.city || '',
-          country: fields.country || 'Kuwait',
-          business_id: (business && business.id) || null,
-          created_at: new Date().toISOString()
-        });
-        console.log('[auth-signup] ✅ User saved to admin system:', savedUser && savedUser.id ? savedUser.id : 'unknown');
+        // Update user with additional fields (user already exists from signup)
+        const allUsers = getAllUsers();
+        const existingUser = allUsers.find(u => u.id === user.id || u.email === user.email);
+        
+        if (existingUser) {
+          // Update existing user with additional fields
+          updateUser(existingUser.id, {
+            name: fields.business_name || fields.name || existingUser.name || user.email.split('@')[0] || '',
+            phone: fields.phone || fields.whatsapp || existingUser.phone || '',
+            business_name: fields.business_name || fields.name || existingUser.business_name || '',
+            industry: fields.industry || fields.category || existingUser.industry || '',
+            city: fields.city || existingUser.city || '',
+            country: fields.country || existingUser.country || 'Kuwait',
+            updated_at: new Date().toISOString()
+          });
+          console.log('[auth-signup] ✅ User updated in admin system:', existingUser.id);
+        } else {
+          // User doesn't exist (shouldn't happen, but create it)
+          const savedUser = saveSignupToAdmin({
+            id: user.id,
+            email: user.email,
+            name: fields.business_name || fields.name || user.email.split('@')[0] || '',
+            phone: fields.phone || fields.whatsapp || '',
+            business_name: fields.business_name || fields.name || '',
+            industry: fields.industry || fields.category || '',
+            city: fields.city || '',
+            country: fields.country || 'Kuwait',
+            business_id: (business && business.id) || null,
+            created_at: new Date().toISOString()
+          });
+          console.log('[auth-signup] ✅ User created in admin system:', savedUser && savedUser.id ? savedUser.id : 'unknown');
+        }
         
         // Prepare documents with file references for admin system
         const adminDocuments = {};
