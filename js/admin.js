@@ -610,65 +610,88 @@ const adminDashboard = {
     // Collect all documents from users and businesses
     const allDocuments = [];
     
+    // Load documents from chamber122_documents storage
+    const allStoredDocs = JSON.parse(localStorage.getItem('chamber122_documents') || '[]');
+    
     users.forEach(user => {
       const business = businesses.find(b => b.owner_id === user.id);
+      const businessName = business ? (business.name || business.business_name) : 'N/A';
       
-      // Check for documents stored in signup data
-      const signupData = JSON.parse(localStorage.getItem(`chamber122_signup_data_${user.id}`) || '{}');
+      // Get documents for this user from stored documents
+      const userStoredDocs = allStoredDocs.filter(d => 
+        (d.user_id === user.id || d.userId === user.id) && 
+        d.file_url && 
+        !d.file_url.startsWith('pending_') // Skip placeholder URLs
+      );
+      
+      userStoredDocs.forEach(doc => {
+        allDocuments.push({
+          userId: user.id,
+          userEmail: user.email,
+          businessId: business ? business.id : null,
+          businessName: businessName,
+          type: doc.kind || doc.type || 'Unknown',
+          kind: doc.kind || doc.type || 'Unknown',
+          docType: doc.kind || doc.type || 'Unknown',
+          url: doc.file_url || doc.url || doc.public_url || '',
+          public_url: doc.public_url || doc.file_url || doc.url || '',
+          file_url: doc.file_url || doc.url || doc.public_url || '',
+          file_name: doc.file_name || doc.name || '',
+          uploaded_at: doc.uploaded_at || doc.created_at || user.created_at,
+          created_at: doc.created_at || doc.uploaded_at || user.created_at,
+          status: doc.status || 'pending'
+        });
+      });
+      
+      // Check for documents in signup data (base64 encoded)
+      const signupData = JSON.parse(localStorage.getItem(`chamber122_signup_data_${user.id}`) || localStorage.getItem('chamber122_signup_data') || '{}');
       if (signupData.documents) {
         Object.entries(signupData.documents).forEach(([docType, docData]) => {
-          allDocuments.push({
-            userId: user.id,
-            userEmail: user.email,
-            businessId: business ? business.id : null,
-            businessName: business ? (business.name || business.business_name) : 'N/A',
-            type: docType,
-            kind: docType,
-            docType: docType,
-            url: docData.url || docData.public_url || docData.file_url || docData.base64 || '',
-            public_url: docData.public_url || docData.url || docData.file_url || docData.base64 || '',
-            file_url: docData.file_url || docData.url || docData.public_url || docData.base64 || '',
-            base64: docData.base64 || '',
-            uploaded_at: docData.uploaded_at || docData.created_at || user.created_at,
-            created_at: docData.created_at || docData.uploaded_at || user.created_at,
-            status: docData.status || 'pending'
-          });
+          if (docData && (docData.url || docData.base64 || docData.signedUrl)) {
+            let docUrl = docData.base64 || docData.url || docData.signedUrl || docData.public_url || '';
+            
+            allDocuments.push({
+              userId: user.id,
+              userEmail: user.email,
+              businessId: business ? business.id : null,
+              businessName: businessName,
+              type: docType,
+              kind: docType,
+              docType: docType,
+              url: docUrl,
+              public_url: docUrl,
+              file_url: docUrl,
+              file_name: docData.name || `${docType}.pdf`,
+              uploaded_at: docData.uploaded_at || docData.created_at || user.created_at,
+              created_at: docData.created_at || docData.uploaded_at || user.created_at,
+              status: docData.status || 'pending'
+            });
+          }
         });
       }
       
       // Check for documents in business data
-      if (business) {
-        if (business.documents && Array.isArray(business.documents)) {
+      if (business && business.documents) {
+        if (Array.isArray(business.documents)) {
           business.documents.forEach(doc => {
             allDocuments.push({
               userId: user.id,
               userEmail: user.email,
               businessId: business.id,
-              businessName: business.name || business.business_name,
+              businessName: businessName,
               type: doc.type || doc.kind || 'Unknown',
               kind: doc.kind || doc.type || 'Unknown',
               docType: doc.docType || doc.type || doc.kind || 'Unknown',
               url: doc.url || doc.public_url || doc.file_url || '',
               public_url: doc.public_url || doc.url || doc.file_url || '',
               file_url: doc.file_url || doc.url || doc.public_url || '',
+              file_name: doc.file_name || doc.name || '',
               uploaded_at: doc.uploaded_at || doc.created_at || business.created_at,
               created_at: doc.created_at || doc.uploaded_at || business.created_at,
               status: doc.status || 'pending'
             });
           });
         }
-        
-        // Check for documents stored separately
-        const userDocs = JSON.parse(localStorage.getItem(`chamber122_documents_${user.id}`) || '[]');
-        userDocs.forEach(doc => {
-          allDocuments.push({
-            userId: user.id,
-            userEmail: user.email,
-            businessId: business.id,
-            businessName: business.name || business.business_name,
-            ...doc
-          });
-        });
       }
     });
     
@@ -704,24 +727,37 @@ const adminDashboard = {
   },
   
   viewDocument(userId, docType, docUrl) {
-    if (!docUrl) {
-      alert('Document URL not available.');
+    if (!docUrl || docUrl.startsWith('pending_')) {
+      alert('Document URL not available yet. The document is still being processed.');
       return;
     }
     
     // Create modal to view document
     const modal = document.createElement('div');
+    modal.id = 'document-viewer-modal';
     modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;';
+    
+    // Determine if it's an image or PDF
+    const isImage = docUrl.startsWith('data:image') || 
+                   docUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ||
+                   (docUrl.startsWith('data:') && docUrl.includes('image'));
+    const isPDF = docUrl.match(/\.pdf$/i) || docUrl.includes('application/pdf');
+    
     modal.innerHTML = `
       <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; max-width: 90%; max-height: 90%; overflow: auto; position: relative;">
         <div style="padding: 20px; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center;">
           <h3 style="margin: 0; color: #fff;">${docType}</h3>
-          <button onclick="this.closest('div[style*=\\'position: fixed\\']').remove()" style="background: none; border: none; color: #fff; font-size: 24px; cursor: pointer;">&times;</button>
+          <button onclick="document.getElementById('document-viewer-modal').remove()" style="background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">&times;</button>
         </div>
         <div style="padding: 20px;">
-          ${docUrl.startsWith('data:') ? 
-            `<img src="${docUrl}" style="max-width: 100%; height: auto; border-radius: 8px;" />` :
-            `<iframe src="${docUrl}" style="width: 100%; min-height: 600px; border: none; border-radius: 8px;"></iframe>`
+          ${isImage ? 
+            `<img src="${docUrl}" style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;" />` :
+            isPDF ?
+            `<iframe src="${docUrl}" style="width: 100%; min-height: 600px; border: none; border-radius: 8px;"></iframe>` :
+            `<div style="padding: 40px; text-align: center; color: #6b7280;">
+              <p>Document preview not available for this file type.</p>
+              <a href="${docUrl}" target="_blank" style="color: #f2c64b; text-decoration: underline;">Open in new tab</a>
+            </div>`
           }
         </div>
       </div>
@@ -734,6 +770,15 @@ const adminDashboard = {
         modal.remove();
       }
     });
+    
+    // Close on Escape key
+    const closeHandler = (e) => {
+      if (e.key === 'Escape') {
+        modal.remove();
+        document.removeEventListener('keydown', closeHandler);
+      }
+    };
+    document.addEventListener('keydown', closeHandler);
   },
   
   reportDocument(userId, userEmail, docType) {
