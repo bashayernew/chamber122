@@ -175,18 +175,21 @@ export function renderEventsGrid(items, {
     const now = new Date();
     const isOngoing = (!ev.start_at || new Date(ev.start_at) <= now) && (!ev.end_at || new Date(ev.end_at) >= now);
     
+    // Always show business header - get business name from event or use default
+    const businessName = ev.business_name || 'Unknown Business';
+    const businessId = ev.business_id || '';
+    const businessLogo = ev.business_logo_url || null;
+    
     card.innerHTML = `
-      <!-- Business Profile Header (TOP) -->
-      ${ev.business_name ? `
-        <div onclick="event.stopPropagation(); window.location.href='/owner.html?businessId=${ev.business_id || ''}'" style="padding: 12px 16px; background: #0f0f0f; border-bottom: 1px solid #2a2a2a; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#151515'" onmouseout="this.style.background='#0f0f0f'">
-          ${ev.business_logo_url ? `<img src="${ev.business_logo_url}" alt="${ev.business_name}" style="width: 32px; height: 32px; border-radius: 6px; object-fit: cover; border: 1px solid #2a2a2a;">` : `<div style="width: 32px; height: 32px; border-radius: 6px; background: #374151; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 14px; font-weight: 600;">${(ev.business_name || 'B').charAt(0).toUpperCase()}</div>`}
-          <div style="flex: 1;">
-            <div style="color: #9ca3af; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Organized by</div>
-            <div style="color: #fff; font-size: 14px; font-weight: 600;">${ev.business_name}</div>
-          </div>
-          <i class="fas fa-chevron-right" style="color: #6b7280; font-size: 12px;"></i>
+      <!-- Business Profile Header (TOP) - Always show -->
+      <div onclick="event.stopPropagation(); window.location.href='/owner.html?businessId=${businessId}'" style="padding: 12px 16px; background: #0f0f0f; border-bottom: 1px solid #2a2a2a; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#151515'" onmouseout="this.style.background='#0f0f0f'">
+        ${businessLogo ? `<img src="${businessLogo}" alt="${businessName}" style="width: 32px; height: 32px; border-radius: 6px; object-fit: cover; border: 1px solid #2a2a2a;">` : `<div style="width: 32px; height: 32px; border-radius: 6px; background: #374151; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 14px; font-weight: 600;">${businessName.charAt(0).toUpperCase()}</div>`}
+        <div style="flex: 1;">
+          <div style="color: #9ca3af; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Organized by</div>
+          <div style="color: #fff; font-size: 14px; font-weight: 600;">${businessName}</div>
         </div>
-      ` : ''}
+        <i class="fas fa-chevron-right" style="color: #6b7280; font-size: 12px;"></i>
+      </div>
       
       <!-- Event Image -->
       <div onclick="if(typeof showEventDetails === 'function') { showEventDetails('${ev.id}'); } else { window.location.href='/event.html?id=${encodeURIComponent(ev.id)}'; }" style="cursor: pointer;">

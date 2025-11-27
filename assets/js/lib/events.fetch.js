@@ -128,13 +128,38 @@ export async function fetchEventsWithBusiness({ scope = 'public', kind = 'all', 
       return { data: [], error: null };
     }
     
-    // Transform data to include business info
-    let transformedData = (events || []).map(event => ({
-      ...event,
-      business_name: event.business_name || 'Unknown Business',
-      business_logo_url: event.business_logo_url || null,
-      location: event.location || 'Kuwait'
-    }));
+    // Transform data to include business info - enrich with business data if missing
+    const { getBusinessById, getBusinessByOwner } = await import('/js/auth-localstorage.js');
+    
+    let transformedData = (events || []).map(event => {
+      // If event already has business_name and business_logo_url, use them
+      if (event.business_name && event.business_logo_url) {
+        return {
+          ...event,
+          location: event.location || 'Kuwait'
+        };
+      }
+      
+      // Try to get business info from business_id
+      let business = null;
+      if (event.business_id) {
+        business = getBusinessById(event.business_id);
+      }
+      
+      // If no business found, try owner_id
+      if (!business && event.owner_id) {
+        business = getBusinessByOwner(event.owner_id);
+      }
+      
+      // Enrich event with business info
+      return {
+        ...event,
+        business_id: event.business_id || (business ? business.id : null),
+        business_name: event.business_name || (business ? (business.name || business.business_name) : 'Unknown Business'),
+        business_logo_url: event.business_logo_url || (business ? business.logo_url : null),
+        location: event.location || 'Kuwait'
+      };
+    });
     
     // Filter by kind if needed
     if (kind && kind !== 'all') {

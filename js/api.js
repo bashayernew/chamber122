@@ -163,8 +163,51 @@ export async function getPublicEvents() {
   try {
     const stored = localStorage.getItem('chamber122_events');
     const events = stored ? JSON.parse(stored) : [];
-    return events.filter(e => e.status === 'published' || e.is_published);
+    const filtered = events.filter(e => e.status === 'published' || e.is_published);
+    
+    // Enrich events with business information if missing
+    const enriched = filtered.map(event => {
+      // If event already has business_name, return as is
+      if (event.business_name && event.business_logo_url) {
+        return event;
+      }
+      
+      // Try to get business info from business_id
+      if (event.business_id) {
+        const business = getBusinessById(event.business_id);
+        if (business) {
+          return {
+            ...event,
+            business_name: event.business_name || business.name || business.business_name || 'Unknown Business',
+            business_logo_url: event.business_logo_url || business.logo_url || null
+          };
+        }
+      }
+      
+      // Try to get business info from owner_id
+      if (event.owner_id) {
+        const business = getBusinessByOwner(event.owner_id);
+        if (business) {
+          return {
+            ...event,
+            business_id: event.business_id || business.id,
+            business_name: event.business_name || business.name || business.business_name || 'Unknown Business',
+            business_logo_url: event.business_logo_url || business.logo_url || null
+          };
+        }
+      }
+      
+      // Return event with defaults if no business found
+      return {
+        ...event,
+        business_name: event.business_name || 'Unknown Business',
+        business_logo_url: event.business_logo_url || null
+      };
+    });
+    
+    return enriched;
   } catch (e) {
+    console.error('[api] Error loading events:', e);
     return [];
   }
 }
@@ -219,13 +262,18 @@ export async function registerForEvent(eventId, registrationData) {
 export async function createEvent(eventData) {
   const user = requireAuth();
   try {
+    // Get user's business to attach business info
+    const business = getBusinessByOwner(user.id);
+    
     const stored = localStorage.getItem('chamber122_events');
     const events = stored ? JSON.parse(stored) : [];
     
     const event = {
       id: generateId(),
       owner_id: user.id,
-      business_id: user.business ? user.business.id : null,
+      business_id: business ? business.id : (user.business ? user.business.id : null),
+      business_name: business ? (business.name || business.business_name) : (eventData.business_name || 'Unknown Business'),
+      business_logo_url: business ? business.logo_url : (eventData.business_logo_url || null),
       ...eventData,
       status: 'published',
       is_published: true,
