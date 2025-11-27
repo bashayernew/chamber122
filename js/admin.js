@@ -1127,13 +1127,16 @@ const adminDashboard = {
               <div><strong>Created:</strong> ${createdDate}</div>
             </div>
             <div style="display: flex; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #2a2a2a;">
+              <button onclick="adminDashboard.viewCommunityMessages('${comm.id}')" style="padding: 8px 16px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer;">
+                <i class="fas fa-comments"></i> View Messages
+              </button>
               <button onclick="adminDashboard.viewCommunity('${comm.id}')" style="padding: 8px 16px; background: #0095f6; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer;">
                 <i class="fas fa-eye"></i> View Details
-      </button>
+              </button>
               ${comm.status === 'active' ? `
                 <button onclick="adminDashboard.suspendCommunity('${comm.id}')" style="padding: 8px 16px; background: #ef4444; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer;">
                   <i class="fas fa-ban"></i> Suspend
-      </button>
+                </button>
               ` : `
                 <button onclick="adminDashboard.activateCommunity('${comm.id}')" style="padding: 8px 16px; background: #10b981; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer;">
                   <i class="fas fa-check"></i> Activate
