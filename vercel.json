@@ -2,6 +2,10 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
       "source": "/admin-login",
       "destination": "/admin-login.html"
     },
