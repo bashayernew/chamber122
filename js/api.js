@@ -220,7 +220,29 @@ export async function createEvent(eventData) {
 export async function getPublicBulletins() {
   try {
     const stored = localStorage.getItem('chamber122_bulletins');
-    const bulletins = stored ? JSON.parse(stored) : [];
+    if (!stored) {
+      return [];
+    }
+    
+    let bulletins = [];
+    try {
+      const parsed = JSON.parse(stored);
+      // Ensure it's an array - if it's a single object, wrap it in an array
+      if (Array.isArray(parsed)) {
+        bulletins = parsed;
+      } else if (parsed && typeof parsed === 'object') {
+        // Single bulletin object - wrap it in an array
+        bulletins = [parsed];
+        // Fix localStorage to store as array
+        localStorage.setItem('chamber122_bulletins', JSON.stringify(bulletins));
+      } else {
+        bulletins = [];
+      }
+    } catch (parseError) {
+      console.error('[api] Error parsing bulletins from localStorage:', parseError);
+      return [];
+    }
+    
     // Filter published bulletins, but also include those without explicit status (for backwards compatibility)
     const published = bulletins.filter(b => {
       // If status is explicitly set, check it
@@ -251,7 +273,25 @@ export async function createBulletin(bulletinData) {
     const business = getBusinessByOwner(user.id);
     
     const stored = localStorage.getItem('chamber122_bulletins');
-    const bulletins = stored ? JSON.parse(stored) : [];
+    let bulletins = [];
+    
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        // Ensure it's an array - if it's a single object, wrap it in an array
+        if (Array.isArray(parsed)) {
+          bulletins = parsed;
+        } else if (parsed && typeof parsed === 'object') {
+          // Single bulletin object - wrap it in an array
+          bulletins = [parsed];
+        } else {
+          bulletins = [];
+        }
+      } catch (parseError) {
+        console.error('[api] Error parsing existing bulletins:', parseError);
+        bulletins = [];
+      }
+    }
     
     const bulletin = {
       id: generateId(),
@@ -270,6 +310,7 @@ export async function createBulletin(bulletinData) {
     console.log('[api] Created bulletin:', bulletin.id, 'Total bulletins:', bulletins.length);
     return { bulletin: bulletin };
   } catch (e) {
+    console.error('[api] Error creating bulletin:', e);
     throw new Error('Failed to create bulletin: ' + e.message);
   }
 }
