@@ -6,19 +6,36 @@
   "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/(.*\\.html)",
-      "destination": "/$1"
+      "source": "/admin-login",
+      "destination": "/admin-login.html"
     },
     {
-      "source": "/([^.]*)",
-      "destination": "/$1.html",
-      "has": [
-        {
-          "type": "header",
-          "key": "accept",
-          "value": "text/html"
-        }
-      ]
+      "source": "/admin-dashboard",
+      "destination": "/admin-dashboard.html"
+    },
+    {
+      "source": "/auth",
+      "destination": "/auth.html"
+    },
+    {
+      "source": "/directory",
+      "destination": "/directory.html"
+    },
+    {
+      "source": "/events",
+      "destination": "/events.html"
+    },
+    {
+      "source": "/inbox",
+      "destination": "/inbox.html"
+    },
+    {
+      "source": "/owner",
+      "destination": "/owner.html"
+    },
+    {
+      "source": "/owner-form",
+      "destination": "/owner-form.html"
     }
   ],
   "headers": [
