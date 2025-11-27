@@ -999,8 +999,10 @@ async function saveProfile(ev) {
       whatsapp: businessData.whatsapp || '',
       website: businessData.website || '',
       instagram: businessData.instagram || '',
-      logo_url: businessData.logo_url || (business ? business.logo_url : null),
-      gallery_urls: businessData.gallery_urls || [],
+      logo_url: businessData.logo_url || (business ? business.logo_url : null), // Preserve existing logo if no new one
+      gallery_urls: businessData.gallery_urls && businessData.gallery_urls.length > 0 
+        ? businessData.gallery_urls 
+        : (business ? business.gallery_urls || [] : []), // Preserve existing gallery if no new one
       updated_at: new Date().toISOString()
     };
     
