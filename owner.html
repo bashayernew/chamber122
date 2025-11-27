@@ -632,16 +632,60 @@
         }
       });
       
+      // Helper function to reload events and bulletins without full page reload
+      async function reloadEventsAndBulletins() {
+        try {
+          const ownerId = window.currentOwnerId;
+          if (!ownerId) {
+            window.location.reload();
+            return;
+          }
+          
+          const { loadOwnerEventsAndBulletins } = await import('/assets/js/profile-events.js');
+          const { renderList } = await import('/assets/js/ui-cards.js');
+          const { eventCardPretty, bulletinCardPretty } = await import('/assets/js/ui-cards-extended.js');
+          
+          // Determine if user is owner
+          const user = await getCurrentUser();
+          let isOwner = false;
+          if (user && ownerId) {
+            const businessResponse = await getMyBusiness();
+            const business = businessResponse && businessResponse.business ? businessResponse.business : null;
+            isOwner = business && business.id === ownerId;
+          }
+          
+          const data = await loadOwnerEventsAndBulletins(ownerId, isOwner);
+          
+          // Re-render all event tabs
+          const allEvents = [...data.events.ongoing, ...data.events.upcoming, ...data.events.previous];
+          renderList(document.getElementById('ev-all'), allEvents, (e) => eventCardPretty(e, isOwner), 'No events.');
+          renderList(document.getElementById('ev-ongoing'), data.events.ongoing, (e) => eventCardPretty(e, isOwner), 'No ongoing events.');
+          renderList(document.getElementById('ev-upcoming'), data.events.upcoming, (e) => eventCardPretty(e, isOwner), 'No upcoming events.');
+          renderList(document.getElementById('ev-previous'), data.events.previous, (e) => eventCardPretty(e, isOwner), 'No previous events.');
+          
+          // Re-render all bulletin tabs
+          const allBulletins = [...data.bulletins.ongoing, ...data.bulletins.upcoming, ...data.bulletins.previous];
+          renderList(document.getElementById('bl-all'), allBulletins, (b) => bulletinCardPretty(b, isOwner), 'No bulletins.');
+          renderList(document.getElementById('bl-ongoing'), data.bulletins.ongoing, (b) => bulletinCardPretty(b, isOwner), 'No ongoing bulletins.');
+          renderList(document.getElementById('bl-upcoming'), data.bulletins.upcoming, (b) => bulletinCardPretty(b, isOwner), 'No upcoming bulletins.');
+          renderList(document.getElementById('bl-previous'), data.bulletins.previous, (b) => bulletinCardPretty(b, isOwner), 'No previous bulletins.');
+        } catch (err) {
+          console.error('[owner] Error reloading events/bulletins:', err);
+          // Fallback to full reload if partial reload fails
+          window.location.reload();
+        }
+      }
+      
       // Event management functions for owner controls
       window.draftEvent = async function(eventId) {
         try {
           const { updateEventStatus } = await import('/js/api.js');
           await updateEventStatus(eventId, 'draft');
-          alert('Event saved as draft');
-          window.location.reload();
+          console.log('[owner] Event saved as draft:', eventId);
+          await reloadEventsAndBulletins();
         } catch (err) {
           console.error('[owner] Error saving event as draft:', err);
-          alert('Failed to save event as draft');
+          alert('Failed to save event as draft: ' + (err.message || 'Unknown error'));
         }
       };
       
@@ -649,11 +693,11 @@
         try {
           const { updateEventStatus } = await import('/js/api.js');
           await updateEventStatus(eventId, 'published');
-          alert('Event published');
-          window.location.reload();
+          console.log('[owner] Event published:', eventId);
+          await reloadEventsAndBulletins();
         } catch (err) {
           console.error('[owner] Error publishing event:', err);
-          alert('Failed to publish event');
+          alert('Failed to publish event: ' + (err.message || 'Unknown error'));
         }
       };
       
@@ -662,14 +706,17 @@
       };
       
       window.deleteEvent = async function(eventId) {
+        if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+          return;
+        }
         try {
           const { deleteEventById } = await import('/js/api.js');
           await deleteEventById(eventId);
-          alert('Event deleted');
-          window.location.reload();
+          console.log('[owner] Event deleted:', eventId);
+          await reloadEventsAndBulletins();
         } catch (err) {
           console.error('[owner] Error deleting event:', err);
-          alert('Failed to delete event');
+          alert('Failed to delete event: ' + (err.message || 'Unknown error'));
         }
       };
       
@@ -678,11 +725,11 @@
         try {
           const { updateBulletinStatus } = await import('/js/api.js');
           await updateBulletinStatus(bulletinId, 'draft');
-          alert('Bulletin saved as draft');
-          window.location.reload();
+          console.log('[owner] Bulletin saved as draft:', bulletinId);
+          await reloadEventsAndBulletins();
         } catch (err) {
           console.error('[owner] Error saving bulletin as draft:', err);
-          alert('Failed to save bulletin as draft');
+          alert('Failed to save bulletin as draft: ' + (err.message || 'Unknown error'));
         }
       };
       
@@ -690,11 +737,11 @@
         try {
           const { updateBulletinStatus } = await import('/js/api.js');
           await updateBulletinStatus(bulletinId, 'published');
-          alert('Bulletin published');
-          window.location.reload();
+          console.log('[owner] Bulletin published:', bulletinId);
+          await reloadEventsAndBulletins();
         } catch (err) {
           console.error('[owner] Error publishing bulletin:', err);
-          alert('Failed to publish bulletin');
+          alert('Failed to publish bulletin: ' + (err.message || 'Unknown error'));
         }
       };
       
@@ -703,14 +750,17 @@
       };
       
       window.deleteBulletin = async function(bulletinId) {
+        if (!confirm('Are you sure you want to delete this bulletin? This action cannot be undone.')) {
+          return;
+        }
         try {
           const { deleteBulletinById } = await import('/js/api.js');
           await deleteBulletinById(bulletinId);
-          alert('Bulletin deleted');
-          window.location.reload();
+          console.log('[owner] Bulletin deleted:', bulletinId);
+          await reloadEventsAndBulletins();
         } catch (err) {
           console.error('[owner] Error deleting bulletin:', err);
-          alert('Failed to delete bulletin');
+          alert('Failed to delete bulletin: ' + (err.message || 'Unknown error'));
         }
       };
     })();

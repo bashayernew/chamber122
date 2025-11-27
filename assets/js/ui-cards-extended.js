@@ -64,19 +64,19 @@ export function eventCardPretty(e, showOwnerControls = false) {
         ${showOwnerControls ? `
           <!-- Owner Controls -->
           <div style="display: flex; gap: 4px; margin-top: 16px; flex-wrap: wrap;">
-            ${e.status === 'draft' || !e.is_published ? `
-              <button onclick="event.stopPropagation(); if(typeof window.publishEvent === 'function') { window.publishEvent('${e.id}'); } else { alert('Function not loaded'); }" style="flex: 1; padding: 8px 12px; background: #10b981; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer;" title="Publish">
+            ${(e.status === 'draft' || e.status === 'pending' || !e.is_published) ? `
+              <button onclick="event.stopPropagation(); if(typeof window.publishEvent === 'function') { window.publishEvent('${e.id}'); } else { alert('Function not loaded'); }" style="flex: 1; padding: 8px 12px; background: #10b981; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'" title="Publish">
                 <i class="fas fa-eye"></i> Publish
               </button>
             ` : `
-              <button onclick="event.stopPropagation(); if(typeof window.draftEvent === 'function') { window.draftEvent('${e.id}'); } else { alert('Function not loaded'); }" style="flex: 1; padding: 8px 12px; background: #f59e0b; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer;" title="Save as Draft">
+              <button onclick="event.stopPropagation(); if(typeof window.draftEvent === 'function') { window.draftEvent('${e.id}'); } else { alert('Function not loaded'); }" style="flex: 1; padding: 8px 12px; background: #f59e0b; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#d97706'" onmouseout="this.style.background='#f59e0b'" title="Save as Draft">
                 <i class="fas fa-eye-slash"></i> Draft
               </button>
             `}
-            <button onclick="event.stopPropagation(); if(typeof window.editEvent === 'function') { window.editEvent('${e.id}'); } else { alert('Function not loaded'); }" style="flex: 1; padding: 8px 12px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer;" title="Edit">
+            <button onclick="event.stopPropagation(); if(typeof window.editEvent === 'function') { window.editEvent('${e.id}'); } else { alert('Function not loaded'); }" style="flex: 1; padding: 8px 12px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'" title="Edit">
               <i class="fas fa-edit"></i> Edit
             </button>
-            <button onclick="event.stopPropagation(); if(typeof window.deleteEvent === 'function') { if(confirm('Are you sure you want to delete this event?')) { window.deleteEvent('${e.id}'); } } else { alert('Function not loaded'); }" style="flex: 1; padding: 8px 12px; background: #ef4444; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer;" title="Delete">
+            <button onclick="event.stopPropagation(); if(typeof window.deleteEvent === 'function') { window.deleteEvent('${e.id}'); } else { alert('Function not loaded'); }" style="flex: 1; padding: 8px 12px; background: #ef4444; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'" title="Delete">
               <i class="fas fa-trash"></i> Delete
             </button>
           </div>
@@ -163,19 +163,19 @@ export function bulletinCardPretty(b, showOwnerControls = false) {
         ${showOwnerControls ? `
           <!-- Owner Controls -->
           <div style="display: flex; gap: 4px; margin-top: 16px; flex-wrap: wrap;">
-            ${b.status === 'draft' || !b.is_published ? `
-              <button onclick="event.stopPropagation(); if(typeof window.publishBulletin === 'function') { window.publishBulletin('${b.id}'); } else { alert('Function not loaded'); }" style="flex: 1; padding: 8px 12px; background: #10b981; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer;" title="Publish">
+            ${(b.status === 'draft' || b.status === 'pending' || !b.is_published) ? `
+              <button onclick="event.stopPropagation(); if(typeof window.publishBulletin === 'function') { window.publishBulletin('${b.id}'); } else { alert('Function not loaded'); }" style="flex: 1; padding: 8px 12px; background: #10b981; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'" title="Publish">
                 <i class="fas fa-eye"></i> Publish
               </button>
             ` : `
-              <button onclick="event.stopPropagation(); if(typeof window.draftBulletin === 'function') { window.draftBulletin('${b.id}'); } else { alert('Function not loaded'); }" style="flex: 1; padding: 8px 12px; background: #f59e0b; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer;" title="Save as Draft">
+              <button onclick="event.stopPropagation(); if(typeof window.draftBulletin === 'function') { window.draftBulletin('${b.id}'); } else { alert('Function not loaded'); }" style="flex: 1; padding: 8px 12px; background: #f59e0b; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#d97706'" onmouseout="this.style.background='#f59e0b'" title="Save as Draft">
                 <i class="fas fa-eye-slash"></i> Draft
               </button>
             `}
-            <button onclick="event.stopPropagation(); console.log('Edit button clicked for bulletin:', '${b.id}'); if(typeof window.editBulletin === 'function') { window.editBulletin('${b.id}'); } else { console.error('editBulletin function not found'); alert('Edit function not loaded. Please refresh the page.'); }" style="flex: 1; padding: 8px 12px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer;" title="Edit">
+            <button onclick="event.stopPropagation(); if(typeof window.editBulletin === 'function') { window.editBulletin('${b.id}'); } else { alert('Function not loaded'); }" style="flex: 1; padding: 8px 12px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'" title="Edit">
               <i class="fas fa-edit"></i> Edit
             </button>
-            <button onclick="event.stopPropagation(); if(typeof window.deleteBulletin === 'function') { if(confirm('Are you sure you want to delete this bulletin?')) { window.deleteBulletin('${b.id}'); } } else { alert('Function not loaded'); }" style="flex: 1; padding: 8px 12px; background: #ef4444; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer;" title="Delete">
+            <button onclick="event.stopPropagation(); if(typeof window.deleteBulletin === 'function') { window.deleteBulletin('${b.id}'); } else { alert('Function not loaded'); }" style="flex: 1; padding: 8px 12px; background: #ef4444; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'" title="Delete">
               <i class="fas fa-trash"></i> Delete
             </button>
           </div>
