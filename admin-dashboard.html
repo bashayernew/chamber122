@@ -8,6 +8,7 @@
   <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
   <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
   <link rel="stylesheet" href="css/style.css?v=16">
+  <link rel="stylesheet" href="css/admin-dashboard.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -111,7 +112,7 @@
 
       <!-- Admin Tabs -->
       <div class="admin-tabs">
-        <button class="admin-tab active" data-tab="approvals">MSME Approvals</button>
+        <button class="admin-tab active" data-tab="approvals">User Management</button>
         <button class="admin-tab" data-tab="needs-setup">Needs Setup</button>
         <button class="admin-tab" data-tab="guest-submissions">Guest Submissions</button>
         <button class="admin-tab" data-tab="content">Content Management</button>
@@ -120,12 +121,13 @@
 
       <!-- Tab Content -->
       <div class="admin-content">
-        <!-- MSME Approvals Tab -->
+        <!-- User Management Tab -->
         <div class="admin-tab-content active" id="approvals-tab">
           <div class="admin-section">
-            <h2>Pending MSME Approvals</h2>
+            <h2>User Accounts & Documents</h2>
+            <p>Review user accounts, documents, and manage approvals.</p>
             <div class="approvals-list" id="approvals-list">
-              <!-- Approvals will be loaded here -->
+              <!-- Users and documents will be loaded here -->
             </div>
           </div>
         </div>
@@ -213,30 +215,9 @@
   </footer>
 
   <script src="js/main.js?v=7"></script>
-  <script>
-    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
-    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
-  </script>
-  <script type="module" src="js/supabase-client.js?v=20"></script>
-<script type="module" src="js/auth-session.js?v=1"></script>
-  <script type="module" src="js/require-auth.js?v=1"></script>
-  <script type="module" src="js/site-header.js?v=1"></script>
-  <script type="module" src="js/supabase-client.js"></script>
-  <script type="module" src="js/admin-dashboard.js"></script>
+  <script type="module" src="js/admin-dashboard-standalone.js"></script>
   <script type="module" src="./js/i18n.js"></script>
-  <!-- Import authentication scripts -->
-  <script type="module" src="js/modal-login-required.js"></script>
-  <script type="module" src="js/guest.js"></script>
-  <script type="module">
-    import { initNavAuthState } from '/js/nav-auth-state.js';
-    initNavAuthState();
-  </script>
   
-  <!-- Auth Guard -->
-  <script type="module">
-    import { requireAuth } from '/shared/auth-guard.js';
-    const user = await requireAuth(); // redirects if not logged in
-  </script>
   <link rel="stylesheet" href="css/modal.css">
   <link rel="stylesheet" href="css/header.css?v=1">
 </body>

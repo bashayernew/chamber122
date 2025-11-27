@@ -222,8 +222,8 @@ function showEmptyState() {
 
 // Filter events based on search and type
 function filterEvents() {
-  const searchTerm = searchInput.value.toLowerCase();
-  const typeFilterValue = typeFilter.value;
+  const searchTerm = searchInput?.value?.toLowerCase() || '';
+  const typeFilterValue = typeFilter?.value || '';
 
   filteredEvents = allEvents.filter(event => {
     const title = (event.title ?? '').toString().toLowerCase();
@@ -246,14 +246,21 @@ function filterEvents() {
 
 // Setup event listeners
 function setupEventListeners() {
-  searchInput.addEventListener('input', filterEvents);
-  typeFilter.addEventListener('change', filterEvents);
+  if (searchInput) {
+    searchInput.addEventListener('input', filterEvents);
+  }
   
-  viewToggle.addEventListener('click', () => {
-    currentView = currentView === 'grid' ? 'list' : 'grid';
-    viewToggle.innerHTML = currentView === 'grid' ? '<i class="fas fa-th-large"></i>' : '<i class="fas fa-list"></i>';
-    displayEvents();
-  });
+  if (typeFilter) {
+    typeFilter.addEventListener('change', filterEvents);
+  }
+  
+  if (viewToggle) {
+    viewToggle.addEventListener('click', () => {
+      currentView = currentView === 'grid' ? 'list' : 'grid';
+      viewToggle.innerHTML = currentView === 'grid' ? '<i class="fas fa-th-large"></i>' : '<i class="fas fa-list"></i>';
+      displayEvents();
+    });
+  }
 
   // Create Event button with auth guard
   const createBtn = document.getElementById('create-event-btn');
@@ -341,6 +348,13 @@ async function openEventForm() {
 // Handle event form submission
 async function handleEventFormSubmit(e) {
   e.preventDefault();
+  
+  // Check if account is suspended
+  const { isAccountSuspended } = await import('/js/api.js');
+  if (await isAccountSuspended()) {
+    toast('Your account has been suspended. You cannot post events. Please contact support if you have any questions or would like to appeal this decision.', 'error');
+    return;
+  }
   
   try {
     // Get business ID from form selection

@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inbox - Chamber122</title>
+  <link rel="stylesheet" href="/css/header.css?v=1">
+  <link rel="stylesheet" href="/css/style.css?v=17">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .page-header {
+      margin-bottom: 2rem;
+    }
+    .page-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #e8e9f3;
+      margin: 0 0 0.5rem 0;
+    }
+    .page-subtitle {
+      color: #a0a0a0;
+      font-size: 1.1rem;
+    }
+    .conversations-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .conversation-item {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .conversation-item:hover {
+      background: #222;
+      border-color: #3a3a3a;
+    }
+    .conversation-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: linear-gradient(135deg, #ffd166, #ff6b6b);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #111;
+      font-weight: 600;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .conversation-avatar img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .conversation-content {
+      flex: 1;
+      min-width: 0;
+    }
+    .conversation-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .conversation-preview {
+      font-size: 14px;
+      color: #AFAFAF;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .conversation-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+    .conversation-time {
+      font-size: 12px;
+      color: #6b7280;
+    }
+    .unread-badge {
+      background: #f2c64b;
+      color: #111;
+      border-radius: 12px;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      min-width: 20px;
+      text-align: center;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #AFAFAF;
+    }
+    .empty-state i {
+      font-size: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+    /* Inbox layout - ensure it doesn't overflow */
+    .inbox-layout {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 2rem;
+      max-height: calc(100vh - 200px);
+      overflow: hidden;
+    }
+    /* Conversations list - scrollable */
+    .conversations-list-container {
+      max-height: calc(100vh - 200px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 8px;
+    }
+    /* Message detail - scrollable and contained */
+    #message-detail {
+      max-height: calc(100vh - 200px);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #message-detail > div {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      max-height: 100%;
+      overflow: hidden;
+    }
+    #message-detail-content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 8px;
+    }
+    /* Custom scrollbar for message detail */
+    #message-detail-content::-webkit-scrollbar {
+      width: 8px;
+    }
+    #message-detail-content::-webkit-scrollbar-track {
+      background: #1a1a1a;
+      border-radius: 4px;
+    }
+    #message-detail-content::-webkit-scrollbar-thumb {
+      background: #3a3a3a;
+      border-radius: 4px;
+    }
+    #message-detail-content::-webkit-scrollbar-thumb:hover {
+      background: #4a4a4a;
+    }
+    /* Responsive: stack on mobile */
+    @media (max-width: 768px) {
+      .inbox-layout {
+        grid-template-columns: 1fr;
+        max-height: none;
+      }
+      .conversations-list-container {
+        max-height: 400px;
+      }
+      #message-detail {
+        max-height: 500px;
+      }
+    }
+  </style>
+</head>
+<body class="dark bg-zinc-900 text-zinc-100 min-h-screen">
+  <header id="site-header">
+    <span id="auth-slot"></span>
+  </header>
+
+  <main class="container">
+    <div class="page-header">
+      <h1 class="page-title">Inbox</h1>
+      <p class="page-subtitle">Your conversations with businesses and users</p>
+    </div>
+
+    <div class="inbox-layout">
+      <!-- Conversations List -->
+      <div class="conversations-list-container">
+        <div id="conversations-list" class="conversations-list">
+          <div class="empty-state">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading conversations...</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Message Detail View -->
+      <div id="message-detail" style="display: none;">
+        <div>
+          <div id="message-detail-content">
+            <!-- Message details will be rendered here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="/js/api.js"></script>
+  <script type="module" src="/public/js/header-auth-slot.js"></script>
+  <script type="module">
+    import { getCurrentUser } from '/js/api.js';
+
+    async function loadConversations() {
+      try {
+        const user = await getCurrentUser();
+        if (!user) {
+          window.location.href = '/auth.html#login';
+          return;
+        }
+
+        // Load backend conversations
+        let backendConversations = [];
+        try {
+          const token = localStorage.getItem('session_token');
+          const response = await fetch('/api/messages/conversations', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+            credentials: 'include'
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            backendConversations = data.conversations || [];
+          }
+        } catch (err) {
+          console.warn('[inbox] Could not load backend conversations:', err);
+        }
+
+        // Load admin messages from localStorage (both old and new format)
+        let adminMessages = [];
+        try {
+          // Try new inbox format first
+          const inboxMessages = JSON.parse(localStorage.getItem('ch122_inbox_messages') || '[]');
+          console.log('[inbox] Loading messages for user:', {
+            userId: user.id,
+            totalMessages: inboxMessages.length,
+            allMessages: inboxMessages.map(m => ({
+              id: m.id,
+              toUserId: m.toUserId,
+              user_id: m.user_id,
+              from: m.from,
+              subject: m.subject
+            }))
+          });
+          const userInboxMessages = inboxMessages.filter(m => 
+            (m.toUserId === user.id || m.user_id === user.id) && m.from === 'admin'
+          );
+          console.log('[inbox] Filtered admin messages for user:', {
+            userId: user.id,
+            matchedCount: userInboxMessages.length,
+            matchedMessages: userInboxMessages.map(m => ({
+              id: m.id,
+              toUserId: m.toUserId,
+              user_id: m.user_id,
+              from: m.from,
+              subject: m.subject
+            }))
+          });
+          
+          // Also try old admin messages format
+          const { getAdminMessages } = await import('/js/admin-auth.js');
+          const allAdminMessages = getAdminMessages();
+          const userAdminMessages = allAdminMessages.filter(m => m.user_id === user.id);
+          
+          // Merge both formats, prioritizing new format
+          const messageMap = new Map();
+          [...userInboxMessages, ...userAdminMessages].forEach(m => {
+            // Use id as key, prefer newer format
+            const key = m.id || `${m.user_id}_${m.created_at || m.createdAt}`;
+            if (!messageMap.has(key) || m.from === 'admin') {
+              messageMap.set(key, m);
+            }
+          });
+          adminMessages = Array.from(messageMap.values());
+          
+          // Convert admin messages to conversation format
+          if (adminMessages.length > 0) {
+            // Sort by date (newest first)
+            adminMessages.sort((a, b) => {
+              const dateA = new Date(a.created_at || a.createdAt || 0);
+              const dateB = new Date(b.created_at || b.createdAt || 0);
+              return dateB - dateA;
+            });
+            
+            // Count unread messages - check both unread flag and read_at timestamp
+            const unreadCount = adminMessages.filter(m => {
+              // Message is unread if:
+              // 1. read_at is missing/null/empty (message was never read), AND
+              // 2. unread is not explicitly false
+              const hasReadAt = m.read_at && m.read_at.trim() !== '';
+              const isExplicitlyUnread = m.unread === true;
+              const isNotExplicitlyRead = m.unread !== false;
+              
+              // Message is unread if it doesn't have read_at timestamp
+              const isUnread = !hasReadAt && (isExplicitlyUnread || isNotExplicitlyRead);
+              
+              return isUnread;
+            }).length;
+            
+            console.log('[inbox] Admin messages unread count:', {
+              total: adminMessages.length,
+              unread: unreadCount,
+              messages: adminMessages.map(m => ({
+                id: m.id,
+                subject: m.subject,
+                unread: m.unread,
+                read_at: m.read_at,
+                isUnread: !(m.read_at && m.read_at.trim() !== '')
+              }))
+            });
+            
+            const adminConversation = {
+              id: 'admin-messages',
+              other_participant: {
+                name: 'Admin',
+                logo_url: '',
+                business_id: null
+              },
+              last_message: adminMessages[0].body || adminMessages[0].message || adminMessages[0].subject || 'Admin message',
+              last_message_at: adminMessages[0].created_at || adminMessages[0].createdAt || new Date().toISOString(),
+              unread_count: unreadCount,
+              messages: adminMessages // Store all messages for detail view
+            };
+            backendConversations.unshift(adminConversation); // Add admin conversation at the top
+          }
+        } catch (err) {
+          console.warn('[inbox] Could not load admin messages:', err);
+        }
+
+        renderConversations(backendConversations);
+      } catch (error) {
+        console.error('[inbox] Error loading conversations:', error);
+        document.getElementById('conversations-list').innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-exclamation-circle"></i>
+            <p>Error loading conversations. Please try again.</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderConversations(conversations) {
+      const container = document.getElementById('conversations-list');
+      
+      if (conversations.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <p>No conversations yet</p>
+            <p style="font-size: 14px; margin-top: 8px;">Start a conversation by messaging a business!</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = conversations.map(conv => {
+        const other = conv.other_participant || {};
+        const name = other.name || 'Unknown';
+        const logo = other.logo_url || '';
+        const lastMessage = conv.last_message || 'No messages yet';
+        const lastMessageTime = conv.last_message_at ? formatTime(conv.last_message_at) : '';
+        const unreadCount = conv.unread_count || 0;
+        const businessId = other.business_id || '';
+
+        // Handle admin messages conversation differently
+        if (conv.id === 'admin-messages') {
+          // For admin messages, show detail view on click instead of navigating
+          // Store messages in a data attribute instead of inline JSON to avoid escaping issues
+          const messagesData = conv.messages || [];
+          const messagesId = `admin-msgs-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          // Store messages in a global object to avoid JSON escaping issues
+          if (!window.adminMessagesCache) window.adminMessagesCache = {};
+          window.adminMessagesCache[messagesId] = messagesData;
+          
+          return `
+            <div class="conversation-item" data-messages-id="${messagesId}" onclick="showAdminMessageDetailFromDataId('${messagesId}')">
+              <div class="conversation-avatar">
+                <span>A</span>
+              </div>
+              <div class="conversation-content">
+                <div class="conversation-name">${escapeHtml(name)}</div>
+                <div class="conversation-preview">${escapeHtml(lastMessage)}</div>
+              </div>
+              <div class="conversation-meta">
+                ${lastMessageTime ? `<div class="conversation-time">${lastMessageTime}</div>` : ''}
+                ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+              </div>
+            </div>
+          `;
+        }
+        
+        const chatUrl = `/chat.html?conversationId=${conv.id}`;
+        return `
+          <div class="conversation-item" onclick="window.location.href='${chatUrl}'">
+            <div class="conversation-avatar">
+              ${logo ? `<img src="${logo}" alt="${name}">` : `<span>${name.charAt(0).toUpperCase()}</span>`}
+            </div>
+            <div class="conversation-content">
+              <div class="conversation-name">${escapeHtml(name)}</div>
+              <div class="conversation-preview">${escapeHtml(lastMessage)}</div>
+            </div>
+            <div class="conversation-meta">
+              ${lastMessageTime ? `<div class="conversation-time">${lastMessageTime}</div>` : ''}
+              ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function formatTime(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return date.toLocaleDateString();
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    async function showAdminMessageDetail(messages) {
+      if (!messages || messages.length === 0) {
+        // Try to load messages from localStorage
+        try {
+          const user = await getCurrentUser();
+          if (user) {
+            const inboxMessages = JSON.parse(localStorage.getItem('ch122_inbox_messages') || '[]');
+            const userInboxMessages = inboxMessages.filter(m => 
+              (m.toUserId === user.id || m.user_id === user.id) && m.from === 'admin'
+            );
+            if (userInboxMessages.length > 0) {
+              messages = userInboxMessages;
+            }
+          }
+        } catch (err) {
+          console.warn('[inbox] Could not load messages from localStorage:', err);
+        }
+      }
+      
+      if (!messages || messages.length === 0) return;
+      
+      // Sort messages by date (newest first)
+      const sortedMessages = [...messages].sort((a, b) => {
+        const dateA = new Date(a.created_at || a.createdAt || 0);
+        const dateB = new Date(b.created_at || b.createdAt || 0);
+        return dateB - dateA;
+      });
+      
+      // Show ALL messages in detail view (newest first)
+      const detailContainer = document.getElementById('message-detail');
+      const detailContent = document.getElementById('message-detail-content');
+      
+      if (!detailContainer || !detailContent) return;
+      
+      // Mark ALL messages as read when viewing the detail
+      // This ensures the unread count updates correctly
+      sortedMessages.forEach(msg => {
+        if (msg.id) {
+          markMessageAsRead(msg.id);
+        }
+      });
+      
+      // Build detail view HTML showing ALL messages
+      const messagesHtml = sortedMessages.map((message, index) => {
+        const messageBody = message.body || message.message || '';
+        const messageSubject = message.subject || 'Admin Message';
+        const messageDate = message.created_at || message.createdAt || new Date().toISOString();
+        const hasAction = message.action && message.action.type === 'fix_document';
+        const formattedDate = formatTime(messageDate);
+        
+        return `
+          <div style="margin-bottom: ${index < sortedMessages.length - 1 ? '32px' : '20px'}; padding-bottom: ${index < sortedMessages.length - 1 ? '24px' : '0'}; border-bottom: ${index < sortedMessages.length - 1 ? '1px solid #2a2a2a' : 'none'};">
+            <div style="margin-bottom: 12px;">
+              <h2 style="color: #fff; font-size: 20px; font-weight: 600; margin: 0 0 8px 0;">${escapeHtml(messageSubject)}</h2>
+              <div style="color: #6b7280; font-size: 14px;">From: Admin • ${formattedDate}</div>
+            </div>
+            <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 20px; color: #e8e9f3; line-height: 1.6; max-height: 400px; overflow-y: auto; word-wrap: break-word; white-space: pre-wrap;">
+              ${escapeHtml(messageBody)}
+            </div>
+            ${hasAction ? `
+              <div style="margin-top: 16px;">
+                <button onclick="window.location.href='${message.action.redirectUrl || '/owner-form.html#documents'}'" style="background: #f2c64b; color: #111; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;">
+                  <i class="fas fa-wrench"></i> Fix this document
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+      
+      detailContent.innerHTML = `
+        <div style="margin-bottom: 20px;">
+          <button onclick="hideMessageDetail()" style="background: transparent; border: 1px solid #3a3a3a; color: #fff; padding: 8px 16px; border-radius: 8px; cursor: pointer; margin-bottom: 16px;">
+            <i class="fas fa-arrow-left"></i> Back to list
+          </button>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <div style="font-size: 24px; font-weight: 600; color: #fff; margin-bottom: 8px;">Admin Messages (${sortedMessages.length})</div>
+          <div style="font-size: 14px; color: #6b7280;">
+            ${sortedMessages.length === 1 ? '1 message' : `${sortedMessages.length} messages`}
+          </div>
+        </div>
+        ${messagesHtml}
+      `;
+      
+      // Show detail view
+      detailContainer.style.display = 'block';
+      
+      // Reload conversations to update unread count
+      loadConversations();
+    }
+
+    function hideMessageDetail() {
+      const detailContainer = document.getElementById('message-detail');
+      if (detailContainer) {
+        detailContainer.style.display = 'none';
+      }
+    }
+
+    async function markMessageAsRead(messageId) {
+      try {
+        // Update in new inbox format
+        const inboxKey = 'ch122_inbox_messages';
+        const allMessages = JSON.parse(localStorage.getItem(inboxKey) || '[]');
+        const messageIndex = allMessages.findIndex(m => m.id === messageId);
+        if (messageIndex !== -1) {
+          allMessages[messageIndex].unread = false;
+          allMessages[messageIndex].read_at = new Date().toISOString();
+          localStorage.setItem(inboxKey, JSON.stringify(allMessages));
+        }
+        
+        // Also update in admin messages format
+        try {
+          const { getAdminMessages, saveAdminMessages } = await import('/js/admin-auth.js');
+          const adminMessages = getAdminMessages();
+          const adminMsgIndex = adminMessages.findIndex(m => m.id === messageId);
+          if (adminMsgIndex !== -1) {
+            adminMessages[adminMsgIndex].read_at = new Date().toISOString();
+            saveAdminMessages(adminMessages);
+          }
+        } catch (adminErr) {
+          console.debug('[inbox] Could not update admin messages format:', adminErr);
+        }
+        
+        // Dispatch custom event to update inbox badge in header
+        window.dispatchEvent(new CustomEvent('inbox-updated'));
+      } catch (err) {
+        console.warn('[inbox] Could not mark message as read:', err);
+      }
+    }
+
+    async function showAdminMessageDetailFromDataId(messagesId) {
+      try {
+        let messages = null;
+        
+        // Try to get from cache first
+        if (window.adminMessagesCache && window.adminMessagesCache[messagesId]) {
+          messages = window.adminMessagesCache[messagesId];
+        } else {
+          // Fallback: load from localStorage
+          console.log('[inbox] Messages not in cache, loading from localStorage');
+          try {
+            const user = await getCurrentUser();
+            if (user) {
+              // Load from new inbox format
+              const inboxMessages = JSON.parse(localStorage.getItem('ch122_inbox_messages') || '[]');
+              const userInboxMessages = inboxMessages.filter(m => 
+                (m.toUserId === user.id || m.user_id === user.id) && m.from === 'admin'
+              );
+              
+              // Also try old admin messages format
+              const { getAdminMessages } = await import('/js/admin-auth.js');
+              const adminMessages = getAdminMessages();
+              const userAdminMessages = adminMessages.filter(m => m.user_id === user.id);
+              
+              // Merge both formats
+              const messageMap = new Map();
+              [...userInboxMessages, ...userAdminMessages].forEach(m => {
+                const key = m.id || `${m.user_id}_${m.created_at || m.createdAt}`;
+                if (!messageMap.has(key) || m.from === 'admin') {
+                  messageMap.set(key, m);
+                }
+              });
+              messages = Array.from(messageMap.values());
+              
+              // Sort by date (newest first)
+              messages.sort((a, b) => {
+                const dateA = new Date(a.created_at || a.createdAt || 0);
+                const dateB = new Date(b.created_at || b.createdAt || 0);
+                return dateB - dateA;
+              });
+              
+              console.log('[inbox] Loaded', messages.length, 'messages from localStorage');
+            }
+          } catch (localErr) {
+            console.warn('[inbox] Could not load messages from localStorage:', localErr);
+          }
+        }
+        
+        if (!messages || messages.length === 0) {
+          console.warn('[inbox] No messages found');
+          return;
+        }
+        
+        showAdminMessageDetail(messages);
+      } catch (err) {
+        console.error('[inbox] Error loading messages:', err);
+        // Try to show empty detail view
+        const detailContainer = document.getElementById('message-detail');
+        const detailContent = document.getElementById('message-detail-content');
+        if (detailContainer && detailContent) {
+          detailContent.innerHTML = `
+            <div style="padding: 20px; text-align: center; color: #a0a0a0;">
+              <p>Error loading message. Please try again.</p>
+              <button onclick="hideMessageDetail()" style="margin-top: 16px; padding: 8px 16px; background: #3a3a3a; color: #fff; border: none; border-radius: 8px; cursor: pointer;">
+                Back to list
+              </button>
+            </div>
+          `;
+          detailContainer.style.display = 'block';
+        }
+      }
+    }
+
+    function showAdminMessageDetailFromClick(messagesJson) {
+      try {
+        // Try to parse, but handle control characters
+        const cleanedJson = messagesJson.replace(/&quot;/g, '"').replace(/[\n\r\t]/g, '\\n');
+        const messages = JSON.parse(cleanedJson);
+        showAdminMessageDetail(messages);
+      } catch (err) {
+        console.error('[inbox] Error parsing messages:', err);
+        // Fallback: try to load from localStorage
+        showAdminMessageDetail([]);
+      }
+    }
+
+    window.showAdminMessageDetail = showAdminMessageDetail;
+    window.showAdminMessageDetailFromDataId = showAdminMessageDetailFromDataId;
+    window.showAdminMessageDetailFromClick = showAdminMessageDetailFromClick;
+    window.hideMessageDetail = hideMessageDetail;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadConversations();
+    });
+  </script>
+</body>
+</html>
+

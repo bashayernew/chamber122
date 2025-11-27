@@ -1,4 +1,5 @@
-import { sb } from "./supabase.js";
+// directory.js - Using backend API instead of Supabase
+import { api } from './api.js';
 
 let currentPage = 0;
 const pageSize = 12;
@@ -57,24 +58,28 @@ function applyURLFilters() {
   }
 }
 
-// Load approved accounts from Supabase
+// Load approved accounts from backend API
 async function loadBusinesses() {
   try {
-    const { data, error } = await sb().from('businesses')
-      .select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
+    console.log('[directory] Loading businesses from API...');
+    const response = await fetch('/api/businesses/public');
+    const data = await response.json();
     
-    if (error) throw error;
+    if (data.ok && data.businesses) {
+      allBusinesses = data.businesses;
+      console.log(`[directory] Loaded ${allBusinesses.length} businesses`);
+    } else {
+      console.warn('[directory] No businesses returned from API');
+      allBusinesses = [];
+    }
     
-    allBusinesses = data || [];
     filteredBusinesses = [...allBusinesses];
     updateResultsCount();
+    renderBusinesses();
   } catch (error) {
-    console.error('Error loading accounts:', error);
-    // Fallback to sample data if Supabase fails
-    allBusinesses = getSampleBusinesses();
-    filteredBusinesses = [...allBusinesses];
+    console.error('[directory] Error loading businesses:', error);
+    allBusinesses = [];
+    filteredBusinesses = [];
     updateResultsCount();
   }
 }
@@ -202,13 +207,19 @@ function createBusinessCard(business) {
   // Get category - check both category and industry fields
   const category = business.category || business.industry || 'Business';
   
-  // Get business name or use default
-  const businessName = business.name || 'Unnamed Business';
+  // Get business name or use default - check both name and business_name fields
+  const businessName = (business.name || business.business_name || 'Unnamed Business').trim();
   
-  console.log('Card data:', { businessName, category, description: truncatedDescription, logo: business.logo_url, fullBusiness: business });
+  // Filter out blob URLs - they're temporary and won't work after page reload
+  let logoUrl = business.logo_url || '';
+  if (logoUrl.startsWith('blob:')) {
+    logoUrl = ''; // Don't use blob URLs
+  }
+  
+  console.log('Card data:', { businessName, category, description: truncatedDescription, logo: logoUrl, fullBusiness: business });
   
   // Ensure we have valid text content - use fallback values
-  const safeName = (businessName && businessName.trim()) ? businessName : (business.name || 'Business Name');
+  const safeName = (businessName && businessName.trim()) ? businessName : (business.business_name || business.name || 'Business Name');
   const safeCategory = (category && category.trim()) ? category : (business.industry || 'Business');
   const safeDescription = (truncatedDescription && truncatedDescription.trim()) ? truncatedDescription : 'No description available.';
   
@@ -219,16 +230,31 @@ function createBusinessCard(business) {
     safeDescription,
     hasName: !!safeName,
     hasCategory: !!safeCategory,
-    hasDescription: !!safeDescription
+    hasDescription: !!safeDescription,
+    logoUrl: logoUrl || 'No logo'
   });
+  
+  // Get status badge for approved businesses
+  const status = (business.status || 'pending').toLowerCase();
+  const statusBadge = status === 'approved' 
+    ? `<span class="status-badge-approved" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 12px; font-size: 11px; font-weight: 600; margin-left: 8px;">
+        <i class="fas fa-check-circle" style="font-size: 10px;"></i> Verified
+       </span>`
+    : '';
   
   // Match home page card style
   card.innerHTML = `
     <div style="position: relative; margin-bottom: 16px;">
-      <img src="${business.logo_url || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=200&fit=crop'}" alt="${escapeHtml(safeName)}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px;" onerror="this.src='https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=200&fit=crop'">
+      ${logoUrl ? `<img src="${logoUrl}" alt="${escapeHtml(safeName)}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
+      <div style="width: 100%; height: 200px; background: linear-gradient(135deg, #ffd166, #ff6b6b); display: ${logoUrl ? 'none' : 'flex'}; align-items: center; justify-content: center; border-radius: 12px;">
+        <i class="fas fa-building" style="color: #111; font-size: 48px;"></i>
+      </div>
       <div class="tag" style="position: absolute; top: 12px; right: 12px; background: linear-gradient(135deg, #4ade80, #22c55e); color: #111; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">New</div>
     </div>
-    <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px; color: #fff;">${escapeHtml(safeName)}</h3>
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+      <h3 style="font-size: 20px; font-weight: 700; color: #fff; margin: 0;">${escapeHtml(safeName)}</h3>
+      ${statusBadge}
+    </div>
     <div class="category" style="color: #ffd166; font-size: 14px; margin-bottom: 16px; font-weight: 500;">${escapeHtml(safeCategory)}</div>
     <div class="explore-btn" style="background: linear-gradient(135deg, #ffd166, #ffed4e); color: #111; padding: 12px 20px; border-radius: 8px; text-align: center; font-weight: 600; transition: all 0.3s ease; border: none; cursor: pointer; width: 100%;">Visit Profile</div>
   `;
@@ -288,7 +314,7 @@ function createBusinessCard(business) {
     // Navigate to profile page
     const businessId = card.getAttribute('data-business-id');
     if (businessId) {
-      window.location.href = `owner.html?businessId=${businessId}`;
+      window.location.href = `/owner.html?businessId=${businessId}`;
     }
   });
   
@@ -372,41 +398,4 @@ window.filterBusinesses = filterBusinesses;
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', initDirectory);
 
-
-    whatsappBtn.style.display = 'none';
-  }
-  
-  if (emailBtn && business.email) {
-    emailBtn.href = `mailto:${business.email}`;
-    emailBtn.style.display = 'inline-flex';
-  } else if (emailBtn) {
-    emailBtn.style.display = 'none';
-  }
-  
-  if (websiteBtn && business.website) {
-    websiteBtn.href = business.website;
-    websiteBtn.style.display = 'inline-flex';
-  } else if (websiteBtn) {
-    websiteBtn.style.display = 'none';
-  }
-  
-  modal.style.display = 'flex';
-}
-
-// Close modal
-function closeModal() {
-  const modal = document.getElementById('modal-overlay');
-  if (modal) {
-    modal.style.display = 'none';
-  }
-}
-
-// Global functions for onclick handlers
-window.openBusinessModal = openBusinessModal;
-window.closeModal = closeModal;
-window.loadMoreBusinesses = loadMoreBusinesses;
-window.filterBusinesses = filterBusinesses;
-
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', initDirectory);
 

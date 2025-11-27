@@ -1,4 +1,4 @@
-// Real MSME data will be loaded from Supabase
+// Real MSME data will be loaded from backend API
 const msmeData = [];
 
 // DOM elements
@@ -60,19 +60,27 @@ function displayMSMEs(msmes) {
 }
 
 // Create MSME card element
-function createMSMECard(msme) {
+function createMSMECard(business) {
   const card = document.createElement('div');
   card.className = 'msme-card';
-  card.onclick = () => openModal(msme);
+  card.onclick = () => window.location.href = `/owner.html?businessId=${business.id}`;
   
-  const statusClass = msme.status === 'verified' ? 'verified' : '';
+  const businessName = (business.name || business.business_name || 'Unnamed Business').trim();
+  // Filter out blob URLs - they're temporary and won't work after page reload
+  let imageUrl = business.logo_url || '';
+  if (imageUrl.startsWith('blob:')) {
+    imageUrl = ''; // Don't use blob URLs
+  }
+  const category = business.category || business.industry || 'General';
+  const description = business.description || business.short_description || '';
+  const statusClass = business.status === 'approved' ? 'verified' : '';
   
   card.innerHTML = `
-    <img src="${msme.image}" alt="${msme.name}">
-    <h3>${msme.name}</h3>
-    <div class="category">${msme.category}</div>
-    <div class="status ${statusClass}">${msme.status === 'verified' ? 'Verified' : 'Available'}</div>
-    <p class="description">${msme.description}</p>
+    ${imageUrl ? `<img src="${imageUrl}" alt="${businessName}">` : `<div style="width: 100%; height: 200px; background: linear-gradient(135deg, #ffd166, #ff6b6b); display: flex; align-items: center; justify-content: center;"><i class="fas fa-building" style="color: #111; font-size: 48px;"></i></div>`}
+    <h3>${businessName}</h3>
+    <div class="category">${category}</div>
+    <div class="status ${statusClass}">${business.status === 'approved' ? 'Verified' : 'Available'}</div>
+    <p class="description">${description.substring(0, 100)}${description.length > 100 ? '...' : ''}</p>
     <div class="visit-btn">Visit Profile</div>
   `;
   
@@ -214,18 +222,50 @@ function hideLoading() {
 }
 
 // Display newest MSMEs on home page
-function displayNewestMSMEs() {
+async function displayNewestMSMEs() {
   const newestGrid = document.getElementById('newest-grid');
   if (!newestGrid) return;
   
-  // Get the 4 most recent MSMEs (simulate newest by reversing array)
-  const newestMSMEs = msmeData.slice(-4).reverse();
-  
-  newestGrid.innerHTML = '';
-  newestMSMEs.forEach(msme => {
-    const card = createMSMECard(msme);
-    newestGrid.appendChild(card);
-  });
+  try {
+    // Fetch businesses from API
+    const response = await fetch('/api/businesses/public');
+    const data = await response.json();
+    
+    let businesses = [];
+    if (data.ok && data.businesses) {
+      businesses = data.businesses;
+      console.log(`[main] Loaded ${businesses.length} businesses for newest section`);
+    }
+    
+    // Get the 4 most recent businesses
+    const newestMSMEs = businesses.slice(-4).reverse();
+    
+    newestGrid.innerHTML = '';
+    if (newestMSMEs.length === 0) {
+      newestGrid.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: #aaa; grid-column: 1 / -1;">
+          <i class="fas fa-building" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+          <h3 style="font-size: 20px; margin-bottom: 8px; color: #fff;">No businesses yet</h3>
+          <p style="font-size: 14px; color: #ccc;">Be the first to join our community!</p>
+        </div>
+      `;
+      return;
+    }
+    
+    newestMSMEs.forEach(msme => {
+      const card = createMSMECard(msme);
+      newestGrid.appendChild(card);
+    });
+  } catch (error) {
+    console.error('[main] Error loading newest MSMEs:', error);
+    newestGrid.innerHTML = `
+      <div style="text-align: center; padding: 40px; color: #aaa; grid-column: 1 / -1;">
+        <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+        <h3 style="font-size: 20px; margin-bottom: 8px; color: #fff;">Error loading businesses</h3>
+        <p style="font-size: 14px; color: #ccc;">Please try refreshing the page.</p>
+      </div>
+    `;
+  }
 }
 
 // Quick search functionality for home page
@@ -301,119 +341,35 @@ function initGlobalSearch() {
   setupGlobalSearchListeners();
 }
 
+let globalSearchListenersAttached = false;
+
 function setupGlobalSearchListeners() {
-  // Handle Enter key on search input
-  document.querySelectorAll('#global-search-input').forEach(input => {
-    input.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        performGlobalSearch(input.value);
-      }
-    });
-
-    // Handle search button click
-    const searchBtn = input.closest('.global-search-container')?.querySelector('#global-search-btn');
-    if (searchBtn) {
-      searchBtn.addEventListener('click', () => {
-        performGlobalSearch(input.value);
-      });
-    }
-  });
-}
-
-function performGlobalSearch(searchTerm) {
-  const term = searchTerm?.trim() || '';
-  
-  if (!term) {
-    // If empty, just go to directory
-    window.location.href = 'directory.html';
+  // Prevent duplicate listeners
+  if (globalSearchListenersAttached) {
     return;
   }
-
-  // Redirect to directory with search parameter
-  const params = new URLSearchParams();
-  params.set('name', term);
-  window.location.href = `directory.html?${params.toString()}`;
-}
-
-// Initialize global search on DOM ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initGlobalSearch);
-} else {
-  initGlobalSearch();
-}
-
-// Make functions available globally
-window.initGlobalSearch = initGlobalSearch;
-window.performGlobalSearch = performGlobalSearch;
-
-// User dropdown toggle
-function toggleUserMenu() {
-  const userDropdownContainer = document.querySelector('.user-dropdown');
-  if (userDropdownContainer) {
-    userDropdownContainer.classList.toggle('active');
-  }
-}
-
-// Close dropdown when clicking outside
-document.addEventListener('click', function(event) {
-  const userDropdownContainer = document.querySelector('.user-dropdown');
-  const userMenuBtn = document.querySelector('.user-menu-btn');
   
-  if (userDropdownContainer && userMenuBtn && !userMenuBtn.contains(event.target) && !userDropdownContainer.contains(event.target)) {
-    userDropdownContainer.classList.remove('active');
-  }
-});
-
-// Enhanced modal functionality
-function openBusinessModal(businessId) {
-  const business = msmeData.find(b => 
-    b.id == businessId || 
-    b.name.toLowerCase().replace(/\s+/g, '-') === businessId
-  );
-  if (business) {
-    openModal(business);
-  }
-}
-
-// Export functions for global access
-window.searchBusinesses = searchBusinesses;
-window.closeModal = closeModal;
-window.performQuickSearch = performQuickSearch;
-window.toggleMobileMenu = toggleMobileMenu;
-window.toggleUserMenu = toggleUserMenu;
-window.openBusinessModal = openBusinessModal;
-
-    const navActions = container.querySelector('.nav-actions');
-    if (navActions) {
-      container.insertBefore(searchWrapper, navActions);
-    } else {
-      container.appendChild(searchWrapper);
+  // Use event delegation to handle dynamically created search inputs
+  document.addEventListener('keypress', (e) => {
+    if (e.target && e.target.id === 'global-search-input' && e.key === 'Enter') {
+      e.preventDefault();
+      performGlobalSearch(e.target.value);
     }
   });
 
-  // Setup event listeners
-  setupGlobalSearchListeners();
-}
-
-function setupGlobalSearchListeners() {
-  // Handle Enter key on search input
-  document.querySelectorAll('#global-search-input').forEach(input => {
-    input.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
+  // Handle search button clicks using event delegation
+  document.addEventListener('click', (e) => {
+    if (e.target && (e.target.id === 'global-search-btn' || e.target.closest('#global-search-btn'))) {
+      const searchBtn = e.target.id === 'global-search-btn' ? e.target : e.target.closest('#global-search-btn');
+      const container = searchBtn.closest('.global-search-container');
+      const input = container?.querySelector('#global-search-input');
+      if (input) {
         performGlobalSearch(input.value);
       }
-    });
-
-    // Handle search button click
-    const searchBtn = input.closest('.global-search-container')?.querySelector('#global-search-btn');
-    if (searchBtn) {
-      searchBtn.addEventListener('click', () => {
-        performGlobalSearch(input.value);
-      });
     }
   });
+  
+  globalSearchListenersAttached = true;
 }
 
 function performGlobalSearch(searchTerm) {
