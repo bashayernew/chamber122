@@ -448,11 +448,13 @@ function renderMessage(message, currentUser, allUsers = [], allBusinesses = []) 
   const time = new Date(message.created_at).toLocaleString();
   const isImage = message.image_url || (message.body && message.body.startsWith('data:image'));
   const isLocation = message.location;
+  const imageUrl = message.image_url || (message.body && message.body.startsWith('data:image') ? message.body : null);
+  const textBody = isImage && imageUrl === message.body ? '' : message.body;
   
   return `
     <div style="margin-bottom: 20px; display: flex; ${isOwn ? 'flex-direction: row-reverse;' : 'flex-direction: row;'} align-items: flex-start; gap: 12px;">
       ${!isOwn ? `
-        <div style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg, #0095f6, #1877f2); display: flex; align-items: center; justify-content: center;">
+        <div style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg, #0095f6, #1877f2); display: flex; align-items: center; justify-content: center; border: 2px solid ${isOwn ? '#0095f6' : '#2a2a2a'};">
           ${senderAvatar ? 
             `<img src="${escapeHtml(senderAvatar)}" alt="${escapeHtml(senderName)}" style="width: 100%; height: 100%; object-fit: cover;">` :
             `<span style="color: #fff; font-weight: 600; font-size: 16px;">${escapeHtml(senderName.charAt(0).toUpperCase())}</span>`
@@ -461,26 +463,28 @@ function renderMessage(message, currentUser, allUsers = [], allBusinesses = []) 
       ` : ''}
       <div style="max-width: 70%; display: flex; flex-direction: column; ${isOwn ? 'align-items: flex-end;' : 'align-items: flex-start;'}">
         ${!isOwn ? `<div style="font-size: 12px; color: #a8a8a8; margin-bottom: 4px; font-weight: 500;">${escapeHtml(senderName)}</div>` : ''}
-        <div style="background: ${isOwn ? 'linear-gradient(135deg, #0095f6, #1877f2)' : '#2a2a2a'}; color: #fff; padding: 12px 16px; border-radius: ${isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px'}; max-width: 100%; word-wrap: break-word;">
-          ${isImage ? 
-            `<img src="${escapeHtml(message.image_url || message.body)}" style="max-width: 300px; border-radius: 8px; margin-bottom: 8px; display: block;" />` :
-            isLocation ?
-            `<div style="margin-bottom: 8px;">
-              <a href="https://www.google.com/maps?q=${escapeHtml(message.location.lat)},${escapeHtml(message.location.lng)}" target="_blank" style="color: #fff; text-decoration: underline; display: flex; align-items: center; gap: 8px;">
-                <i class="fas fa-map-marker-alt"></i> View Location
+        <div style="background: ${isOwn ? 'linear-gradient(135deg, #0095f6, #1877f2)' : '#2a2a2a'}; color: #fff; padding: ${isImage || isLocation ? '8px' : '12px 16px'}; border-radius: ${isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px'}; max-width: 100%; word-wrap: break-word; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+          ${imageUrl ? 
+            `<img src="${escapeHtml(imageUrl)}" style="max-width: 300px; max-height: 300px; border-radius: 8px; margin-bottom: ${textBody ? '8px' : '0'}; display: block; cursor: pointer;" onclick="window.open('${escapeHtml(imageUrl)}', '_blank')" />` :
+            ''
+          }
+          ${isLocation ? 
+            `<div style="margin-bottom: ${textBody ? '8px' : '0'};">
+              <a href="https://www.google.com/maps?q=${escapeHtml(message.location.lat)},${escapeHtml(message.location.lng)}" target="_blank" style="color: #fff; text-decoration: none; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(255,255,255,0.1); border-radius: 6px;">
+                <i class="fas fa-map-marker-alt"></i> <span>View Location on Map</span>
               </a>
             </div>` :
             ''
           }
-          ${message.body && !isImage ? `<div style="line-height: 1.5;">${escapeHtml(message.body)}</div>` : ''}
+          ${textBody ? `<div style="line-height: 1.5; white-space: pre-wrap;">${escapeHtml(textBody)}</div>` : ''}
         </div>
         <div style="font-size: 11px; color: #6b7280; margin-top: 4px; padding: 0 4px;">${time}</div>
       </div>
       ${isOwn ? `
-        <div style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg, #0095f6, #1877f2); display: flex; align-items: center; justify-content: center;">
-          ${currentUser.logo_url || (currentUser.business && currentUser.business.logo_url) ? 
-            `<img src="${escapeHtml(currentUser.logo_url || currentUser.business.logo_url)}" alt="${escapeHtml(currentUser.name || currentUser.email)}" style="width: 100%; height: 100%; object-fit: cover;">` :
-            `<span style="color: #fff; font-weight: 600; font-size: 16px;">${escapeHtml((currentUser.name || currentUser.email || 'U').charAt(0).toUpperCase())}</span>`
+        <div style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg, #0095f6, #1877f2); display: flex; align-items: center; justify-content: center; border: 2px solid #0095f6;">
+          ${currentUser && (currentUser.logo_url || (currentUser.business && currentUser.business.logo_url)) ? 
+            `<img src="${escapeHtml(currentUser.logo_url || (currentUser.business && currentUser.business.logo_url))}" alt="${escapeHtml(currentUser.name || currentUser.email)}" style="width: 100%; height: 100%; object-fit: cover;">` :
+            `<span style="color: #fff; font-weight: 600; font-size: 16px;">${escapeHtml((currentUser && (currentUser.name || currentUser.email) ? (currentUser.name || currentUser.email).charAt(0).toUpperCase() : 'U'))}</span>`
           }
         </div>
       ` : ''}
