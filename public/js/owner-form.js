@@ -474,7 +474,13 @@ async function preloadEdit() {
         
         // Convert to string and handle null/undefined - use safeTrim
         if (value != null && value !== '') {
-          el.value = safeTrim(value);
+          const trimmedValue = safeTrim(value);
+          // Don't save placeholder text as actual value
+          if (trimmedValue && !trimmedValue.includes('Describe what you offer') && !trimmedValue.includes('Share your journey')) {
+            el.value = trimmedValue;
+          } else {
+            el.value = '';
+          }
         } else {
           // Set empty string if field is null/undefined to clear the field
           el.value = '';
