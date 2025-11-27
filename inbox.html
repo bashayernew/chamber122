@@ -19,15 +19,16 @@
     
     .inbox-container {
       max-width: 1400px;
-      margin: 60px auto 40px auto;
-      padding: 20px;
-      min-height: calc(100vh - 200px);
-      height: calc(100vh - 200px);
+      margin: 80px auto 20px auto;
+      padding: 0;
+      min-height: calc(100vh - 120px);
+      max-height: calc(100vh - 120px);
       display: flex;
-      gap: 1px;
+      gap: 0;
       background: #262626;
       border-radius: 12px;
       overflow: hidden;
+      box-sizing: border-box;
     }
     
     /* Left sidebar - conversations list (Instagram style) */
@@ -182,6 +183,8 @@
       display: flex;
       flex-direction: column;
       position: relative;
+      min-height: 0;
+      overflow: hidden;
     }
     
     .chat-empty-state {
@@ -243,6 +246,7 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
+      min-height: 0;
     }
     
     /* Instagram-style message bubbles */
@@ -294,6 +298,14 @@
       word-wrap: break-word;
       line-height: 1.4;
       font-size: 14px;
+      max-width: 100%;
+      overflow: hidden;
+    }
+    
+    .message-bubble img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
     }
     
     .message.sent .message-bubble {
@@ -414,6 +426,8 @@
         flex-direction: column;
         height: auto;
         min-height: calc(100vh - 100px);
+        max-height: none;
+        margin: 60px auto 20px auto;
       }
       
       .conversations-sidebar {
@@ -424,6 +438,16 @@
       .chat-area {
         min-height: 500px;
       }
+    }
+    
+    /* Ensure body doesn't cut off content */
+    html, body {
+      overflow-x: hidden;
+      height: 100%;
+    }
+    
+    body {
+      padding-bottom: 20px;
     }
   </style>
 </head>
@@ -488,14 +512,14 @@
       <div class="chat-messages" id="chat-messages" style="display: none;"></div>
       
       <!-- Chat Input (hidden by default) -->
-      <div class="chat-input-container" id="chat-input-container" style="display: none;">
-        <div id="message-preview" style="display: none; padding: 8px 12px; background: #1a1a1a; border-top: 1px solid #2a2a2a;"></div>
-        <div style="display: flex; align-items: flex-end; gap: 8px; padding: 12px;">
+      <div class="chat-input-container" id="chat-input-container" style="display: none; flex-direction: column;">
+        <div id="message-preview" style="display: none; padding: 8px 16px; background: #1a1a1a; border-top: 1px solid #2a2a2a;"></div>
+        <div style="display: flex; align-items: flex-end; gap: 8px; padding: 12px 16px;">
           <input type="file" id="chat-image-input" accept="image/*" style="display: none;">
-          <button type="button" id="chat-attach-image-btn" onclick="document.getElementById('chat-image-input').click()" style="padding: 10px; background: #2a2a2a; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; flex-shrink: 0;" title="Attach Image">
+          <button type="button" id="chat-attach-image-btn" onclick="document.getElementById('chat-image-input').click()" style="padding: 10px; background: #2a2a2a; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;" title="Attach Image">
             <i class="fas fa-image"></i>
           </button>
-          <button type="button" id="chat-share-location-btn" onclick="shareLocationInbox()" style="padding: 10px; background: #2a2a2a; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; flex-shrink: 0;" title="Share Location">
+          <button type="button" id="chat-share-location-btn" onclick="shareLocationInbox()" style="padding: 10px; background: #2a2a2a; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;" title="Share Location">
             <i class="fas fa-map-marker-alt"></i>
           </button>
           <div class="chat-input-wrapper" style="flex: 1;">
@@ -807,10 +831,15 @@
             const isSent = msg.fromUserId === user.id;
             const messageTime = formatTime(msg.created_at);
             const messageBody = msg.body || msg.subject || '';
-            const isImage = msg.image_url || (messageBody && messageBody.startsWith('data:image'));
-            const isLocation = msg.location;
-            const imageUrl = msg.image_url || (messageBody && messageBody.startsWith('data:image') ? messageBody : null);
-            const textBody = isImage && imageUrl === messageBody ? '' : messageBody;
+            // Check for image - check both image_url field and if body is a base64 image
+            const hasImageUrl = msg.image_url && msg.image_url.trim();
+            const isBodyImage = messageBody && messageBody.trim().startsWith('data:image');
+            const isImage = hasImageUrl || isBodyImage;
+            const imageUrl = hasImageUrl ? msg.image_url : (isBodyImage ? messageBody : null);
+            // Check for location
+            const isLocation = msg.location && typeof msg.location === 'object' && msg.location.lat && msg.location.lng;
+            // Text body - exclude if it's just an image URL
+            const textBody = (isImage && imageUrl === messageBody) ? '' : messageBody;
             
             const senderUser = allUsers.find(u => u.id === msg.fromUserId);
             const senderName = senderUser ? (senderUser.name || senderUser.email) : 'Unknown';
@@ -826,11 +855,11 @@
                     }
                   </div>
                 ` : ''}
-                <div>
+                <div style="display: flex; flex-direction: column; max-width: 100%;">
                   ${!isSent ? `<div style="font-size: 11px; color: #a8a8a8; margin-bottom: 4px; font-weight: 600;">${escapeHtml(senderName)}</div>` : ''}
-                  <div class="message-bubble">
+                  <div class="message-bubble" style="padding: ${isImage || isLocation ? '8px' : '8px 12px'};">
                     ${imageUrl ? 
-                      `<img src="${escapeHtml(imageUrl)}" style="max-width: 300px; max-height: 300px; border-radius: 8px; margin-bottom: ${textBody ? '8px' : '0'}; display: block; cursor: pointer;" onclick="window.open('${escapeHtml(imageUrl)}', '_blank')" />` :
+                      `<img src="${escapeHtml(imageUrl)}" style="max-width: 100%; max-width: 300px; max-height: 300px; border-radius: 8px; margin-bottom: ${textBody ? '8px' : '0'}; display: block; cursor: pointer; object-fit: contain;" onclick="window.open('${escapeHtml(imageUrl)}', '_blank')" />` :
                       ''
                     }
                     ${isLocation ? 
@@ -841,7 +870,7 @@
                       </div>` :
                       ''
                     }
-                    ${textBody ? `<div style="white-space: pre-wrap;">${escapeHtml(textBody)}</div>` : ''}
+                    ${textBody ? `<div style="white-space: pre-wrap; word-break: break-word;">${escapeHtml(textBody)}</div>` : ''}
                   </div>
                   <div class="message-time">${messageTime}</div>
                 </div>
@@ -903,10 +932,15 @@
             const isSent = msg.fromUserId === user.id;
             const messageTime = formatTime(msg.created_at);
             const messageBody = msg.body || msg.subject || '';
-            const isImage = msg.image_url || (messageBody && messageBody.startsWith('data:image'));
-            const isLocation = msg.location;
-            const imageUrl = msg.image_url || (messageBody && messageBody.startsWith('data:image') ? messageBody : null);
-            const textBody = isImage && imageUrl === messageBody ? '' : messageBody;
+            // Check for image - check both image_url field and if body is a base64 image
+            const hasImageUrl = msg.image_url && msg.image_url.trim();
+            const isBodyImage = messageBody && messageBody.trim().startsWith('data:image');
+            const isImage = hasImageUrl || isBodyImage;
+            const imageUrl = hasImageUrl ? msg.image_url : (isBodyImage ? messageBody : null);
+            // Check for location
+            const isLocation = msg.location && typeof msg.location === 'object' && msg.location.lat && msg.location.lng;
+            // Text body - exclude if it's just an image URL
+            const textBody = (isImage && imageUrl === messageBody) ? '' : messageBody;
             
             const senderUser = allUsers.find(u => u.id === msg.fromUserId);
             const senderName = senderUser ? (senderUser.name || senderUser.email) : 'Unknown';
@@ -933,10 +967,11 @@
                     }
                   </div>
                 ` : ''}
-                <div>
-                  <div class="message-bubble">
+                <div style="display: flex; flex-direction: column; max-width: 100%;">
+                  ${!isSent ? `<div style="font-size: 11px; color: #a8a8a8; margin-bottom: 4px; font-weight: 600;">${escapeHtml(senderName)}</div>` : ''}
+                  <div class="message-bubble" style="padding: ${isImage || isLocation ? '8px' : '8px 12px'};">
                     ${imageUrl ? 
-                      `<img src="${escapeHtml(imageUrl)}" style="max-width: 300px; max-height: 300px; border-radius: 8px; margin-bottom: ${textBody ? '8px' : '0'}; display: block; cursor: pointer;" onclick="window.open('${escapeHtml(imageUrl)}', '_blank')" />` :
+                      `<img src="${escapeHtml(imageUrl)}" style="max-width: 100%; max-width: 300px; max-height: 300px; border-radius: 8px; margin-bottom: ${textBody ? '8px' : '0'}; display: block; cursor: pointer; object-fit: contain;" onclick="window.open('${escapeHtml(imageUrl)}', '_blank')" />` :
                       ''
                     }
                     ${isLocation ? 
@@ -947,7 +982,7 @@
                       </div>` :
                       ''
                     }
-                    ${textBody ? `<div style="white-space: pre-wrap;">${escapeHtml(textBody)}</div>` : ''}
+                    ${textBody ? `<div style="white-space: pre-wrap; word-break: break-word;">${escapeHtml(textBody)}</div>` : ''}
                     ${actionButton}
                   </div>
                   <div class="message-time">${messageTime}</div>
