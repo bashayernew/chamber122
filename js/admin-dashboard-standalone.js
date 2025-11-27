@@ -26,6 +26,8 @@ import {
 
 class AdminDashboard {
   constructor() {
+    this.allUsers = []; // Store all users for filtering
+    this.filteredUsers = []; // Store filtered users
     this.init();
   }
 
@@ -85,6 +87,23 @@ class AdminDashboard {
     tabs.forEach(tab => {
       tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
     });
+    
+    // Search and filter inputs
+    const searchInput = document.getElementById('admin-search-input');
+    const statusFilter = document.getElementById('admin-status-filter');
+    const clearFiltersBtn = document.getElementById('admin-clear-filters');
+    
+    if (searchInput) {
+      searchInput.addEventListener('input', () => this.applyFilters());
+    }
+    
+    if (statusFilter) {
+      statusFilter.addEventListener('change', () => this.applyFilters());
+    }
+    
+    if (clearFiltersBtn) {
+      clearFiltersBtn.addEventListener('click', () => this.clearFilters());
+    }
   }
 
   switchTab(tabName) {
@@ -398,19 +417,106 @@ class AdminDashboard {
     return { deletedEvents, deletedBulletins };
   }
 
+  /**
+   * Check if any filters are currently active
+   */
+  areFiltersActive() {
+    const searchTerm = document.getElementById('admin-search-input')?.value?.trim() || '';
+    const statusFilter = document.getElementById('admin-status-filter')?.value || '';
+    return searchTerm !== '' || statusFilter !== '';
+  }
+
+  /**
+   * Apply search and status filters to the users list
+   */
+  applyFilters() {
+    const searchTerm = document.getElementById('admin-search-input')?.value?.toLowerCase() || '';
+    const statusFilter = document.getElementById('admin-status-filter')?.value || '';
+    
+    // Get admin dashboard state for status lookup
+    const stateKey = 'chamber_admin_dashboard_state';
+    const state = JSON.parse(localStorage.getItem(stateKey) || '{}');
+    const userStatuses = state.userStatuses || {};
+    
+    // Filter users based on search and status
+    this.filteredUsers = this.allUsers.filter(user => {
+      // Search filter: match name, email, or business name
+      const matchesSearch = !searchTerm || 
+        (user.name && user.name.toLowerCase().includes(searchTerm)) ||
+        (user.email && user.email.toLowerCase().includes(searchTerm)) ||
+        (user.business_name && user.business_name.toLowerCase().includes(searchTerm));
+      
+      // Status filter - check userStatuses first (admin dashboard state), then user.status
+      const userStatus = (userStatuses[user.id] || user.status || 'pending').toLowerCase();
+      const matchesStatus = !statusFilter || userStatus === statusFilter.toLowerCase();
+      
+      return matchesSearch && matchesStatus;
+    });
+    
+    // Re-render with filtered users (will be sorted in loadApprovals)
+    this.loadApprovals();
+  }
+  
+  /**
+   * Clear all filters and show all users
+   */
+  clearFilters() {
+    const searchInput = document.getElementById('admin-search-input');
+    const statusFilter = document.getElementById('admin-status-filter');
+    
+    if (searchInput) searchInput.value = '';
+    if (statusFilter) statusFilter.value = '';
+    
+    // Reset filtered users to show all users
+    this.filteredUsers = [...this.allUsers];
+    this.loadApprovals();
+  }
+  
+  /**
+   * Update the results count display
+   */
+  updateResultsCount() {
+    const resultsCountEl = document.getElementById('admin-results-count');
+    if (resultsCountEl) {
+      const total = this.allUsers.length;
+      const filtered = this.filteredUsers.length;
+      if (filtered === total) {
+        resultsCountEl.textContent = `Showing ${total} user${total !== 1 ? 's' : ''}`;
+      } else {
+        resultsCountEl.textContent = `Showing ${filtered} of ${total} user${total !== 1 ? 's' : ''}`;
+      }
+    }
+  }
+
   async loadApprovals() {
     try {
       const users = getAllUsers();
       const documents = getAllDocuments();
+      
+      // Store all users for filtering
+      this.allUsers = users;
 
-      // Show all users, but prioritize pending/rejected/suspended for review
-      // You can filter later if needed, but for now show all accounts
-      const allUsers = users;
+      // Initialize filtered users if not already set AND filters are not active
+      // If filters are active but return 0 results, keep the empty array
+      const filtersActive = this.areFiltersActive();
+      if (this.filteredUsers.length === 0 && !filtersActive) {
+        this.filteredUsers = [...users];
+      }
+      
+      // Use filtered users if filters are active, otherwise use all users
+      // If filters are active, always use filteredUsers (even if empty)
+      const usersToDisplay = filtersActive ? this.filteredUsers : users;
+      
+      // Get admin dashboard state for status lookup (for sorting)
+      const stateKey = 'chamber_admin_dashboard_state';
+      const state = JSON.parse(localStorage.getItem(stateKey) || '{}');
+      const userStatuses = state.userStatuses || {};
       
       // Sort: pending/rejected/suspended/needs_fix first, then updated, then approved
-      const sortedUsers = allUsers.sort((a, b) => {
-        const statusA = (a.status || 'pending').toLowerCase();
-        const statusB = (b.status || 'pending').toLowerCase();
+      const sortedUsers = [...usersToDisplay].sort((a, b) => {
+        // Use status from admin dashboard state first, then fallback to user.status
+        const statusA = (userStatuses[a.id] || a.status || 'pending').toLowerCase();
+        const statusB = (userStatuses[b.id] || b.status || 'pending').toLowerCase();
         // Priority: needs_fix, pending, rejected, suspended = 0; updated = 1; approved = 2
         const priorityA = ['pending', 'rejected', 'suspended', 'needs_fix'].includes(statusA) ? 0 : 
                           statusA === 'updated' ? 1 : 2;
@@ -423,6 +529,7 @@ class AdminDashboard {
 
       console.log('[admin-dashboard] Loading approvals:', {
         totalUsers: users.length,
+        filteredUsers: this.filteredUsers.length,
         showingUsers: sortedUsers.length,
         documentsCount: documents.length,
         userStatuses: sortedUsers.map(u => ({ id: u.id, email: u.email, name: u.name, status: u.status || 'pending' }))
@@ -436,57 +543,69 @@ class AdminDashboard {
       });
       console.log('[admin-dashboard] User status breakdown:', statusCounts);
 
-      // Group documents by user_id (also try business_id as fallback)
-      const documentsByUser = {};
-      documents.forEach(doc => {
-        // Try multiple ways to match documents to users
-        const userIds = [
-          doc.user_id,
-          doc.business_id,
-          doc.owner_id
-        ].filter(Boolean);
-        
-        userIds.forEach(userId => {
-          if (!documentsByUser[userId]) {
-            documentsByUser[userId] = [];
-          }
-          // Avoid duplicates - check by id, or by kind+user_id if no id
-          const existing = documentsByUser[userId].find(d => 
-            d.id === doc.id || 
-            (d.kind === doc.kind && d.user_id === doc.user_id && !d.id && !doc.id)
-          );
-          if (!existing) {
-            documentsByUser[userId].push(doc);
-          } else {
-            // Update existing if this one has a better URL
-            if (doc.file_url && !doc.file_url.startsWith('pending_') && !doc.file_url.startsWith('blob:')) {
-              const existingIndex = documentsByUser[userId].indexOf(existing);
-              documentsByUser[userId][existingIndex] = doc;
-            }
-          }
-        });
-      });
-
-      console.log('[admin-dashboard] Documents grouped by user:', {
-        totalDocuments: documents.length,
-        usersWithDocs: Object.keys(documentsByUser).length,
-        details: Object.entries(documentsByUser).map(([userId, docs]) => ({
-          userId,
-          count: docs.length,
-          kinds: docs.map(d => d.kind),
-          hasPending: docs.some(d => d.file_url?.startsWith('pending_') || d.url_pending)
-        }))
-      });
-
+      // Store the sorted users for rendering
+      this.sortedUsers = sortedUsers;
+      
+      // Render the approvals
+      this.renderApprovals(sortedUsers);
+      
+      // Update results count
+      this.updateResultsCount();
+    } catch (error) {
+      console.error('Error loading approvals:', error);
       const container = document.getElementById('approvals-list');
-      if (!container) return;
-
-      if (sortedUsers.length === 0) {
-        container.innerHTML = '<p>No users found. Users will appear here when they sign up.</p>';
-        return;
+      if (container) {
+        container.innerHTML = `<p>Error loading users: ${error.message}</p>`;
       }
+    }
+  }
+  
+  /**
+   * Render the approvals list with the provided users
+   */
+  renderApprovals(sortedUsers) {
+    const container = document.getElementById('approvals-list');
+    if (!container) return;
+    
+    const documents = getAllDocuments();
+    
+    if (sortedUsers.length === 0) {
+      container.innerHTML = '<p style="padding: 20px; text-align: center; color: #6b7280;">No users found matching your filters. Try adjusting your search or status filter.</p>';
+      return;
+    }
 
-      const docTypes = {
+    // Group documents by user_id (also try business_id as fallback)
+    const documentsByUser = {};
+    documents.forEach(doc => {
+      // Try multiple ways to match documents to users
+      const userIds = [
+        doc.user_id,
+        doc.business_id,
+        doc.owner_id
+      ].filter(Boolean);
+      
+      userIds.forEach(userId => {
+        if (!documentsByUser[userId]) {
+          documentsByUser[userId] = [];
+        }
+        // Avoid duplicates - check by id, or by kind+user_id if no id
+        const existing = documentsByUser[userId].find(d => 
+          d.id === doc.id || 
+          (d.kind === doc.kind && d.user_id === doc.user_id && !d.id && !doc.id)
+        );
+        if (!existing) {
+          documentsByUser[userId].push(doc);
+        } else {
+          // Update existing if this one has a better URL
+          if (doc.file_url && !doc.file_url.startsWith('pending_') && !doc.file_url.startsWith('blob:')) {
+            const existingIndex = documentsByUser[userId].indexOf(existing);
+            documentsByUser[userId][existingIndex] = doc;
+          }
+        }
+      });
+    });
+
+    const docTypes = {
         'civil_id_front': 'Civil ID Front',
         'civil_id_back': 'Civil ID Back',
         'owner_proof': 'Owner Proof',
@@ -678,11 +797,6 @@ class AdminDashboard {
           </div>
         `;
       }).join('');
-
-    } catch (error) {
-      console.error('Error loading approvals:', error);
-      document.getElementById('approvals-list').innerHTML = `<p>Error loading users: ${error.message}</p>`;
-    }
   }
 
   async loadTabData(tabName) {
