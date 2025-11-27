@@ -70,23 +70,43 @@ export function getMessagesForUser(userId) {
 }
 
 // Get conversations for current user
+// Get conversations for a user (individual and group) - handles both types
 export function getConversationsForUser(userId) {
   const messages = getAllMessages();
-  const userMessages = messages.filter(m => m.fromUserId === userId || m.toUserId === userId);
+  const userMessages = messages.filter(m => 
+    m.fromUserId === userId || 
+    m.toUserId === userId || 
+    (m.groupId && m.groupMembers && m.groupMembers.includes(userId))
+  );
   
-  // Group by conversation (other user ID)
+  // Group by conversation (other user ID or group ID)
   const conversationMap = new Map();
   
   userMessages.forEach(msg => {
-    const otherUserId = msg.fromUserId === userId ? msg.toUserId : msg.fromUserId;
-    const otherUserName = msg.fromUserId === userId ? msg.toUserName : msg.fromUserName;
-    const otherUserEmail = msg.fromUserId === userId ? msg.toUserEmail : msg.fromUserEmail;
+    let convKey;
+    let convName;
+    let convEmail;
     
-    if (!conversationMap.has(otherUserId)) {
-      conversationMap.set(otherUserId, {
-        userId: otherUserId,
-        userName: otherUserName || otherUserEmail || 'Unknown User',
-        userEmail: otherUserEmail,
+    if (msg.groupId) {
+      // Group conversation
+      convKey = `group_${msg.groupId}`;
+      convName = msg.groupName || 'Group Chat';
+      convEmail = null;
+    } else {
+      // Individual conversation
+      const otherUserId = msg.fromUserId === userId ? msg.toUserId : msg.fromUserId;
+      convKey = otherUserId;
+      convName = msg.fromUserId === userId ? msg.toUserName : msg.fromUserName;
+      convEmail = msg.fromUserId === userId ? msg.toUserEmail : msg.fromUserEmail;
+    }
+    
+    if (!conversationMap.has(convKey)) {
+      conversationMap.set(convKey, {
+        userId: msg.groupId ? null : (msg.fromUserId === userId ? msg.toUserId : msg.fromUserId),
+        groupId: msg.groupId || null,
+        userName: convName || convEmail || 'Unknown User',
+        userEmail: convEmail,
+        isGroup: !!msg.groupId,
         messages: [],
         unreadCount: 0,
         lastMessage: null,
@@ -94,10 +114,10 @@ export function getConversationsForUser(userId) {
       });
     }
     
-    const conv = conversationMap.get(otherUserId);
+    const conv = conversationMap.get(convKey);
     conv.messages.push(msg);
     
-    if (!msg.read_at && msg.toUserId === userId) {
+    if (!msg.read_at && (msg.toUserId === userId || (msg.groupId && msg.fromUserId !== userId))) {
       conv.unreadCount++;
     }
     
@@ -292,68 +312,4 @@ export function getGroupMessages(groupId) {
   });
 }
 
-// Update getConversationsForUser to include groups
-export function getConversationsForUser(userId) {
-  const messages = getAllMessages();
-  const userMessages = messages.filter(m => 
-    m.fromUserId === userId || 
-    m.toUserId === userId || 
-    (m.groupId && m.groupMembers && m.groupMembers.includes(userId))
-  );
-  
-  // Group by conversation (other user ID or group ID)
-  const conversationMap = new Map();
-  
-  userMessages.forEach(msg => {
-    let convKey;
-    let convName;
-    let convEmail;
-    
-    if (msg.groupId) {
-      // Group conversation
-      convKey = `group_${msg.groupId}`;
-      convName = msg.groupName || 'Group Chat';
-      convEmail = null;
-    } else {
-      // Individual conversation
-      const otherUserId = msg.fromUserId === userId ? msg.toUserId : msg.fromUserId;
-      convKey = otherUserId;
-      convName = msg.fromUserId === userId ? msg.toUserName : msg.fromUserName;
-      convEmail = msg.fromUserId === userId ? msg.toUserEmail : msg.fromUserEmail;
-    }
-    
-    if (!conversationMap.has(convKey)) {
-      conversationMap.set(convKey, {
-        userId: msg.groupId ? null : (msg.fromUserId === userId ? msg.toUserId : msg.fromUserId),
-        groupId: msg.groupId || null,
-        userName: convName,
-        userEmail: convEmail,
-        isGroup: !!msg.groupId,
-        messages: [],
-        unreadCount: 0,
-        lastMessage: null,
-        lastMessageTime: null
-      });
-    }
-    
-    const conv = conversationMap.get(convKey);
-    conv.messages.push(msg);
-    
-    if (!msg.read_at && msg.toUserId === userId || (msg.groupId && msg.fromUserId !== userId)) {
-      conv.unreadCount++;
-    }
-    
-    if (!conv.lastMessage || new Date(msg.created_at) > new Date(conv.lastMessage.created_at)) {
-      conv.lastMessage = msg;
-      conv.lastMessageTime = msg.created_at;
-    }
-  });
-  
-  // Sort conversations by last message time
-  return Array.from(conversationMap.values()).sort((a, b) => {
-    const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(0);
-    const timeB = b.lastMessageTime ? new Date(b.lastMessageTime) : new Date(0);
-    return timeB - timeA;
-  });
-}
 

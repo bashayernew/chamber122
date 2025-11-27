@@ -1003,6 +1003,141 @@
         loadChatMessages(currentChatUserId);
       }
     });
+
+    // Show create group modal
+    window.showCreateGroupModal = async function() {
+      const user = getCurrentUser();
+      if (!user) {
+        alert('Please login to create a group');
+        return;
+      }
+
+      // Get all users and people they've texted
+      await loadAllUsers();
+      const conversations = getConversationsForUser(user.id);
+      const textedUserIds = new Set();
+      conversations.forEach(conv => {
+        if (!conv.isGroup && conv.userId) {
+          textedUserIds.add(conv.userId);
+        }
+      });
+
+      // Filter out current user
+      const availableUsers = allUsers.filter(u => u.id !== user.id);
+      const textedUsers = availableUsers.filter(u => textedUserIds.has(u.id));
+      const otherUsers = availableUsers.filter(u => !textedUserIds.has(u.id));
+
+      // Create modal HTML
+      const modalHTML = `
+        <div id="create-group-modal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;">
+          <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; width: 100%; max-width: 500px; max-height: 80vh; display: flex; flex-direction: column;">
+            <div style="padding: 20px; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center;">
+              <h2 style="color: #fff; margin: 0; font-size: 20px;">Create New Group</h2>
+              <button onclick="document.getElementById('create-group-modal').remove()" style="background: none; border: none; color: #a8a8a8; font-size: 24px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">&times;</button>
+            </div>
+            <div style="padding: 20px; flex: 1; overflow-y: auto;">
+              <div style="margin-bottom: 20px;">
+                <label style="display: block; color: #fff; font-size: 14px; font-weight: 500; margin-bottom: 8px;">Group Name</label>
+                <input type="text" id="group-name-input" placeholder="Enter group name" style="width: 100%; padding: 12px; background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 8px; color: #fff; font-size: 14px; box-sizing: border-box;">
+              </div>
+              <div style="margin-bottom: 12px;">
+                <input type="text" id="group-member-search" placeholder="Search members..." style="width: 100%; padding: 12px; background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 8px; color: #fff; font-size: 14px; box-sizing: border-box; margin-bottom: 16px;">
+              </div>
+              ${textedUsers.length > 0 ? `
+                <div style="margin-bottom: 20px;">
+                  <h3 style="color: #fff; font-size: 14px; font-weight: 600; margin-bottom: 12px;">People You've Texted</h3>
+                  <div id="texted-users-list" style="display: flex; flex-direction: column; gap: 8px;">
+                    ${textedUsers.map(u => `
+                      <label style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 8px; cursor: pointer; transition: background 0.2s;">
+                        <input type="checkbox" class="group-member-checkbox" value="${u.id}" style="width: 18px; height: 18px; cursor: pointer;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; flex-shrink: 0;">
+                          ${u.logo_url ? `<img src="${escapeHtml(u.logo_url)}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">` : `<span>${(u.name || u.email || 'U').charAt(0).toUpperCase()}</span>`}
+                        </div>
+                        <div style="flex: 1;">
+                          <div style="color: #fff; font-weight: 500;">${escapeHtml(u.name || u.email || 'Unknown')}</div>
+                          <div style="color: #a8a8a8; font-size: 12px;">${escapeHtml(u.email || '')}</div>
+                        </div>
+                      </label>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+              <div>
+                <h3 style="color: #fff; font-size: 14px; font-weight: 600; margin-bottom: 12px;">All Members</h3>
+                <div id="all-users-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto;">
+                  ${otherUsers.map(u => `
+                    <label style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 8px; cursor: pointer; transition: background 0.2s;">
+                      <input type="checkbox" class="group-member-checkbox" value="${u.id}" style="width: 18px; height: 18px; cursor: pointer;">
+                      <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 600; flex-shrink: 0;">
+                        ${u.logo_url ? `<img src="${escapeHtml(u.logo_url)}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">` : `<span>${(u.name || u.email || 'U').charAt(0).toUpperCase()}</span>`}
+                      </div>
+                      <div style="flex: 1;">
+                        <div style="color: #fff; font-weight: 500;">${escapeHtml(u.name || u.email || 'Unknown')}</div>
+                        <div style="color: #a8a8a8; font-size: 12px;">${escapeHtml(u.email || '')}</div>
+                      </div>
+                    </label>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+            <div style="padding: 20px; border-top: 1px solid #2a2a2a; display: flex; gap: 12px; justify-content: flex-end;">
+              <button onclick="document.getElementById('create-group-modal').remove()" style="padding: 10px 20px; background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 8px; color: #fff; cursor: pointer; font-size: 14px; font-weight: 500;">Cancel</button>
+              <button onclick="createGroupFromModal()" style="padding: 10px 20px; background: #0095f6; border: none; border-radius: 8px; color: #fff; cursor: pointer; font-size: 14px; font-weight: 600;">Create Group</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+      // Add search functionality
+      const searchInput = document.getElementById('group-member-search');
+      if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+          const searchTerm = e.target.value.toLowerCase();
+          const allLabels = document.querySelectorAll('#texted-users-list label, #all-users-list label');
+          allLabels.forEach(label => {
+            const name = label.querySelector('div > div:first-child').textContent.toLowerCase();
+            const email = label.querySelector('div > div:last-child').textContent.toLowerCase();
+            if (name.includes(searchTerm) || email.includes(searchTerm)) {
+              label.style.display = 'flex';
+            } else {
+              label.style.display = 'none';
+            }
+          });
+        });
+      }
+    };
+
+    // Create group from modal
+    window.createGroupFromModal = async function() {
+      const groupNameInput = document.getElementById('group-name-input');
+      const checkboxes = document.querySelectorAll('.group-member-checkbox:checked');
+      
+      if (!groupNameInput || !groupNameInput.value.trim()) {
+        alert('Please enter a group name');
+        return;
+      }
+
+      if (checkboxes.length === 0) {
+        alert('Please select at least one member');
+        return;
+      }
+
+      const memberIds = Array.from(checkboxes).map(cb => cb.value);
+      const groupName = groupNameInput.value.trim();
+
+      try {
+        const { createGroup } = await import('/js/messaging.js');
+        await createGroup(groupName, memberIds);
+        document.getElementById('create-group-modal').remove();
+        await loadConversations();
+        alert('Group created successfully!');
+      } catch (error) {
+        console.error('[inbox] Error creating group:', error);
+        alert('Error creating group: ' + error.message);
+      }
+    };
   </script>
   
   <script type="module" src="/public/js/header-auth-slot.js"></script>
