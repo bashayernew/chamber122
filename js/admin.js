@@ -340,10 +340,14 @@ const adminDashboard = {
                     docUrl = signupDocs[docType].base64 || signupDocs[docType].url || signupDocs[docType].file_url || signupDocs[docType].signedUrl || '';
                   }
                   
-                  // Also check if doc has a file object that we can convert
-                  if (!docUrl && doc.file) {
-                    // If we have a file object, we can't display it directly, but mark it as having a file
-                    console.log('[admin] Document has file object but no URL:', docType);
+                  // Debug logging
+                  if (!docUrl || docUrl === 'undefined' || docUrl === 'null') {
+                    console.log(`[admin] No URL found for ${docType} for user ${user.id}:`, {
+                      doc: doc,
+                      signupDoc: signupDocs[docType],
+                      hasDoc: !!doc,
+                      hasSignupDoc: !!signupDocs[docType]
+                    });
                   }
                   
                   // Validate URL - must be base64 data URL, HTTP URL, or valid file path
@@ -360,6 +364,15 @@ const adminDashboard = {
                                       docUrl.startsWith('https://') ||
                                       docUrl.startsWith('/') ||
                                       (docUrl.length > 50)); // Accept any reasonably long string as potential base64
+                  
+                  // Additional debug for validation
+                  if (docUrl && !hasValidUrl) {
+                    console.log(`[admin] URL found but failed validation for ${docType}:`, {
+                      url: docUrl.substring(0, 100) + '...',
+                      length: docUrl.length,
+                      startsWith: docUrl.substring(0, 20)
+                    });
+                  }
                   
                   // For onclick, we need to escape properly and handle long base64 strings
                   // Store in a data attribute instead of inline onclick for long URLs
