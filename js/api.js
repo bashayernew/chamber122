@@ -159,6 +159,38 @@ export async function getPublicEvents() {
   }
 }
 
+// Get event by ID
+export async function getEventById(eventId) {
+  try {
+    const stored = localStorage.getItem('chamber122_events');
+    const events = stored ? JSON.parse(stored) : [];
+    return events.find(e => e.id === eventId) || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Register for event
+export async function registerForEvent(eventId, registrationData) {
+  try {
+    const stored = localStorage.getItem('chamber122_event_registrations');
+    const registrations = stored ? JSON.parse(stored) : [];
+    
+    const registration = {
+      id: generateId(),
+      event_id: eventId,
+      ...registrationData,
+      created_at: new Date().toISOString()
+    };
+    
+    registrations.push(registration);
+    localStorage.setItem('chamber122_event_registrations', JSON.stringify(registrations));
+    return registration;
+  } catch (e) {
+    throw new Error('Failed to register for event: ' + e.message);
+  }
+}
+
 // Create event (replaces /api/events/create)
 export async function createEvent(eventData) {
   const user = requireAuth();

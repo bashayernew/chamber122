@@ -11,7 +11,7 @@
   
   <link rel="stylesheet" href="css/style.css?v=16">
   <link rel="stylesheet" href="css/header.css?v=1">
-  <link rel="stylesheet" href="css/responsive-enhancements.css">
+  <link rel="stylesheet" href="/css/responsive-enhancements.css">
   <link rel="stylesheet" href="public/css/main.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free@6.0.0/css/all.min.css" crossorigin="anonymous">
@@ -181,7 +181,7 @@
 </section>
 <!-- View-mode logic -->
   <!-- Main dependencies -->
-  <script src="/js/main.js?v=7"></script>
+  <script type="module" src="/js/main.js?v=7"></script>
 
   <script type="module">
     (async function() {
@@ -204,10 +204,13 @@
         const user = await getCurrentUser();
         if (user) {
           try {
-            const business = await getMyBusiness();
+            const businessResponse = await getMyBusiness();
+            // getMyBusiness returns { ok: true, business: {...} }
+            const business = businessResponse && businessResponse.business ? businessResponse.business : null;
             
             if (business) {
               ownerId = business.id;
+              console.log('[owner] Found business ID:', ownerId);
             } else {
               // No business found - redirect to form page ONCE
               console.log('[owner] No business found for user, redirecting to form');
@@ -222,6 +225,9 @@
           }
         }
       }
+      
+      // Store ownerId in window scope so init() can access it
+      window.currentOwnerId = ownerId;
       
       // Check if this is a reload after profile update
       const updated = urlParams.get('updated');
@@ -312,6 +318,9 @@
     }
 
     async function init() {
+      // Get ownerId from window scope
+      const ownerId = window.currentOwnerId;
+      
       // If still no ownerId after all checks, show message and exit
       if (!ownerId) {
         console.warn('[owner] No ownerId available, cannot load profile');
@@ -325,7 +334,8 @@
       // Check if current user owns the business being viewed
       let isOwner = false;
       if (user && ownerId) {
-        const business = await getMyBusiness();
+        const businessResponse = await getMyBusiness();
+        const business = businessResponse && businessResponse.business ? businessResponse.business : null;
         isOwner = business && business.id === ownerId;
       }
       isOwnerViewing = isOwner; // Store in outer scope
@@ -358,9 +368,11 @@
         messageBtn.onclick = async () => {
           try {
             // Get business owner ID from the business we're viewing
-            const businessRes = await fetch(`/api/businesses/${ownerId}`).then(r => r.json()).catch(() => null);
-            if (businessRes?.business?.owner_id) {
-              window.location.href = `/chat.html?userId=${businessRes.business.owner_id}`;
+            // Get business from localStorage
+            const { getBusinessById: getBusinessByIdFromAuth } = await import('/js/auth-localstorage.js');
+            const business = getBusinessByIdFromAuth(ownerId);
+            if (business && business.owner_id) {
+              window.location.href = `/chat.html?userId=${business.owner_id}`;
             } else {
               alert('Unable to start conversation. Please try again.');
             }
@@ -708,16 +720,7 @@
     </div>
   </div>
 
-  <script src="/owner-controls.js"></script>
-  <script>
-    // Verify owner-controls functions are loaded
-    console.log('[owner.html] Checking owner-controls functions:', {
-      editBulletin: typeof window.editBulletin,
-      editEvent: typeof window.editEvent,
-      deleteBulletin: typeof window.deleteBulletin,
-      deleteEvent: typeof window.deleteEvent
-    });
-  </script>
+  <!-- owner-controls.js removed - not needed for static site -->
   <script type="module" src="/js/owner.js"></script>
   <script type="module" src="/js/bulletins.js"></script>
   <script type="module" src="/js/events.js"></script>
