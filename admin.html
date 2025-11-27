@@ -327,6 +327,12 @@
             <h1><i class="fas fa-file-alt"></i> Documents Management</h1>
             <p style="color: #6b7280; margin-top: 8px;">View and manage documents submitted during signup and profile editing</p>
           </div>
+          <div id="documents-filter-message" style="display: none; padding: 12px 16px; background: #2a2a2a; border-radius: 8px; margin-bottom: 16px; color: #f2c64b;">
+            <i class="fas fa-filter"></i> <span></span>
+            <button onclick="window.adminDocumentFilter = null; adminDashboard.loadDocuments();" style="margin-left: 12px; background: #1a1a1a; border: 1px solid #3a3a3a; color: #fff; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+              Clear Filter
+            </button>
+          </div>
           <div class="admin-filters">
             <input type="text" id="documents-search" placeholder="Search documents by user email..." class="admin-search">
             <select id="documents-filter" class="admin-filter">

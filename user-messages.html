@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Messages | Chamber122</title>
+  <meta name="supabase-url" content="https://gidbvemmqffogakcepka.supabase.co">
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w">
+  <link rel="stylesheet" href="css/style.css?v=16">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    .messages-container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+    .messages-header {
+      margin-bottom: 30px;
+    }
+    .messages-header h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .message-card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-left: 4px solid #667eea;
+    }
+    .message-card.open {
+      border-left-color: #f59e0b;
+    }
+    .message-card.resolved {
+      border-left-color: #10b981;
+    }
+    .message-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 16px;
+    }
+    .message-subject {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+    }
+    .message-date {
+      color: #666;
+      font-size: 14px;
+    }
+    .message-status {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .message-status.open {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .message-status.resolved {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .message-body {
+      color: #444;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      white-space: pre-wrap;
+    }
+    .message-document-type {
+      background: #f3f4f6;
+      padding: 8px 12px;
+      border-radius: 6px;
+      display: inline-block;
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 16px;
+    }
+    .response-section {
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .response-section h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .response-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .form-group label {
+      font-weight: 500;
+      color: #333;
+    }
+    .form-group textarea {
+      padding: 12px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 100px;
+    }
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .file-upload {
+      padding: 12px;
+      border: 2px dashed #d1d5db;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .file-upload:hover {
+      border-color: #667eea;
+      background: #f9fafb;
+    }
+    .file-upload input[type="file"] {
+      display: none;
+    }
+    .file-upload-label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .file-upload-label i {
+      font-size: 32px;
+      color: #667eea;
+    }
+    .btn-submit {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .existing-responses {
+      margin-top: 20px;
+    }
+    .response-item {
+      background: #f9fafb;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .response-item-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .response-item-date {
+      color: #666;
+      font-size: 12px;
+    }
+    .response-item-text {
+      color: #444;
+      margin-bottom: 8px;
+    }
+    .response-item-document {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #667eea;
+      font-size: 14px;
+    }
+    .no-messages {
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+    }
+    .no-messages i {
+      font-size: 64px;
+      color: #d1d5db;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+  
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="logo site-logo">
+        <img src="images/logo.png" alt="Chamber122 Logo">
+      </a>
+      <div class="nav-menu">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="dashboard.html" class="nav-link">Dashboard</a>
+        <a href="user-messages.html" class="nav-link active">Messages</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="messages-container">
+    <div class="messages-header">
+      <h1><i class="fas fa-envelope"></i> Admin Messages</h1>
+      <p>View messages from administrators and submit corrected documents</p>
+    </div>
+
+    <div id="messages-list">
+      <div class="no-messages">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Loading messages...</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    window.SUPABASE_URL = "https://gidbvemmqffogakcepka.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpZGJ2ZW1tcWZmb2dha2NlcGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3NjI0MTUsImV4cCI6MjA3MjMzODQxNX0.rFFi4gq5ZUApmJM_FM5nfGpcPCHy9FLedVwmJOEzV1w";
+  </script>
+  <script type="module" src="js/supabase-client.js?v=20"></script>
+  <script type="module">
+    import { supabase } from './js/supabase-client.js';
+
+    const docTypeNames = {
+      'civil_id_front': 'Civil ID Front',
+      'civil_id_back': 'Civil ID Back',
+      'owner_proof': 'Owner Proof'
+    };
+
+    async function loadMessages() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          window.location.href = '/auth.html';
+          return;
+        }
+
+        // Load messages
+        const { data: messages, error: messagesError } = await supabase
+          .from('admin_messages')
+          .select('*, admin_message_responses(*)')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (messagesError) throw messagesError;
+
+        // Get user's business ID
+        const { data: business } = await supabase
+          .from('businesses')
+          .select('id')
+          .eq('owner_id', user.id)
+          .maybeSingle();
+
+        const businessId = business?.id;
+
+        renderMessages(messages || [], businessId);
+      } catch (error) {
+        console.error('Error loading messages:', error);
+        document.getElementById('messages-list').innerHTML = `
+          <div class="no-messages">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>Error loading messages: ${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderMessages(messages, businessId) {
+      const container = document.getElementById('messages-list');
+      
+      if (!messages || messages.length === 0) {
+        container.innerHTML = `
+          <div class="no-messages">
+            <i class="fas fa-inbox"></i>
+            <p>No messages from administrators</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = messages.map(message => {
+        const responses = message.admin_message_responses || [];
+        const isOpen = message.status === 'open';
+        
+        return `
+          <div class="message-card ${message.status}">
+            <div class="message-header">
+              <div>
+                <div class="message-subject">${message.subject}</div>
+                <div class="message-date">${new Date(message.created_at).toLocaleString()}</div>
+                ${message.document_type ? `
+                  <div class="message-document-type">
+                    <i class="fas fa-file"></i> Document: ${docTypeNames[message.document_type] || message.document_type}
+                  </div>
+                ` : ''}
+              </div>
+              <span class="message-status ${message.status}">${message.status}</span>
+            </div>
+            <div class="message-body">${message.message}</div>
+            
+            ${responses.length > 0 ? `
+              <div class="existing-responses">
+                <h4>Your Responses:</h4>
+                ${responses.map(response => `
+                  <div class="response-item">
+                    <div class="response-item-header">
+                      <strong>Your Response</strong>
+                      <span class="response-item-date">${new Date(response.created_at).toLocaleString()}</span>
+                    </div>
+                    ${response.response_text ? `<div class="response-item-text">${response.response_text}</div>` : ''}
+                    ${response.document_url ? `
+                      <div class="response-item-document">
+                        <i class="fas fa-file-pdf"></i>
+                        <a href="${response.document_url}" target="_blank">View Submitted Document</a>
+                      </div>
+                    ` : ''}
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+            
+            ${isOpen ? `
+              <div class="response-section">
+                <h3>Submit Response</h3>
+                <form class="response-form" onsubmit="submitResponse(event, '${message.id}', '${message.document_type || ''}', '${businessId || ''}')">
+                  <div class="form-group">
+                    <label>Response Message (optional)</label>
+                    <textarea name="response_text" placeholder="Add any comments or notes..."></textarea>
+                  </div>
+                  ${message.document_type ? `
+                    <div class="form-group">
+                      <label>Upload Corrected Document</label>
+                      <div class="file-upload">
+                        <label class="file-upload-label">
+                          <i class="fas fa-cloud-upload-alt"></i>
+                          <span>Click to upload corrected ${docTypeNames[message.document_type] || message.document_type}</span>
+                          <input type="file" name="document" accept="image/*,.pdf" required>
+                        </label>
+                      </div>
+                    </div>
+                  ` : ''}
+                  <button type="submit" class="btn-submit">
+                    <i class="fas fa-paper-plane"></i> Submit Response
+                  </button>
+                </form>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      // Add file upload preview
+      document.querySelectorAll('input[type="file"]').forEach(input => {
+        input.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            const label = e.target.closest('.file-upload').querySelector('span');
+            label.textContent = `Selected: ${file.name}`;
+          }
+        });
+      });
+    }
+
+    window.submitResponse = async function(event, messageId, documentType, businessId) {
+      event.preventDefault();
+      
+      // Check if account is suspended
+      const { isAccountSuspended } = await import('/js/api.js');
+      if (await isAccountSuspended()) {
+        alert('Your account has been suspended. You cannot send messages. Please contact support if you have any questions or would like to appeal this decision.');
+        return;
+      }
+      
+      const form = event.target;
+      const formData = new FormData(form);
+      const responseText = formData.get('response_text');
+      const documentFile = formData.get('document');
+      
+      const submitBtn = form.querySelector('.btn-submit');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        let documentUrl = null;
+        
+        // Upload document if provided
+        if (documentFile && documentFile.size > 0) {
+          const ext = documentFile.name.split('.').pop();
+          const path = `${user.id}/${businessId}/${documentType}_${Date.now()}.${ext}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('docs')
+            .upload(path, documentFile, { upsert: true });
+          
+          if (uploadError) throw uploadError;
+          
+          const { data: urlData } = supabase.storage.from('docs').getPublicUrl(path);
+          documentUrl = urlData.publicUrl;
+        }
+
+        // Insert response
+        const { error: responseError } = await supabase
+          .from('admin_message_responses')
+          .insert({
+            message_id: messageId,
+            user_id: user.id,
+            response_text: responseText || null,
+            document_url: documentUrl,
+            document_type: documentType || null
+          });
+
+        if (responseError) throw responseError;
+
+        // Update message status to resolved if document was uploaded
+        if (documentUrl) {
+          await supabase
+            .from('admin_messages')
+            .update({ status: 'resolved' })
+            .eq('id', messageId);
+        }
+
+        alert('Response submitted successfully!');
+        await loadMessages();
+      } catch (error) {
+        console.error('Error submitting response:', error);
+        alert('Error submitting response: ' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Response';
+      }
+    };
+
+    // Load messages on page load
+    loadMessages();
+  </script>
+</body>
+</html>
+

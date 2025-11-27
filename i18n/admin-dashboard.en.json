@@ -1,0 +1,45 @@
+{
+  "title": "Admin Dashboard",
+  "subtitle": "Manage MSMEs, events, bulletins, and guest submissions",
+  "stats": {
+    "totalMsmes": "Total MSMEs",
+    "pendingApprovals": "Pending Approvals",
+    "totalEvents": "Total Events",
+    "totalBulletins": "Total Bulletins"
+  },
+  "tabs": {
+    "approvals": "User Management",
+    "needsSetup": "Needs Setup",
+    "guestSubmissions": "Guest Submissions",
+    "content": "Content Management",
+    "analytics": "Analytics"
+  },
+  "userManagement": {
+    "title": "User Accounts & Documents",
+    "description": "Review user accounts, documents, and manage approvals.",
+    "noUsers": "No users found. Users will appear here when they sign up.",
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "suspended": "Suspended"
+    },
+    "documents": "Documents",
+    "actions": {
+      "approve": "Approve",
+      "reject": "Reject",
+      "suspend": "Suspend",
+      "unsuspend": "Unsuspend",
+      "viewDetails": "View Details",
+      "reportIssue": "Report Issue"
+    }
+  },
+  "messages": {
+    "approveSuccess": "Account approved successfully",
+    "rejectSuccess": "Account rejected and notification sent",
+    "suspendSuccess": "Account suspended successfully",
+    "unsuspendSuccess": "Account unsuspended successfully",
+    "messageSent": "Message sent to user successfully"
+  }
+}
+

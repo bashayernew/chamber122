@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password_hash String
+  role          String    @default("msme") // msme, admin
+  name          String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  
+  business      Business?
+  events        Event[]
+  bulletins     Bulletin[]
+  
+  @@map("users")
+}
+
+model Business {
+  id               String   @id @default(cuid())
+  owner_id         String   @unique
+  name             String
+  business_name    String?  // Alias for name (compatibility)
+  description      String?
+  short_description String?
+  story            String?
+  industry         String?
+  category         String?
+  country          String?  @default("Kuwait")
+  city             String?
+  area             String?
+  block            String?
+  street           String?
+  floor            String?
+  office_no        String?
+  phone            String?
+  whatsapp         String?
+  website          String?
+  instagram        String?
+  logo_url         String?
+  is_active        Boolean  @default(true)
+  status           String?  @default("pending") // pending, approved, rejected
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  
+  owner            User     @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  media            BusinessMedia[]
+  
+  @@map("businesses")
+}
+
+model BusinessMedia {
+  id          String   @id @default(cuid())
+  business_id String
+  file_path   String?
+  file_url    String
+  media_type  String   @default("image")
+  display_order Int    @default(0)
+  created_at  DateTime @default(now())
+  
+  business    Business @relation(fields: [business_id], references: [id], onDelete: Cascade)
+  
+  @@map("business_media")
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  owner_id    String
+  title       String
+  description String?
+  starts_at   DateTime?
+  ends_at     DateTime?
+  status      String  @default("draft") // draft, pending, published
+  is_published Boolean @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  
+  owner       User    @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  @@map("events")
+}
+
+model Bulletin {
+  id          String   @id @default(cuid())
+  owner_id    String
+  title       String
+  content     String
+  category    String?
+  url         String?
+  image_url   String?
+  start_date  DateTime?
+  end_date    DateTime?
+  status      String   @default("draft") // draft, pending, published
+  is_published Boolean @default(false)
+  is_pinned   Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  
+  owner       User    @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  @@map("bulletins")
+}
+

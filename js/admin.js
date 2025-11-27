@@ -135,27 +135,51 @@ const adminDashboard = {
   
   // Users Management
   loadUsers() {
-    const users = getAllUsers();
+    const allUsers = getAllUsers();
+    // Filter out admin from stats but show in list
+    const users = allUsers; // Show all users including admin
+    const nonAdminUsers = users.filter(u => u.role !== 'admin');
+    
     const tbody = document.getElementById('users-table-body');
     
-    // Update stats
-    const total = users.length;
-    const pending = users.filter(u => u.status === 'pending').length;
-    const approved = users.filter(u => u.status === 'approved').length;
-    const suspended = users.filter(u => u.status === 'suspended').length;
+    // Update stats (exclude admin from counts)
+    const total = nonAdminUsers.length;
+    const pending = nonAdminUsers.filter(u => u.status === 'pending').length;
+    const approved = nonAdminUsers.filter(u => u.status === 'approved').length;
+    const suspended = nonAdminUsers.filter(u => u.status === 'suspended').length;
     
     document.getElementById('stat-total-users').textContent = total;
     document.getElementById('stat-pending-users').textContent = pending;
     document.getElementById('stat-approved-users').textContent = approved;
     document.getElementById('stat-suspended-users').textContent = suspended;
     
+    // Apply search and filter
+    const searchTerm = (document.getElementById('users-search')?.value || '').toLowerCase();
+    const filterStatus = document.getElementById('users-filter')?.value || 'all';
+    
+    let filteredUsers = users;
+    
+    // Apply search filter
+    if (searchTerm) {
+      filteredUsers = filteredUsers.filter(u => 
+        u.email.toLowerCase().includes(searchTerm) ||
+        (u.name && u.name.toLowerCase().includes(searchTerm)) ||
+        (u.business_name && u.business_name.toLowerCase().includes(searchTerm))
+      );
+    }
+    
+    // Apply status filter
+    if (filterStatus !== 'all') {
+      filteredUsers = filteredUsers.filter(u => (u.status || 'pending') === filterStatus);
+    }
+    
     // Render users
-    if (users.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #6b7280;">No users found.</td></tr>';
+    if (filteredUsers.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">No users found.</td></tr>';
       return;
     }
     
-    tbody.innerHTML = users.map(user => {
+    tbody.innerHTML = filteredUsers.map(user => {
       const statusClass = user.status === 'approved' ? 'status-approved' : 
                          user.status === 'suspended' ? 'status-suspended' : 'status-pending';
       const roleBadge = user.role === 'admin' ? '<span class="badge badge-admin">Admin</span>' : '';
@@ -168,9 +192,10 @@ const adminDashboard = {
           <td><span class="status-badge ${statusClass}">${user.status || 'pending'}</span></td>
           <td>${createdDate}</td>
           <td class="actions-cell">
-            ${user.status !== 'approved' ? `<button onclick="adminDashboard.approveUser('${user.id}')" class="btn-action btn-approve" title="Approve"><i class="fas fa-check"></i></button>` : ''}
-            ${user.status !== 'suspended' ? `<button onclick="adminDashboard.suspendUser('${user.id}')" class="btn-action btn-suspend" title="Suspend"><i class="fas fa-ban"></i></button>` : ''}
+            ${user.role !== 'admin' && user.status !== 'approved' ? `<button onclick="adminDashboard.approveUser('${user.id}')" class="btn-action btn-approve" title="Approve"><i class="fas fa-check"></i></button>` : ''}
+            ${user.role !== 'admin' && user.status !== 'suspended' ? `<button onclick="adminDashboard.suspendUser('${user.id}')" class="btn-action btn-suspend" title="Suspend"><i class="fas fa-ban"></i></button>` : ''}
             ${user.role !== 'admin' ? `<button onclick="adminDashboard.deleteUser('${user.id}')" class="btn-action btn-delete" title="Delete"><i class="fas fa-trash"></i></button>` : ''}
+            ${user.role !== 'admin' ? `<button onclick="adminDashboard.viewUserDocuments('${user.id}', '${user.email}')" class="btn-action btn-view" title="View Documents"><i class="fas fa-file"></i></button>` : ''}
             <button onclick="adminDashboard.sendMessageToUser('${user.id}', '${user.email}')" class="btn-action btn-message" title="Send Message"><i class="fas fa-envelope"></i></button>
           </td>
         </tr>
@@ -607,6 +632,9 @@ const adminDashboard = {
     const users = getAllUsers();
     const businesses = getAllBusinesses();
     
+    // Check if filtering by user
+    const filter = window.adminDocumentFilter || null;
+    
     // Collect all documents from users and businesses
     const allDocuments = [];
     
@@ -614,14 +642,15 @@ const adminDashboard = {
     const allStoredDocs = JSON.parse(localStorage.getItem('chamber122_documents') || '[]');
     
     users.forEach(user => {
+      // Skip if filtering by user
+      if (filter && filter.userId && user.id !== filter.userId) return;
+      
       const business = businesses.find(b => b.owner_id === user.id);
       const businessName = business ? (business.name || business.business_name) : 'N/A';
       
-      // Get documents for this user from stored documents
+      // Get documents for this user from stored documents (include pending URLs)
       const userStoredDocs = allStoredDocs.filter(d => 
-        (d.user_id === user.id || d.userId === user.id) && 
-        d.file_url && 
-        !d.file_url.startsWith('pending_') // Skip placeholder URLs
+        (d.user_id === user.id || d.userId === user.id)
       );
       
       userStoredDocs.forEach(doc => {
@@ -694,6 +723,20 @@ const adminDashboard = {
         }
       }
     });
+    
+    // Show filter message if filtering
+    if (filter && filter.userId) {
+      const filterMsg = document.getElementById('documents-filter-message');
+      if (filterMsg) {
+        filterMsg.textContent = `Showing documents for: ${filter.userEmail}`;
+        filterMsg.style.display = 'block';
+      }
+    } else {
+      const filterMsg = document.getElementById('documents-filter-message');
+      if (filterMsg) {
+        filterMsg.style.display = 'none';
+      }
+    }
     
     if (allDocuments.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">No documents found.</td></tr>';
@@ -807,7 +850,7 @@ const adminDashboard = {
     const currentUser = getCurrentUser();
     if (!currentUser) return;
     
-    // Send report message to user
+    // Send report message to user with fix action
     const inboxMessages = JSON.parse(localStorage.getItem('ch122_inbox_messages') || '[]');
     const reportMessage = {
       id: generateId(),
@@ -819,13 +862,21 @@ const adminDashboard = {
       body: `We found an issue with your ${docType} document:\n\n${issue}\n\nPlease update your document in your profile.`,
       created_at: new Date().toISOString(),
       unread: true,
-      read_at: null
+      read_at: null,
+      action: {
+        type: 'fix_document',
+        docType: docType,
+        redirectUrl: '/owner-form.html#documents'
+      }
     };
     
     inboxMessages.push(reportMessage);
     localStorage.setItem('ch122_inbox_messages', JSON.stringify(inboxMessages));
     
-    alert('Report sent to user!');
+    // Dispatch event to update inbox badge
+    window.dispatchEvent(new CustomEvent('inbox-updated'));
+    
+    alert('Report sent to user! They will receive a message with a link to fix the document.');
     this.loadDocuments();
   },
   
@@ -894,8 +945,24 @@ const adminDashboard = {
   },
   
   filterUsers() {
-    // Implementation for filtering users
+    // Reload users with current search/filter values
     this.loadUsers();
+  },
+  
+  // View all documents for a specific user
+  viewUserDocuments(userId, userEmail) {
+    // Switch to documents section and filter by user
+    this.switchSection('documents');
+    
+    // Store filter for documents section
+    window.adminDocumentFilter = { userId: userId, userEmail: userEmail };
+    
+    // Reload documents (will apply filter)
+    setTimeout(() => {
+      this.loadDocuments();
+      // Scroll to documents section
+      document.getElementById('section-documents')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   },
   
   // Export Data

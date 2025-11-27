@@ -1,0 +1,20 @@
+{
+  "users": [
+    {
+      "id": "e8ec9fb6-52d8-4969-8838-d818531fb2dc",
+      "email": "life21545@gmail.com",
+      "password_hash": "$2b$10$xpNHRIXKx7IRitmyEhcVIO/TQGMQzFqeYWYmuuYabBrddVZXqqJiW",
+      "role": "provider",
+      "name": "life21545"
+    }
+  ],
+  "businesses": [
+    {
+      "id": "cff59464-44eb-4a57-88e9-b27b208789f9",
+      "owner_id": "e8ec9fb6-52d8-4969-8838-d818531fb2dc",
+      "business_name": "life21545",
+      "created_at": "2025-11-23T05:31:39.423Z",
+      "updated_at": "2025-11-23T05:31:39.424Z"
+    }
+  ]
+}

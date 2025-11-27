@@ -254,19 +254,19 @@ function filterEvents() {
 // Setup event listeners
 function setupEventListeners() {
   if (searchInput) {
-    searchInput.addEventListener('input', filterEvents);
+  searchInput.addEventListener('input', filterEvents);
   }
   
   if (typeFilter) {
-    typeFilter.addEventListener('change', filterEvents);
+  typeFilter.addEventListener('change', filterEvents);
   }
   
   if (viewToggle) {
-    viewToggle.addEventListener('click', () => {
-      currentView = currentView === 'grid' ? 'list' : 'grid';
-      viewToggle.innerHTML = currentView === 'grid' ? '<i class="fas fa-th-large"></i>' : '<i class="fas fa-list"></i>';
-      displayEvents();
-    });
+  viewToggle.addEventListener('click', () => {
+    currentView = currentView === 'grid' ? 'list' : 'grid';
+    viewToggle.innerHTML = currentView === 'grid' ? '<i class="fas fa-th-large"></i>' : '<i class="fas fa-list"></i>';
+    displayEvents();
+  });
   }
 
   // Create Event button
@@ -281,7 +281,7 @@ function setupEventListeners() {
       }
       openEventForm();
     });
-  }
+    }
 
   // Modal close handlers
   const closeBtn = document.getElementById('close-event-form');
@@ -291,22 +291,22 @@ function setupEventListeners() {
   if (closeBtn) {
     closeBtn.addEventListener('click', () => {
       if (modal) modal.style.display = 'none';
-    });
+  });
   }
   
   if (cancelBtn) {
     cancelBtn.addEventListener('click', () => {
       if (modal) modal.style.display = 'none';
-    });
+  });
   }
   
   // Close modal when clicking outside
   if (modal) {
     modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.style.display = 'none';
-      }
-    });
+    if (e.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
   }
 
   // Event form submission
