@@ -159,11 +159,15 @@ const adminDashboard = {
       let allUsers = getAllUsers();
       console.log('[admin] Found users in localStorage:', allUsers.length);
       
-      // Show loading state
+      // Get container
       const container = document.getElementById('users-container');
-      if (container) {
-        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #6b7280;"><i class="fas fa-spinner fa-spin"></i> Loading users...</div>';
+      if (!container) {
+        console.error('[admin] Users container not found');
+        return;
       }
+      
+      // Show loading state
+      container.innerHTML = '<div style="text-align: center; padding: 40px; color: #6b7280;"><i class="fas fa-spinner fa-spin"></i> Loading users...</div>';
       
       // Force reload from localStorage
       const rawStorage = localStorage.getItem('chamber122_users');
@@ -179,12 +183,6 @@ const adminDashboard = {
       // Filter out admin from stats but show in list
       const users = allUsers; // Show all users including admin
       const nonAdminUsers = users.filter(u => u.role !== 'admin');
-      
-      const container = document.getElementById('users-container');
-      if (!container) {
-        console.error('[admin] Users container not found');
-        return;
-      }
       
       // Update stats (exclude admin from counts)
       const total = nonAdminUsers.length;
