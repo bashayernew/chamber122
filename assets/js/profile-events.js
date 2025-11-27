@@ -1,36 +1,6 @@
-// assets/js/profile-events.js - Load events and bulletins for owner profile using backend API
-const API_BASE = '/api';
-
-async function apiRequest(endpoint, options = {}) {
-  const { method = 'GET', body, headers = {} } = options;
-  const url = `${API_BASE}${endpoint}`;
-  const token = localStorage.getItem('session_token');
-  
-  const config = {
-    method,
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
-  };
-  
-  if (token) {
-    config.headers['Authorization'] = `Bearer ${token}`;
-  }
-  
-  if (body) {
-    config.body = JSON.stringify(body);
-  }
-  
-  const res = await fetch(url, config);
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(error.error || error.message || `HTTP ${res.status}`);
-  }
-  
-  return res.json();
-}
+// assets/js/profile-events.js - Load events and bulletins for owner profile using localStorage
+import { getCurrentUser } from '/js/auth-localstorage.js';
+import { getPublicEvents, getPublicBulletins } from '/js/api.js';
 
 export async function loadOwnerEventsAndBulletins(ownerId, isOwnerViewingOwnProfile = false) {
     const now = new Date().toISOString();
@@ -39,25 +9,28 @@ export async function loadOwnerEventsAndBulletins(ownerId, isOwnerViewingOwnProf
       // Load events by business_id
       let ownerEvents = [];
       
-      if (isOwnerViewingOwnProfile) {
-        // Owner viewing own profile - get all events (including drafts) from dashboard
-        try {
-          const eventsResponse = await apiRequest(`/dashboard/my-events`);
-          ownerEvents = eventsResponse.events || [];
-        } catch (err) {
-          console.error('[profile-events] Error loading my events:', err);
-          ownerEvents = [];
+      // Load events from localStorage
+      try {
+        const allEvents = await getPublicEvents();
+        // Filter events by business_id (ownerId is the business ID)
+        ownerEvents = allEvents.filter(e => {
+          // Check if event belongs to this business
+          return e.business_id === ownerId || e.owner_id === ownerId;
+        });
+        
+        // If owner viewing own profile, also include drafts (events without status='published')
+        if (isOwnerViewingOwnProfile) {
+          const stored = localStorage.getItem('chamber122_events');
+          const allEventsWithDrafts = stored ? JSON.parse(stored) : [];
+          const draftEvents = allEventsWithDrafts.filter(e => 
+            (e.business_id === ownerId || e.owner_id === ownerId) && 
+            (!e.status || e.status !== 'published')
+          );
+          ownerEvents = [...ownerEvents, ...draftEvents];
         }
-      } else {
-        // Public view - only published events, filter by business_id
-        try {
-          const eventsResponse = await apiRequest(`/events`);
-          const allEvents = eventsResponse.events || [];
-          ownerEvents = allEvents.filter(e => e.business_id === ownerId);
-        } catch (err) {
-          console.error('[profile-events] Error loading public events:', err);
-          ownerEvents = [];
-        }
+      } catch (err) {
+        console.error('[profile-events] Error loading events:', err);
+        ownerEvents = [];
       }
 
       // Categorize events by time
@@ -79,25 +52,28 @@ export async function loadOwnerEventsAndBulletins(ownerId, isOwnerViewingOwnProf
       // Load bulletins by business_id
       let pubs = [];
       
-      if (isOwnerViewingOwnProfile) {
-        // Owner viewing own profile - get all bulletins (including drafts) from dashboard
-        try {
-          const bulletinsResponse = await apiRequest(`/dashboard/my-bulletins`);
-          pubs = bulletinsResponse.bulletins || [];
-        } catch (err) {
-          console.error('[profile-events] Error loading my bulletins:', err);
-          pubs = [];
+      // Load bulletins from localStorage
+      try {
+        const allBulletins = await getPublicBulletins();
+        // Filter bulletins by business_id (ownerId is the business ID)
+        pubs = allBulletins.filter(b => {
+          // Check if bulletin belongs to this business
+          return b.business_id === ownerId || b.owner_id === ownerId;
+        });
+        
+        // If owner viewing own profile, also include drafts
+        if (isOwnerViewingOwnProfile) {
+          const stored = localStorage.getItem('chamber122_bulletins');
+          const allBulletinsWithDrafts = stored ? JSON.parse(stored) : [];
+          const draftBulletins = allBulletinsWithDrafts.filter(b => 
+            (b.business_id === ownerId || b.owner_id === ownerId) && 
+            (!b.status || b.status !== 'published')
+          );
+          pubs = [...pubs, ...draftBulletins];
         }
-      } else {
-        // Public view - only published bulletins, filter by business_id
-        try {
-          const bulletinsResponse = await apiRequest(`/bulletins`);
-          const allBulletins = bulletinsResponse.bulletins || [];
-          pubs = allBulletins.filter(b => b.business_id === ownerId);
-        } catch (err) {
-          console.error('[profile-events] Error loading public bulletins:', err);
-          pubs = [];
-        }
+      } catch (err) {
+        console.error('[profile-events] Error loading bulletins:', err);
+        pubs = [];
       }
 
       // Support both start_at/end_at and start_date/deadline_date field variants

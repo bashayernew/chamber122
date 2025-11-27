@@ -143,14 +143,24 @@ async function loadAndDisplayBusiness(businessId = null) {
     // Description and Story
     const descEl = $('description');
     if (descEl) {
-      const descText = val(business.description || business.short_description, 'No description yet...');
+      let descText = val(business.description || business.short_description, 'No description yet...');
+      // Filter out placeholder/label text
+      const invalidTexts = ['Describe what you offer', 'Business Description', 'Tell us about your business'];
+      if (invalidTexts.some(text => descText.includes(text))) {
+        descText = 'No description yet...';
+      }
       descEl.textContent = descText;
       console.log('[owner] Setting description:', descText.substring(0, 50) + '...');
     }
     
     const storyEl = $('story');
     if (storyEl) {
-      const storyText = val(business.story, 'No story yet...');
+      let storyText = val(business.story, 'No story yet...');
+      // Filter out placeholder/label text
+      const invalidTexts = ['Share your journey', 'Business Description', 'Tell us about your business', 'Why did you start this business'];
+      if (invalidTexts.some(text => storyText.includes(text))) {
+        storyText = 'No story yet...';
+      }
       storyEl.textContent = storyText;
       console.log('[owner] Setting story:', storyText.substring(0, 50) + '...');
     }
@@ -215,13 +225,22 @@ async function loadAndDisplayBusiness(businessId = null) {
     
     // Logo
     const logoEl = $('logo');
-    if (logoEl && business.logo_url) {
+    const logoUrl = business.logo_url || business.logo || null;
+    if (logoEl && logoUrl && !logoUrl.startsWith('blob:')) {
+      // Don't use blob URLs - they're temporary
       if (logoEl.tagName === 'IMG') {
-        logoEl.src = business.logo_url;
+        logoEl.src = logoUrl;
         logoEl.alt = business.name || business.business_name || 'Business logo';
+        logoEl.style.display = 'block';
+        logoEl.style.visibility = 'visible';
+        console.log('[owner] Logo set:', logoUrl.substring(0, 50) + '...');
       } else {
-        logoEl.innerHTML = `<img src="${business.logo_url}" alt="Business logo" style="max-width: 200px; max-height: 120px; border-radius: 8px;">`;
+        logoEl.innerHTML = `<img src="${logoUrl}" alt="Business logo" style="max-width: 200px; max-height: 120px; border-radius: 8px; display: block;">`;
+        console.log('[owner] Logo HTML set');
       }
+    } else if (logoEl) {
+      console.log('[owner] No valid logo URL found. Logo URL:', logoUrl);
+      console.log('[owner] Business object keys:', Object.keys(business));
     }
     
     // Gallery
