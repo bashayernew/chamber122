@@ -211,22 +211,6 @@ export function renderRegistrations(container, registrations) {
           ` : ''}
         </div>
         
-        ${status === 'pending' ? `
-        <div style="display: flex; gap: 8px;">
-          <button onclick="updateRegistrationStatus('${reg.id}', 'approved')" 
-                  style="flex: 1; padding: 10px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: opacity 0.3s;"
-                  onmouseover="this.style.opacity='0.9'"
-                  onmouseout="this.style.opacity='1'">
-            ✓ Approve
-          </button>
-          <button onclick="updateRegistrationStatus('${reg.id}', 'rejected')" 
-                  style="flex: 1; padding: 10px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: opacity 0.3s;"
-                  onmouseover="this.style.opacity='0.9'"
-                  onmouseout="this.style.opacity='1'">
-            ✗ Reject
-          </button>
-        </div>
-        ` : ''}
       </div>
     `;
   }).join('');
@@ -234,58 +218,4 @@ export function renderRegistrations(container, registrations) {
   container.innerHTML = html;
 }
 
-// Make updateRegistrationStatus available globally
-window.updateRegistrationStatus = async function(registrationId, status) {
-  try {
-    // Update registration status in localStorage
-    const eventRegistrationsStr = localStorage.getItem('chamber122_event_registrations');
-    const bulletinRegistrationsStr = localStorage.getItem('chamber122_bulletin_registrations');
-    
-    let updated = false;
-    
-    // Update event registration
-    if (eventRegistrationsStr) {
-      try {
-        const registrations = JSON.parse(eventRegistrationsStr);
-        const index = registrations.findIndex(r => r.id === registrationId);
-        if (index !== -1) {
-          registrations[index].status = status;
-          registrations[index].updated_at = new Date().toISOString();
-          localStorage.setItem('chamber122_event_registrations', JSON.stringify(registrations));
-          updated = true;
-        }
-      } catch (e) {
-        console.warn('[registrations] Error updating event registration:', e);
-      }
-    }
-    
-    // Update bulletin registration
-    if (!updated && bulletinRegistrationsStr) {
-      try {
-        const registrations = JSON.parse(bulletinRegistrationsStr);
-        const index = registrations.findIndex(r => r.id === registrationId);
-        if (index !== -1) {
-          registrations[index].status = status;
-          registrations[index].updated_at = new Date().toISOString();
-          localStorage.setItem('chamber122_bulletin_registrations', JSON.stringify(registrations));
-          updated = true;
-        }
-      } catch (e) {
-        console.warn('[registrations] Error updating bulletin registration:', e);
-      }
-    }
-    
-    if (updated) {
-      console.log('[registrations] Registration status updated:', registrationId, status);
-      // Reload registrations
-      if (window.reloadRegistrations) {
-        await window.reloadRegistrations();
-      }
-    } else {
-      console.warn('[registrations] Registration not found:', registrationId);
-    }
-  } catch (error) {
-    console.error('Error updating registration status:', error);
-    alert('Failed to update registration status. Please try again.');
-  }
-};
+// updateRegistrationStatus function removed - no approve/reject buttons needed
