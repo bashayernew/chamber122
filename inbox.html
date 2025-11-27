@@ -903,6 +903,10 @@
             const isSent = msg.fromUserId === user.id;
             const messageTime = formatTime(msg.created_at);
             const messageBody = msg.body || msg.subject || '';
+            const isImage = msg.image_url || (messageBody && messageBody.startsWith('data:image'));
+            const isLocation = msg.location;
+            const imageUrl = msg.image_url || (messageBody && messageBody.startsWith('data:image') ? messageBody : null);
+            const textBody = isImage && imageUrl === messageBody ? '' : messageBody;
             
             const senderUser = allUsers.find(u => u.id === msg.fromUserId);
             const senderName = senderUser ? (senderUser.name || senderUser.email) : 'Unknown';
@@ -930,7 +934,22 @@
                   </div>
                 ` : ''}
                 <div>
-                  <div class="message-bubble">${escapeHtml(messageBody)}${actionButton}</div>
+                  <div class="message-bubble">
+                    ${imageUrl ? 
+                      `<img src="${escapeHtml(imageUrl)}" style="max-width: 300px; max-height: 300px; border-radius: 8px; margin-bottom: ${textBody ? '8px' : '0'}; display: block; cursor: pointer;" onclick="window.open('${escapeHtml(imageUrl)}', '_blank')" />` :
+                      ''
+                    }
+                    ${isLocation ? 
+                      `<div style="margin-bottom: ${textBody ? '8px' : '0'};">
+                        <a href="https://www.google.com/maps?q=${escapeHtml(msg.location.lat)},${escapeHtml(msg.location.lng)}" target="_blank" style="color: ${isSent ? '#fff' : '#0095f6'}; text-decoration: none; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(255,255,255,0.1); border-radius: 6px;">
+                          <i class="fas fa-map-marker-alt"></i> <span>View Location on Map</span>
+                        </a>
+                      </div>` :
+                      ''
+                    }
+                    ${textBody ? `<div style="white-space: pre-wrap;">${escapeHtml(textBody)}</div>` : ''}
+                    ${actionButton}
+                  </div>
                   <div class="message-time">${messageTime}</div>
                 </div>
               </div>
