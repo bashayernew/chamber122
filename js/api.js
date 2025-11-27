@@ -415,9 +415,35 @@ export async function getPublicBulletins() {
   try {
     const result = await api.get('/bulletins');
     // Handle both { ok: true, bulletins: [...] } and { bulletins: [...] } formats
-    return result.bulletins || result || [];
+    const bulletins = result.bulletins || result || [];
+    
+    // Store in localStorage for fallback
+    if (bulletins.length > 0) {
+      try {
+        localStorage.setItem('chamber122_bulletins', JSON.stringify(bulletins));
+      } catch (e) {
+        console.warn('[api] Could not store bulletins in localStorage:', e);
+      }
+    }
+    
+    return bulletins;
   } catch (error) {
     console.error('[api] getPublicBulletins error:', error);
+    
+    // Try localStorage fallback for 404 errors
+    if (error.status === 404 || error.message?.includes('404') || error.message?.includes('Failed to fetch')) {
+      try {
+        const stored = localStorage.getItem('chamber122_bulletins');
+        if (stored) {
+          const bulletins = JSON.parse(stored);
+          console.log(`[api] Loaded ${bulletins.length} bulletins from localStorage fallback`);
+          return bulletins;
+        }
+      } catch (e) {
+        console.warn('[api] Error reading bulletins from localStorage:', e);
+      }
+    }
+    
     return [];
   }
 }
