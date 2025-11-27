@@ -35,17 +35,30 @@ export async function loadOwnerEventsAndBulletins(ownerId, isOwnerViewingOwnProf
       }
 
       // Categorize events by time
+      // If owner viewing own profile, include drafts in all categories
       const ongoing = ownerEvents.filter(e => {
+        // If owner viewing own profile and event is draft, include it
+        if (isOwnerViewingOwnProfile && (e.status === 'draft' || !e.is_published || !e.status)) {
+          return true;
+        }
         if (!e.start_at || !e.end_at) return false;
         return e.start_at <= now && e.end_at >= now;
       });
       
       const upcoming = ownerEvents.filter(e => {
+        // If owner viewing own profile and event is draft, include it
+        if (isOwnerViewingOwnProfile && (e.status === 'draft' || !e.is_published || !e.status)) {
+          return true;
+        }
         if (!e.start_at) return true;
         return e.start_at > now;
       });
       
       const previous = ownerEvents.filter(e => {
+        // If owner viewing own profile and event is draft, include it
+        if (isOwnerViewingOwnProfile && (e.status === 'draft' || !e.is_published || !e.status)) {
+          return true;
+        }
         if (!e.end_at) return false;
         return e.end_at < now;
       });
@@ -93,7 +106,13 @@ export async function loadOwnerEventsAndBulletins(ownerId, isOwnerViewingOwnProf
 
       const bulletinsArray = Array.isArray(pubs) ? pubs : [];
       
+      // If owner viewing own profile, include drafts in all categories
+      // Otherwise, categorize by date
       const b_ongoing = bulletinsArray.filter(b => {
+        // If owner viewing own profile and bulletin is draft, include it
+        if (isOwnerViewingOwnProfile && (b.status === 'draft' || !b.is_published || !b.status)) {
+          return true;
+        }
         const s = getStart(b);
         const e = getEnd(b);
         if (!s && !e) return true;
@@ -104,11 +123,19 @@ export async function loadOwnerEventsAndBulletins(ownerId, isOwnerViewingOwnProf
       });
       
       const b_upcoming = bulletinsArray.filter(b => {
+        // If owner viewing own profile and bulletin is draft, include it
+        if (isOwnerViewingOwnProfile && (b.status === 'draft' || !b.is_published || !b.status)) {
+          return true;
+        }
         const s = getStart(b);
         return s && s > now;
       });
       
       const b_previous = bulletinsArray.filter(b => {
+        // If owner viewing own profile and bulletin is draft, include it
+        if (isOwnerViewingOwnProfile && (b.status === 'draft' || !b.is_published || !b.status)) {
+          return true;
+        }
         const e = getEnd(b);
         return e && e < now;
       });
