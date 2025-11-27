@@ -696,6 +696,8 @@ async function loadBulletins() {
     const result = await getPublicBulletins();
     bulletins = Array.isArray(result) ? result : (result?.bulletins || []);
     
+    console.log('[bulletins] Loaded', bulletins.length, 'bulletins from localStorage');
+    
     // Store in localStorage for fallback
     if (bulletins.length > 0) {
       try {

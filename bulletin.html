@@ -691,13 +691,9 @@
   <!-- main.js removed to avoid conflicts -->
   
   <!-- Classic scripts -->
-  <script>
-    // Initialize page
-    document.addEventListener('DOMContentLoaded', () => {
-      if (window.initActivitiesPage) {
-        window.initActivitiesPage();
-      }
-    });
+  <script type="module">
+    // Load bulletins.js which will initialize the page
+    import '/js/bulletins.js';
 
     const authModal = document.getElementById('auth-required-modal');
     const reasonEl  = document.getElementById('auth-required-reason');

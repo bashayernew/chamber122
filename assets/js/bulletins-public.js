@@ -11,11 +11,14 @@ export async function loadPublicBulletins(limit = 12) {
     // Transform and filter out fake/incomplete bulletins
     const filtered = (Array.isArray(bulletins) ? bulletins : [])
       .filter(b => {
-        // Check for valid title and body
-        if (!b.title || !b.body) return false;
+        // Check for valid title and body/content
+        if (!b.title) return false;
         const title = b.title.trim();
-        const body = b.body.trim();
-        if (!title || !body) return false;
+        if (!title) return false;
+        
+        // Check for body, content, or description
+        const body = (b.body || b.content || b.description || '').trim();
+        if (!body) return false;
         
         // Filter out test/fake bulletins
         const titleLower = title.toLowerCase();
@@ -34,14 +37,18 @@ export async function loadPublicBulletins(limit = 12) {
       .map(b => ({
         id: b.id,
         title: b.title,
-        description: b.body,
+        description: b.body || b.content || b.description || '',
+        body: b.body || b.content || b.description || '',
         business_name: b.business_name || 'Business',
         business_logo_url: b.business_logo_url,
-        cover_image_url: b.cover_image_url,
+        cover_image_url: b.cover_image_url || b.cover_url || b.image_url || '',
         location: b.location || '',
         created_at: b.created_at,
         contact_phone: b.contact_phone,
-        contact_email: b.contact_email
+        contact_email: b.contact_email,
+        start_at: b.start_at || b.start_date || b.publish_at,
+        end_at: b.end_at || b.deadline_date || b.end_date || b.expire_at,
+        category: b.category || b.type || ''
       }))
       .slice(0, limit);
     
