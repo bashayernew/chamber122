@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registrations | Chamber122</title>
+  <meta name="description" content="View and manage registrations for your events and bulletins">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/header.css?v=1">
+  <link rel="stylesheet" href="css/style.css?v=17">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  
+  <style>
+    .registrations-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    .registrations-header {
+      margin-bottom: 2rem;
+    }
+    
+    .registrations-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #e8e9f3;
+      margin-bottom: 0.5rem;
+    }
+    
+    .registrations-subtitle {
+      color: #a0a0a0;
+      font-size: 1.1rem;
+    }
+    
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 20px;
+    }
+    
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #2a2a2a;
+      padding-bottom: 8px;
+    }
+    
+    .tab {
+      padding: 8px 16px;
+      background: transparent;
+      border: none;
+      color: #AFAFAF;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    
+    .tab:hover {
+      color: #fff;
+    }
+    
+    .tab.active {
+      color: #f2c64b;
+      border-bottom-color: #f2c64b;
+    }
+    
+    .tab-pane {
+      display: block;
+    }
+    
+    .tab-pane.hidden {
+      display: none;
+    }
+    
+    #registrations-count {
+      background: #f59e0b;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div id="auth-slot"></div>
+  
+  <div class="registrations-container">
+    <div class="registrations-header">
+      <h1 class="registrations-title">Registrations</h1>
+      <p class="registrations-subtitle">View and manage registrations for your events and bulletin responses.</p>
+    </div>
+
+    <!-- Registrations Section -->
+    <section class="card" id="registrations-section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2 class="section-title" style="margin: 0;">Registrations</h2>
+        <span id="registrations-count" style="background: #f59e0b; color: white; padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: 600; display: none;">0</span>
+      </div>
+      
+      <div class="tabs mb-4 flex gap-2">
+        <button class="tab active" data-tab="reg-all">All</button>
+        <button class="tab" data-tab="reg-events">Events</button>
+        <button class="tab" data-tab="reg-bulletins">Bulletins</button>
+        <button class="tab" data-tab="reg-pending">Pending</button>
+      </div>
+      
+      <div id="reg-all" class="tab-pane">
+        <div id="registrations-all"></div>
+      </div>
+      <div id="reg-events" class="tab-pane hidden">
+        <div id="registrations-events"></div>
+      </div>
+      <div id="reg-bulletins" class="tab-pane hidden">
+        <div id="registrations-bulletins"></div>
+      </div>
+      <div id="reg-pending" class="tab-pane hidden">
+        <div id="registrations-pending"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="/public/js/header-auth-slot.js"></script>
+  <script type="module">
+    import { loadRegistrations, renderRegistrations } from '/assets/js/registrations.js';
+    
+    // Wire up registration tabs
+    function wireRegistrationTabs() {
+      const regSection = document.getElementById('registrations-section');
+      if (!regSection) return;
+      
+      regSection.querySelectorAll('.tabs .tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const group = regSection;
+          group.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const target = btn.dataset.tab;
+          group.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+          group.querySelector(`#${target}`)?.classList.remove('hidden');
+        });
+      });
+    }
+
+    // Load and display registrations
+    async function initRegistrations() {
+      try {
+        console.log('[registrations] Initializing registrations page...');
+        const regData = await loadRegistrations();
+        console.log('[registrations] Loaded registrations data:', {
+          all: regData.all.length,
+          events: regData.events.length,
+          bulletins: regData.bulletins.length
+        });
+        
+        // Update count
+        const countEl = document.getElementById('registrations-count');
+        if (countEl) {
+          const totalCount = regData.all.length;
+          countEl.textContent = totalCount;
+          countEl.style.display = totalCount > 0 ? 'inline-block' : 'none';
+        }
+
+        // Render all registrations
+        const allContainer = document.getElementById('registrations-all');
+        const eventsContainer = document.getElementById('registrations-events');
+        const bulletinsContainer = document.getElementById('registrations-bulletins');
+        const pendingContainer = document.getElementById('registrations-pending');
+        
+        if (allContainer) renderRegistrations(allContainer, regData.all);
+        if (eventsContainer) renderRegistrations(eventsContainer, regData.events);
+        if (bulletinsContainer) renderRegistrations(bulletinsContainer, regData.bulletins);
+        
+        // Render pending
+        const pending = regData.all.filter(r => r.status === 'pending');
+        if (pendingContainer) renderRegistrations(pendingContainer, pending);
+
+        // Make reload function available globally
+        window.reloadRegistrations = async () => {
+          console.log('[registrations] Reloading registrations...');
+          try {
+            const regData = await loadRegistrations();
+            const countEl = document.getElementById('registrations-count');
+            if (countEl) {
+              const totalCount = regData.all.length;
+              countEl.textContent = totalCount;
+              countEl.style.display = totalCount > 0 ? 'inline-block' : 'none';
+            }
+            const allContainer = document.getElementById('registrations-all');
+            const eventsContainer = document.getElementById('registrations-events');
+            const bulletinsContainer = document.getElementById('registrations-bulletins');
+            const pendingContainer = document.getElementById('registrations-pending');
+            
+            if (allContainer) renderRegistrations(allContainer, regData.all);
+            if (eventsContainer) renderRegistrations(eventsContainer, regData.events);
+            if (bulletinsContainer) renderRegistrations(bulletinsContainer, regData.bulletins);
+            const pending = regData.all.filter(r => r.status === 'pending');
+            if (pendingContainer) renderRegistrations(pendingContainer, pending);
+          } catch (err) {
+            console.error('[registrations] Error reloading:', err);
+          }
+        };
+      } catch (error) {
+        console.error('[registrations] Error loading registrations:', error);
+        console.error('[registrations] Error stack:', error.stack);
+        const containers = ['registrations-all', 'registrations-events', 'registrations-bulletins', 'registrations-pending'];
+        containers.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.innerHTML = `<div style="text-align: center; color: #AFAFAF; padding: 40px;">
+              <p>Error loading registrations.</p>
+              <p style="font-size: 12px; color: #666; margin-top: 8px;">${error.message || 'Unknown error'}</p>
+              <button onclick="window.location.reload()" style="margin-top: 16px; padding: 8px 16px; background: #f2c64b; color: #111; border: none; border-radius: 8px; cursor: pointer;">Reload Page</button>
+            </div>`;
+          }
+        });
+      }
+    }
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('[registrations] DOM loaded, initializing...');
+      wireRegistrationTabs();
+      // Small delay to ensure auth is loaded
+      setTimeout(() => {
+        initRegistrations();
+      }, 500);
+    });
+    
+    // Also try to initialize if DOMContentLoaded already fired
+    if (document.readyState === 'loading') {
+      // Still loading, wait for DOMContentLoaded
+    } else {
+      // Already loaded
+      console.log('[registrations] DOM already loaded, initializing immediately...');
+      wireRegistrationTabs();
+      setTimeout(() => {
+        initRegistrations();
+      }, 500);
+    }
+  </script>
+</body>
+</html>
+

@@ -15,27 +15,35 @@ export async function loadRegistrations() {
 
     // Get user's business
     const businessResponse = await getMyBusiness();
+    console.log('[registrations] getMyBusiness response:', businessResponse);
     const business = businessResponse && businessResponse.business ? businessResponse.business : null;
     if (!business) {
-      console.log('No business found for user');
-      return { events: [], bulletins: [], all: [] };
+      console.log('[registrations] No business found for user:', user.id);
+      // Still try to load registrations by owner_id even if business is null
+      // This allows users to see registrations even if business data is incomplete
     }
 
-    const businessId = business.id;
+    const businessId = business ? business.id : null;
 
     // Get events for this business from localStorage
     const allEvents = await getPublicEvents();
-    const events = allEvents.filter(e => e.business_id === businessId || e.owner_id === user.id);
+    const events = allEvents.filter(e => {
+      if (businessId && e.business_id === businessId) return true;
+      if (e.owner_id === user.id) return true;
+      return false;
+    });
     
     // Also check localStorage for all events (including drafts)
     const storedEvents = localStorage.getItem('chamber122_events');
     if (storedEvents) {
       try {
         const allStoredEvents = JSON.parse(storedEvents);
-        const draftEvents = allStoredEvents.filter(e => 
-          (e.business_id === businessId || e.owner_id === user.id) && 
-          (!e.status || e.status !== 'published')
-        );
+        const draftEvents = allStoredEvents.filter(e => {
+          const matchesBusiness = businessId && e.business_id === businessId;
+          const matchesOwner = e.owner_id === user.id;
+          const isDraft = !e.status || e.status !== 'published';
+          return (matchesBusiness || matchesOwner) && isDraft;
+        });
         events.push(...draftEvents);
       } catch (e) {
         console.warn('[registrations] Error parsing stored events:', e);
@@ -44,17 +52,23 @@ export async function loadRegistrations() {
 
     // Get bulletins for this business from localStorage
     const allBulletins = await getPublicBulletins();
-    const bulletins = allBulletins.filter(b => b.business_id === businessId || b.owner_id === user.id);
+    const bulletins = allBulletins.filter(b => {
+      if (businessId && b.business_id === businessId) return true;
+      if (b.owner_id === user.id) return true;
+      return false;
+    });
     
     // Also check localStorage for all bulletins (including drafts)
     const storedBulletins = localStorage.getItem('chamber122_bulletins');
     if (storedBulletins) {
       try {
         const allStoredBulletins = JSON.parse(storedBulletins);
-        const draftBulletins = allStoredBulletins.filter(b => 
-          (b.business_id === businessId || b.owner_id === user.id) && 
-          (!b.status || b.status !== 'published')
-        );
+        const draftBulletins = allStoredBulletins.filter(b => {
+          const matchesBusiness = businessId && b.business_id === businessId;
+          const matchesOwner = b.owner_id === user.id;
+          const isDraft = !b.status || b.status !== 'published';
+          return (matchesBusiness || matchesOwner) && isDraft;
+        });
         bulletins.push(...draftBulletins);
       } catch (e) {
         console.warn('[registrations] Error parsing stored bulletins:', e);
