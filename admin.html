@@ -325,12 +325,23 @@
         <section id="section-documents" class="admin-section">
           <div class="admin-section-header">
             <h1><i class="fas fa-file-alt"></i> Documents Management</h1>
+            <p style="color: #6b7280; margin-top: 8px;">View and manage documents submitted during signup and profile editing</p>
+          </div>
+          <div class="admin-filters">
+            <input type="text" id="documents-search" placeholder="Search documents by user email..." class="admin-search">
+            <select id="documents-filter" class="admin-filter">
+              <option value="all">All Documents</option>
+              <option value="pending">Pending Review</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
           </div>
           <div class="admin-table-container">
             <table class="admin-table">
               <thead>
                 <tr>
                   <th>User</th>
+                  <th>Business</th>
                   <th>Document Type</th>
                   <th>Uploaded</th>
                   <th>Status</th>
@@ -339,8 +350,8 @@
               </thead>
               <tbody id="documents-table-body">
                 <tr>
-                  <td colspan="5" style="text-align: center; padding: 40px; color: #6b7280;">
-                    No documents uploaded yet.
+                  <td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">
+                    <i class="fas fa-spinner fa-spin"></i> Loading documents...
                   </td>
                 </tr>
               </tbody>
@@ -389,8 +400,22 @@
   </main>
 
   <!-- Scripts -->
-  <script type="module" src="/js/auth-localstorage.js"></script>
-  <script type="module" src="/public/js/header-auth-slot.js"></script>
-  <script type="module" src="/js/admin.js"></script>
+  <script type="module">
+    // Admin auth guard - check before loading anything
+    import { getCurrentUser, isAdmin } from '/js/auth-localstorage.js';
+    
+    const user = getCurrentUser();
+    if (!user) {
+      alert('Please login to access the admin dashboard.');
+      window.location.href = '/auth.html#login';
+    } else if (!isAdmin()) {
+      alert('Access denied. Admin privileges required.');
+      window.location.href = '/index.html';
+    } else {
+      // User is admin, load the dashboard
+      import('/public/js/header-auth-slot.js');
+      import('/js/admin.js');
+    }
+  </script>
 </body>
 </html>

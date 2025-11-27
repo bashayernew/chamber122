@@ -15,20 +15,29 @@ import {
 // Ensure admin account exists
 function ensureAdminAccount() {
   const users = getAllUsers();
-  const adminExists = users.some(u => u.role === 'admin');
+  let admin = users.find(u => u.role === 'admin');
   
-  if (!adminExists) {
+  if (!admin) {
     const adminUser = {
       id: generateId(),
-      email: 'admin@admin.com',
-      password: 'admin123',
+      email: 'admin@123123.com',
+      password: '12345678',
       role: 'admin',
       status: 'approved',
       created_at: new Date().toISOString()
     };
     users.push(adminUser);
     saveUsers(users);
-    console.log('[admin] Auto-created admin account: admin@admin.com / admin123');
+    console.log('[admin] Auto-created admin account: admin@123123.com / 12345678');
+  } else {
+    // Update existing admin credentials
+    const adminIndex = users.findIndex(u => u.id === admin.id);
+    if (adminIndex !== -1) {
+      users[adminIndex].email = 'admin@123123.com';
+      users[adminIndex].password = '12345678';
+      saveUsers(users);
+      console.log('[admin] Updated admin account credentials: admin@123123.com / 12345678');
+    }
   }
 }
 
@@ -171,14 +180,66 @@ const adminDashboard = {
   
   approveUser(userId) {
     if (!confirm('Approve this user?')) return;
+    const users = getAllUsers();
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+    
     updateUser(userId, { status: 'approved' });
+    
+    // Send approval message to user
+    this.sendStatusMessage(userId, user.email, 'approved', 'Your account has been approved! You can now access all features.');
+    
+    // Also approve their business if exists
+    const businesses = getAllBusinesses();
+    const userBusiness = businesses.find(b => b.owner_id === userId);
+    if (userBusiness) {
+      updateBusiness(userBusiness.id, { status: 'approved', is_published: true });
+    }
+    
     this.loadUsers();
   },
   
   suspendUser(userId) {
     if (!confirm('Suspend this user?')) return;
+    const users = getAllUsers();
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+    
     updateUser(userId, { status: 'suspended' });
+    
+    // Send suspension message to user
+    this.sendStatusMessage(userId, user.email, 'suspended', 'Your account has been suspended. Please contact support for more information.');
+    
+    // Also suspend their business if exists
+    const businesses = getAllBusinesses();
+    const userBusiness = businesses.find(b => b.owner_id === userId);
+    if (userBusiness) {
+      updateBusiness(userBusiness.id, { status: 'suspended', is_published: false });
+    }
+    
     this.loadUsers();
+  },
+  
+  sendStatusMessage(userId, userEmail, status, message) {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return;
+    
+    const inboxMessages = JSON.parse(localStorage.getItem('ch122_inbox_messages') || '[]');
+    const statusMessage = {
+      id: generateId(),
+      from: 'admin',
+      fromUserId: currentUser.id,
+      toUserId: userId,
+      user_id: userId,
+      subject: `Account ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+      body: message,
+      created_at: new Date().toISOString(),
+      unread: true,
+      read_at: null
+    };
+    
+    inboxMessages.push(statusMessage);
+    localStorage.setItem('ch122_inbox_messages', JSON.stringify(inboxMessages));
   },
   
   deleteUser(userId) {
@@ -245,13 +306,39 @@ const adminDashboard = {
   
   approveMSME(businessId) {
     if (!confirm('Approve this MSME?')) return;
+    const businesses = getAllBusinesses();
+    const business = businesses.find(b => b.id === businessId);
+    if (!business) return;
+    
     updateBusiness(businessId, { status: 'approved', is_published: true });
+    
+    // Also approve the owner user
+    const users = getAllUsers();
+    const owner = users.find(u => u.id === business.owner_id);
+    if (owner && owner.status !== 'approved') {
+      updateUser(owner.id, { status: 'approved' });
+      this.sendStatusMessage(owner.id, owner.email, 'approved', 'Your MSME profile has been approved! Your business is now visible to the public.');
+    }
+    
     this.loadMSMEs();
   },
   
   suspendMSME(businessId) {
     if (!confirm('Suspend this MSME?')) return;
+    const businesses = getAllBusinesses();
+    const business = businesses.find(b => b.id === businessId);
+    if (!business) return;
+    
     updateBusiness(businessId, { status: 'suspended', is_published: false });
+    
+    // Also suspend the owner user
+    const users = getAllUsers();
+    const owner = users.find(u => u.id === business.owner_id);
+    if (owner && owner.status !== 'suspended') {
+      updateUser(owner.id, { status: 'suspended' });
+      this.sendStatusMessage(owner.id, owner.email, 'suspended', 'Your MSME profile has been suspended. Please contact support for more information.');
+    }
+    
     this.loadMSMEs();
   },
   
@@ -517,9 +604,165 @@ const adminDashboard = {
   // Documents Management
   loadDocuments() {
     const tbody = document.getElementById('documents-table-body');
-    // Documents are stored as part of user signup data
-    // For now, show placeholder
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #6b7280;">Document management coming soon.</td></tr>';
+    const users = getAllUsers();
+    const businesses = getAllBusinesses();
+    
+    // Collect all documents from users and businesses
+    const allDocuments = [];
+    
+    users.forEach(user => {
+      const business = businesses.find(b => b.owner_id === user.id);
+      
+      // Check for documents stored in signup data
+      const signupData = JSON.parse(localStorage.getItem(`chamber122_signup_data_${user.id}`) || '{}');
+      if (signupData.documents) {
+        Object.entries(signupData.documents).forEach(([docType, docData]) => {
+          allDocuments.push({
+            userId: user.id,
+            userEmail: user.email,
+            businessId: business ? business.id : null,
+            businessName: business ? (business.name || business.business_name) : 'N/A',
+            type: docType,
+            kind: docType,
+            docType: docType,
+            url: docData.url || docData.public_url || docData.file_url || docData.base64 || '',
+            public_url: docData.public_url || docData.url || docData.file_url || docData.base64 || '',
+            file_url: docData.file_url || docData.url || docData.public_url || docData.base64 || '',
+            base64: docData.base64 || '',
+            uploaded_at: docData.uploaded_at || docData.created_at || user.created_at,
+            created_at: docData.created_at || docData.uploaded_at || user.created_at,
+            status: docData.status || 'pending'
+          });
+        });
+      }
+      
+      // Check for documents in business data
+      if (business) {
+        if (business.documents && Array.isArray(business.documents)) {
+          business.documents.forEach(doc => {
+            allDocuments.push({
+              userId: user.id,
+              userEmail: user.email,
+              businessId: business.id,
+              businessName: business.name || business.business_name,
+              type: doc.type || doc.kind || 'Unknown',
+              kind: doc.kind || doc.type || 'Unknown',
+              docType: doc.docType || doc.type || doc.kind || 'Unknown',
+              url: doc.url || doc.public_url || doc.file_url || '',
+              public_url: doc.public_url || doc.url || doc.file_url || '',
+              file_url: doc.file_url || doc.url || doc.public_url || '',
+              uploaded_at: doc.uploaded_at || doc.created_at || business.created_at,
+              created_at: doc.created_at || doc.uploaded_at || business.created_at,
+              status: doc.status || 'pending'
+            });
+          });
+        }
+        
+        // Check for documents stored separately
+        const userDocs = JSON.parse(localStorage.getItem(`chamber122_documents_${user.id}`) || '[]');
+        userDocs.forEach(doc => {
+          allDocuments.push({
+            userId: user.id,
+            userEmail: user.email,
+            businessId: business.id,
+            businessName: business.name || business.business_name,
+            ...doc
+          });
+        });
+      }
+    });
+    
+    if (allDocuments.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">No documents found.</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = allDocuments.map((doc, index) => {
+      const docType = doc.type || doc.kind || doc.docType || 'Unknown';
+      const uploadedDate = doc.uploaded_at || doc.created_at || 'N/A';
+      const date = uploadedDate !== 'N/A' ? new Date(uploadedDate).toLocaleDateString() : 'N/A';
+      const status = doc.status || 'pending';
+      const statusClass = status === 'approved' ? 'status-approved' : 
+                         status === 'rejected' ? 'status-suspended' : 'status-pending';
+      const docUrl = doc.url || doc.public_url || doc.file_url || doc.base64 || '';
+      const docId = `doc_${doc.userId}_${index}`;
+      
+      return `
+        <tr>
+          <td>${doc.userEmail}</td>
+          <td>${doc.businessName}</td>
+          <td>${docType}</td>
+          <td>${date}</td>
+          <td><span class="status-badge ${statusClass}">${status}</span></td>
+          <td class="actions-cell">
+            ${docUrl ? `<button onclick="adminDashboard.viewDocument('${doc.userId}', '${docType}', '${docUrl.replace(/'/g, "\\'")}')" class="btn-action btn-view" title="View Document"><i class="fas fa-eye"></i></button>` : ''}
+            <button onclick="adminDashboard.reportDocument('${doc.userId}', '${doc.userEmail}', '${docType}')" class="btn-action btn-suspend" title="Report Issue"><i class="fas fa-flag"></i></button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  },
+  
+  viewDocument(userId, docType, docUrl) {
+    if (!docUrl) {
+      alert('Document URL not available.');
+      return;
+    }
+    
+    // Create modal to view document
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;';
+    modal.innerHTML = `
+      <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; max-width: 90%; max-height: 90%; overflow: auto; position: relative;">
+        <div style="padding: 20px; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="margin: 0; color: #fff;">${docType}</h3>
+          <button onclick="this.closest('div[style*=\\'position: fixed\\']').remove()" style="background: none; border: none; color: #fff; font-size: 24px; cursor: pointer;">&times;</button>
+        </div>
+        <div style="padding: 20px;">
+          ${docUrl.startsWith('data:') ? 
+            `<img src="${docUrl}" style="max-width: 100%; height: auto; border-radius: 8px;" />` :
+            `<iframe src="${docUrl}" style="width: 100%; min-height: 600px; border: none; border-radius: 8px;"></iframe>`
+          }
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Close on outside click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
+  },
+  
+  reportDocument(userId, userEmail, docType) {
+    const issue = prompt(`Report issue with ${docType} document for ${userEmail}:\n\nDescribe the issue:`);
+    if (!issue) return;
+    
+    const currentUser = getCurrentUser();
+    if (!currentUser) return;
+    
+    // Send report message to user
+    const inboxMessages = JSON.parse(localStorage.getItem('ch122_inbox_messages') || '[]');
+    const reportMessage = {
+      id: generateId(),
+      from: 'admin',
+      fromUserId: currentUser.id,
+      toUserId: userId,
+      user_id: userId,
+      subject: `Document Issue: ${docType}`,
+      body: `We found an issue with your ${docType} document:\n\n${issue}\n\nPlease update your document in your profile.`,
+      created_at: new Date().toISOString(),
+      unread: true,
+      read_at: null
+    };
+    
+    inboxMessages.push(reportMessage);
+    localStorage.setItem('ch122_inbox_messages', JSON.stringify(inboxMessages));
+    
+    alert('Report sent to user!');
+    this.loadDocuments();
   },
   
   // Settings
@@ -533,6 +776,42 @@ const adminDashboard = {
     document.getElementById('settings-total-msmes').textContent = businesses.length;
     document.getElementById('settings-total-events').textContent = events.length;
     document.getElementById('settings-total-bulletins').textContent = bulletins.length;
+    
+    // Load website analytics
+    this.loadAnalytics();
+  },
+  
+  loadAnalytics() {
+    // Get website visit count
+    const visitCount = parseInt(localStorage.getItem('chamber122_visit_count') || '0');
+    const uniqueVisitors = JSON.parse(localStorage.getItem('chamber122_unique_visitors') || '[]');
+    
+    // Display analytics
+    const analyticsContainer = document.querySelector('.admin-settings');
+    if (analyticsContainer && !document.getElementById('analytics-card')) {
+      const analyticsCard = document.createElement('div');
+      analyticsCard.id = 'analytics-card';
+      analyticsCard.className = 'settings-card';
+      analyticsCard.innerHTML = `
+        <h3>Website Analytics</h3>
+        <div class="settings-item">
+          <label>Total Page Views:</label>
+          <span id="analytics-visits">${visitCount}</span>
+        </div>
+        <div class="settings-item">
+          <label>Unique Visitors:</label>
+          <span id="analytics-unique">${uniqueVisitors.length}</span>
+        </div>
+        <div class="settings-item">
+          <label>Last Updated:</label>
+          <span>${new Date().toLocaleString()}</span>
+        </div>
+      `;
+      analyticsContainer.appendChild(analyticsCard);
+    } else if (document.getElementById('analytics-visits')) {
+      document.getElementById('analytics-visits').textContent = visitCount;
+      document.getElementById('analytics-unique').textContent = uniqueVisitors.length;
+    }
   },
   
   // Search and Filters
