@@ -660,15 +660,31 @@ async function loadExistingDocuments(business) {
           // Show document status with link to view
           // For base64 data URLs, use directly; for other URLs, use as-is
           const fullUrl = fileUrl.startsWith('data:') || fileUrl.startsWith('http') ? fileUrl : fileUrl;
-          statusEl.innerHTML = `
-            <span style="color: #10b981;">✓ Uploaded: </span>
-            <a href="${fullUrl}" target="_blank" style="color: #3b82f6; text-decoration: underline;">
-              ${fileName}
-            </a>
-            <span style="color: #9ca3af; font-size: 12px;"> (Click to view)</span>
-            <br>
-            <span style="color: #9ca3af; font-size: 11px;">You can upload a new file to replace this document.</span>
-          `;
+          
+          // If it's a base64 image, show a preview
+          if (fileUrl.startsWith('data:image')) {
+            statusEl.innerHTML = `
+              <span style="color: #10b981;">✓ Uploaded: </span>
+              <a href="${fullUrl}" target="_blank" style="color: #3b82f6; text-decoration: underline;">
+                ${fileName}
+              </a>
+              <span style="color: #9ca3af; font-size: 12px;"> (Click to view)</span>
+              <br>
+              <img src="${fullUrl}" alt="${fileName}" style="max-width: 200px; max-height: 150px; margin-top: 8px; border-radius: 4px; border: 1px solid #3a3a3a;">
+              <br>
+              <span style="color: #9ca3af; font-size: 11px;">You can upload a new file to replace this document.</span>
+            `;
+          } else {
+            statusEl.innerHTML = `
+              <span style="color: #10b981;">✓ Uploaded: </span>
+              <a href="${fullUrl}" target="_blank" style="color: #3b82f6; text-decoration: underline;">
+                ${fileName}
+              </a>
+              <span style="color: #9ca3af; font-size: 12px;"> (Click to view)</span>
+              <br>
+              <span style="color: #9ca3af; font-size: 11px;">You can upload a new file to replace this document.</span>
+            `;
+          }
           statusEl.style.display = 'block';
           console.log(`[owner-form] Displayed document: ${docType} - ${fileName}`);
         }
