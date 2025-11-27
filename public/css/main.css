@@ -229,18 +229,20 @@ img, .card img, .logo-box img, .gallery img {
 /* Description and Story text styling */
 .description-text, .story-text {
   color: #e2e8f0;
-  line-height: 1.6;
+  line-height: 1.7;
   font-size: 15px;
-  padding: 16px 0;
+  padding: 1rem 0;
   white-space: pre-wrap;
   word-wrap: break-word;
+  min-height: 2rem;
 }
 
 .description-text:empty::before,
 .story-text:empty::before {
-  content: "No description provided yet.";
-  color: #94a3b8;
+  content: "No content provided yet.";
+  color: #6b7280;
   font-style: italic;
+  font-size: 14px;
 }
 
 .story-text:empty::before {
