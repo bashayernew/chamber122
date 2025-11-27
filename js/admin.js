@@ -140,6 +140,9 @@ const adminDashboard = {
       case 'messages':
         this.loadMessages();
         break;
+      case 'communities':
+        this.loadCommunities();
+        break;
       case 'documents':
         this.loadDocuments();
         break;
@@ -780,6 +783,265 @@ const adminDashboard = {
     window.location.href = `/inbox.html`;
   },
   
+  // Communities Management
+  async loadCommunities() {
+    try {
+      const container = document.getElementById('communities-container');
+      if (!container) {
+        console.error('[admin] Communities container not found');
+        return;
+      }
+
+      container.innerHTML = '<div style="text-align: center; padding: 40px; color: #6b7280;"><i class="fas fa-spinner fa-spin"></i> Loading communities...</div>';
+
+      // Import communities API
+      const CommunitiesAPI = await import('./communities.api.js');
+      
+      // Get all communities (including suspended for admin)
+      const data = await CommunitiesAPI.getCommunities({ include_suspended: true });
+      const communities = data.communities || [];
+      
+      const businesses = getAllBusinesses();
+      const users = getAllUsers();
+      
+      // Update stats
+      const total = communities.length;
+      const active = communities.filter(c => c.status === 'active').length;
+      const suspended = communities.filter(c => c.status === 'suspended').length;
+      
+      document.getElementById('stat-total-communities').textContent = total;
+      document.getElementById('stat-active-communities').textContent = active;
+      document.getElementById('stat-suspended-communities').textContent = suspended;
+      
+      // Apply filters
+      const searchTerm = document.getElementById('communities-search')?.value.toLowerCase() || '';
+      const statusFilter = document.getElementById('communities-filter')?.value || 'all';
+      
+      let filtered = communities;
+      
+      if (searchTerm) {
+        filtered = filtered.filter(c => 
+          c.name.toLowerCase().includes(searchTerm) ||
+          (c.description || '').toLowerCase().includes(searchTerm) ||
+          c.category.toLowerCase().includes(searchTerm)
+        );
+      }
+      
+      if (statusFilter !== 'all') {
+        filtered = filtered.filter(c => c.status === statusFilter);
+      }
+      
+      if (filtered.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #6b7280;">No communities found.</div>';
+        return;
+      }
+      
+      // Render communities
+      container.innerHTML = filtered.map(comm => {
+        const creatorBusiness = businesses.find(b => b.id === comm.creator_msme_id || b.owner_id === comm.creator_msme_id);
+        const creatorUser = users.find(u => u.id === comm.creator_msme_id);
+        const creatorName = creatorBusiness ? (creatorBusiness.name || creatorBusiness.business_name) : 
+                          (creatorUser ? creatorUser.email : 'Unknown');
+        const createdDate = comm.created_at ? new Date(comm.created_at).toLocaleDateString() : 'N/A';
+        const memberCount = comm.member_count || 0;
+        const statusClass = comm.status === 'active' ? 'status-approved' : 'status-suspended';
+        
+        return `
+          <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+              <div style="flex: 1;">
+                <h3 style="color: #fff; font-size: 1.2rem; margin: 0 0 8px 0;">${this.escapeHtml(comm.name)}</h3>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;">
+                  <span style="padding: 4px 12px; background: #2a2a2a; color: #a8a8a8; border-radius: 6px; font-size: 12px;">${this.escapeHtml(comm.category)}</span>
+                  <span class="status-badge ${statusClass}">${comm.status}</span>
+                </div>
+                ${comm.description ? `<p style="color: #a8a8a8; font-size: 14px; margin: 12px 0; line-height: 1.6;">${this.escapeHtml(comm.description.substring(0, 150))}${comm.description.length > 150 ? '...' : ''}</p>` : ''}
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #2a2a2a; font-size: 14px; color: #6b7280;">
+              <div><strong>Creator:</strong> ${this.escapeHtml(creatorName)}</div>
+              <div><strong>Members:</strong> ${memberCount}</div>
+              <div><strong>Created:</strong> ${createdDate}</div>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #2a2a2a;">
+              <button onclick="adminDashboard.viewCommunity('${comm.id}')" style="padding: 8px 16px; background: #0095f6; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer;">
+                <i class="fas fa-eye"></i> View Details
+              </button>
+              ${comm.status === 'active' ? `
+                <button onclick="adminDashboard.suspendCommunity('${comm.id}')" style="padding: 8px 16px; background: #ef4444; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer;">
+                  <i class="fas fa-ban"></i> Suspend
+                </button>
+              ` : `
+                <button onclick="adminDashboard.activateCommunity('${comm.id}')" style="padding: 8px 16px; background: #10b981; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer;">
+                  <i class="fas fa-check"></i> Activate
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+    } catch (error) {
+      console.error('[admin] Error loading communities:', error);
+      const container = document.getElementById('communities-container');
+      if (container) {
+        container.innerHTML = `<div style="text-align: center; padding: 40px; color: #ef4444;">Error loading communities: ${error.message}</div>`;
+      }
+    }
+  },
+  
+  async viewCommunity(communityId) {
+    try {
+      // Import communities API
+      const CommunitiesAPI = await import('./communities.api.js');
+      const community = await CommunitiesAPI.getCommunity(communityId);
+      
+      // Get members and messages
+      const members = JSON.parse(localStorage.getItem('chamber122_community_members') || '[]');
+      const messages = JSON.parse(localStorage.getItem('chamber122_community_messages') || '[]');
+      
+      const communityMembers = members.filter(m => m.community_id === communityId && m.status === 'active');
+      const communityMessages = messages
+        .filter(m => m.community_id === communityId)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .slice(0, 20); // Last 20 messages
+      
+      const businesses = getAllBusinesses();
+      const users = getAllUsers();
+      
+      // Create modal with details
+      const modalHTML = `
+        <div id="community-detail-modal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; overflow-y: auto;">
+          <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto;">
+            <div style="padding: 24px; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #1a1a1a; z-index: 1;">
+              <h2 style="color: #fff; margin: 0; font-size: 1.5rem;">${this.escapeHtml(community.name)}</h2>
+              <button onclick="document.getElementById('community-detail-modal').remove()" style="background: none; border: none; color: #a8a8a8; font-size: 24px; cursor: pointer; padding: 0; width: 32px; height: 32px;">&times;</button>
+            </div>
+            <div style="padding: 24px;">
+              <div style="margin-bottom: 24px;">
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
+                  <span style="padding: 6px 12px; background: #2a2a2a; color: #a8a8a8; border-radius: 6px; font-size: 14px;">${this.escapeHtml(community.category)}</span>
+                  <span class="status-badge ${community.status === 'active' ? 'status-approved' : 'status-suspended'}">${community.status}</span>
+                </div>
+                ${community.description ? `<p style="color: #a8a8a8; font-size: 14px; line-height: 1.6; margin: 12px 0;">${this.escapeHtml(community.description)}</p>` : ''}
+                <div style="color: #6b7280; font-size: 14px; margin-top: 12px;">
+                  <div><strong>Created:</strong> ${new Date(community.created_at).toLocaleString()}</div>
+                  <div><strong>Members:</strong> ${communityMembers.length}</div>
+                </div>
+              </div>
+              
+              <div style="margin-bottom: 24px;">
+                <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 16px;">Members (${communityMembers.length})</h3>
+                <div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;">
+                  ${communityMembers.length === 0 ? '<p style="color: #6b7280; text-align: center; padding: 20px;">No members yet</p>' : ''}
+                  ${communityMembers.map(m => {
+                    const business = businesses.find(b => b.id === m.msme_id || b.owner_id === m.msme_id);
+                    const user = users.find(u => u.id === m.msme_id);
+                    const name = business ? (business.name || business.business_name) : (user ? user.email : 'Unknown');
+                    return `
+                      <div style="padding: 12px; background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                          <div style="color: #fff; font-weight: 500;">${this.escapeHtml(name)}</div>
+                          <div style="color: #6b7280; font-size: 12px;">${m.role === 'owner' ? 'Owner' : 'Member'}</div>
+                        </div>
+                        ${m.role !== 'owner' ? `<button onclick="adminDashboard.removeMember('${communityId}', '${m.msme_id}')" style="padding: 6px 12px; background: #ef4444; color: #fff; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Remove</button>` : ''}
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+              
+              <div>
+                <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 16px;">Recent Messages (${communityMessages.length})</h3>
+                <div style="display: flex; flex-direction: column; gap: 12px; max-height: 300px; overflow-y: auto; padding: 16px; background: #0f0f0f; border-radius: 8px;">
+                  ${communityMessages.length === 0 ? '<p style="color: #6b7280; text-align: center; padding: 20px;">No messages yet</p>' : ''}
+                  ${communityMessages.map(msg => {
+                    const time = new Date(msg.created_at).toLocaleString();
+                    return `
+                      <div style="padding: 12px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px;">
+                        <div style="color: #fff; font-weight: 500; margin-bottom: 4px;">${this.escapeHtml(msg.msme_name || 'Unknown')}</div>
+                        <div style="color: #a8a8a8; font-size: 14px; margin-bottom: 4px;">${this.escapeHtml(msg.body)}</div>
+                        <div style="color: #6b7280; font-size: 12px;">${time}</div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+    } catch (error) {
+      console.error('[admin] Error viewing community:', error);
+      alert('Error loading community details: ' + error.message);
+    }
+  },
+  
+  async removeMember(communityId, msmeId) {
+    if (!confirm('Remove this member from the community?')) return;
+    
+    try {
+      const CommunitiesAPI = await import('./communities.api.js');
+      await CommunitiesAPI.leaveCommunity(communityId, msmeId);
+      alert('Member removed successfully');
+      this.viewCommunity(communityId); // Reload view
+    } catch (error) {
+      console.error('[admin] Error removing member:', error);
+      alert('Error removing member: ' + error.message);
+    }
+  },
+  
+  async suspendCommunity(communityId) {
+    if (!confirm('Are you sure you want to suspend this community? Members will not be able to send messages.')) return;
+    
+    try {
+      const user = getCurrentUser();
+      if (!user) {
+        alert('You must be logged in');
+        return;
+      }
+      
+      const CommunitiesAPI = await import('./communities.api.js');
+      await CommunitiesAPI.updateCommunityStatus(communityId, 'suspended', user.id);
+      
+      alert('Community suspended successfully');
+      this.loadCommunities();
+    } catch (error) {
+      console.error('[admin] Error suspending community:', error);
+      alert('Error suspending community: ' + error.message);
+    }
+  },
+  
+  async activateCommunity(communityId) {
+    if (!confirm('Activate this community?')) return;
+    
+    try {
+      const user = getCurrentUser();
+      if (!user) {
+        alert('You must be logged in');
+        return;
+      }
+      
+      const CommunitiesAPI = await import('./communities.api.js');
+      await CommunitiesAPI.updateCommunityStatus(communityId, 'active', user.id);
+      
+      alert('Community activated successfully');
+      this.loadCommunities();
+    } catch (error) {
+      console.error('[admin] Error activating community:', error);
+      alert('Error activating community: ' + error.message);
+    }
+  },
+  
+  // Helper function
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  },
+  
   sendMessageToUser(userId, userEmail) {
     const subject = prompt('Enter message subject:');
     if (!subject) return;
@@ -1191,6 +1453,16 @@ const adminDashboard = {
     const usersFilter = document.getElementById('users-filter');
     if (usersFilter) {
       usersFilter.addEventListener('change', () => this.filterUsers());
+    }
+    
+    // Communities search and filter
+    const communitiesSearch = document.getElementById('communities-search');
+    if (communitiesSearch) {
+      communitiesSearch.addEventListener('input', () => this.loadCommunities());
+    }
+    const communitiesFilter = document.getElementById('communities-filter');
+    if (communitiesFilter) {
+      communitiesFilter.addEventListener('change', () => this.loadCommunities());
     }
     
     // Similar for other sections...

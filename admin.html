@@ -62,6 +62,9 @@
           <a href="#messages" class="admin-nav-item" data-section="messages">
             <i class="fas fa-envelope"></i> Messages
           </a>
+          <a href="#communities" class="admin-nav-item" data-section="communities">
+            <i class="fas fa-users"></i> Communities
+          </a>
           <a href="#documents" class="admin-nav-item" data-section="documents">
             <i class="fas fa-file-alt"></i> Documents
           </a>
@@ -304,6 +307,40 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+        </section>
+
+        <!-- Communities Section -->
+        <section id="section-communities" class="admin-section">
+          <div class="admin-section-header">
+            <h1><i class="fas fa-users"></i> Communities Management</h1>
+            <div class="admin-stats">
+              <div class="stat-card">
+                <div class="stat-value" id="stat-total-communities">0</div>
+                <div class="stat-label">Total Communities</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="stat-active-communities">0</div>
+                <div class="stat-label">Active</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="stat-suspended-communities">0</div>
+                <div class="stat-label">Suspended</div>
+              </div>
+            </div>
+          </div>
+          <div class="admin-filters">
+            <input type="text" id="communities-search" placeholder="Search communities..." class="admin-search">
+            <select id="communities-filter" class="admin-filter">
+              <option value="all">All Communities</option>
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </div>
+          <div id="communities-container" style="display: grid; grid-template-columns: 1fr; gap: 20px; padding: 20px 0;">
+            <div style="text-align: center; padding: 40px; color: #6b7280;">
+              <i class="fas fa-spinner fa-spin"></i> Loading communities...
+            </div>
           </div>
         </section>
 
