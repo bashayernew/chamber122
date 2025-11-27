@@ -298,10 +298,14 @@ async function loadCommunityDetail(communityId) {
     const community = await CommunitiesAPI.getCommunity(communityId);
     const user = getCurrentUser();
     
-    // Check membership
+    // Check membership - check both user ID and business ID
     let isMember = false;
     if (user) {
-      isMember = await CommunitiesAPI.isCommunityMember(communityId, user.id);
+      const business = await getBusinessForUser(user.id);
+      const msmeId = business ? business.id : user.id;
+      // Check membership with both possible IDs
+      isMember = await CommunitiesAPI.isCommunityMember(communityId, msmeId) || 
+                 await CommunitiesAPI.isCommunityMember(communityId, user.id);
     }
 
     // Load messages
@@ -385,7 +389,20 @@ function renderCommunityDetail(community, isMember, messages, user) {
  * Render a message
  */
 function renderMessage(message, currentUser) {
-  const isOwn = currentUser && (message.msme_id === currentUser.id);
+  // Check if message is from current user (check both user ID and business ID)
+  let isOwn = false;
+  if (currentUser) {
+    isOwn = message.msme_id === currentUser.id;
+    // Also check if user has a business and message is from that business
+    if (!isOwn) {
+      // We'll check business ID dynamically if needed
+      const businessId = currentUser.business_id || (currentUser.business ? currentUser.business.id : null);
+      if (businessId) {
+        isOwn = message.msme_id === businessId;
+      }
+    }
+  }
+  
   const time = new Date(message.created_at).toLocaleString();
   
   return `
@@ -405,8 +422,9 @@ function renderMessage(message, currentUser) {
 async function handleJoinLeave(communityId, isMember) {
   const user = getCurrentUser();
   if (!user) {
-    alert('Please login to join communities');
-    window.location.href = '/auth.html#login';
+    if (confirm('You need to be logged in to join communities. Go to login page?')) {
+      window.location.href = '/auth.html#login';
+    }
     return;
   }
 
@@ -415,14 +433,31 @@ async function handleJoinLeave(communityId, isMember) {
     const msmeId = business ? business.id : user.id;
 
     if (isMember) {
-      await CommunitiesAPI.leaveCommunity(communityId, msmeId);
+      // Try leaving with both IDs
+      try {
+        await CommunitiesAPI.leaveCommunity(communityId, msmeId);
+      } catch (e) {
+        // Try with user ID if different
+        if (msmeId !== user.id) {
+          await CommunitiesAPI.leaveCommunity(communityId, user.id);
+        }
+      }
       alert('You have left the community');
     } else {
+      // Join with primary ID (business ID if available, otherwise user ID)
       await CommunitiesAPI.joinCommunity(communityId, msmeId);
+      // Also join with user ID if different to ensure membership is recorded
+      if (msmeId !== user.id) {
+        try {
+          await CommunitiesAPI.joinCommunity(communityId, user.id);
+        } catch (e) {
+          // Ignore if already member or error
+        }
+      }
       alert('You have joined the community!');
     }
 
-    // Reload page
+    // Reload page to refresh membership status and messages
     window.location.reload();
   } catch (error) {
     console.error('[communities-ui] Error joining/leaving:', error);
