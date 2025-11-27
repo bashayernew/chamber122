@@ -72,11 +72,13 @@ const adminDashboard = {
     // Setup navigation
     this.setupNavigation();
     
-    // Load initial section
-    this.loadSection('users');
-    
     // Setup search and filters
     this.setupSearchAndFilters();
+    
+    // Load initial section (with delay to ensure DOM is ready)
+    setTimeout(() => {
+      this.loadSection('users');
+    }, 100);
   },
   
   setupNavigation() {
@@ -136,9 +138,14 @@ const adminDashboard = {
   // Users Management
   loadUsers() {
     try {
-      console.log('[admin] Loading users...');
+      console.log('[admin] ========== LOADING USERS ==========');
       const allUsers = getAllUsers();
-      console.log('[admin] Found users in localStorage:', allUsers.length, allUsers);
+      console.log('[admin] Found users in localStorage:', allUsers.length);
+      console.log('[admin] Users data:', JSON.stringify(allUsers, null, 2));
+      
+      // Debug: Check localStorage directly
+      const rawStorage = localStorage.getItem('chamber122_users');
+      console.log('[admin] Raw localStorage data:', rawStorage);
       
       // Filter out admin from stats but show in list
       const users = allUsers; // Show all users including admin
@@ -313,23 +320,37 @@ const adminDashboard = {
   
   suspendUser(userId) {
     if (!confirm('Suspend this user?')) return;
-    const users = getAllUsers();
-    const user = users.find(u => u.id === userId);
-    if (!user) return;
-    
-    updateUser(userId, { status: 'suspended' });
-    
-    // Send suspension message to user
-    this.sendStatusMessage(userId, user.email, 'suspended', 'Your account has been suspended. Please contact support for more information.');
-    
-    // Also suspend their business if exists
-    const businesses = getAllBusinesses();
-    const userBusiness = businesses.find(b => b.owner_id === userId);
-    if (userBusiness) {
-      updateBusiness(userBusiness.id, { status: 'suspended', is_published: false });
+    try {
+      const users = getAllUsers();
+      const user = users.find(u => u.id === userId);
+      if (!user) {
+        alert('User not found');
+        return;
+      }
+      
+      updateUser(userId, { status: 'suspended', updated_at: new Date().toISOString() });
+      
+      // Send suspension message to user
+      this.sendStatusMessage(userId, user.email, 'suspended', 'Your account has been suspended. Please contact support for more information.');
+      
+      // Also suspend their business if exists
+      const businesses = getAllBusinesses();
+      const userBusiness = businesses.find(b => b.owner_id === userId);
+      if (userBusiness) {
+        updateBusiness(userBusiness.id, { status: 'suspended', is_published: false, updated_at: new Date().toISOString() });
+      }
+      
+      // Reload users
+      this.loadUsers();
+      
+      // Dispatch event to update inbox badge
+      window.dispatchEvent(new CustomEvent('inbox-updated'));
+      
+      alert('User suspended successfully!');
+    } catch (error) {
+      console.error('[admin] Error suspending user:', error);
+      alert('Error suspending user: ' + error.message);
     }
-    
-    this.loadUsers();
   },
   
   sendStatusMessage(userId, userEmail, status, message) {
@@ -356,19 +377,27 @@ const adminDashboard = {
   
   deleteUser(userId) {
     if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
-    const users = getAllUsers();
-    const filtered = users.filter(u => u.id !== userId);
-    saveUsers(filtered);
-    
-    // Also delete user's business
-    const businesses = getAllBusinesses();
-    const userBusiness = businesses.find(b => b.owner_id === userId);
-    if (userBusiness) {
-      const filteredBusinesses = businesses.filter(b => b.id !== userBusiness.id);
-      saveBusinesses(filteredBusinesses);
+    try {
+      const users = getAllUsers();
+      const filtered = users.filter(u => u.id !== userId);
+      saveUsers(filtered);
+      
+      // Also delete user's business
+      const businesses = getAllBusinesses();
+      const userBusiness = businesses.find(b => b.owner_id === userId);
+      if (userBusiness) {
+        const filteredBusinesses = businesses.filter(b => b.id !== userBusiness.id);
+        saveBusinesses(filteredBusinesses);
+      }
+      
+      // Reload users
+      this.loadUsers();
+      
+      alert('User deleted successfully!');
+    } catch (error) {
+      console.error('[admin] Error deleting user:', error);
+      alert('Error deleting user: ' + error.message);
     }
-    
-    this.loadUsers();
   },
   
   // MSMEs Management
