@@ -312,7 +312,7 @@ const adminDashboard = {
                         <span style="color: #1a1a1a; font-weight: 500; text-transform: capitalize;">${docType.replace(/_/g, ' ')}</span>
                       </div>
                       <div style="display: flex; gap: 8px;">
-                        ${hasValidUrl ? `<button onclick="adminDashboard.viewDocument('${user.id}', '${docType}', ${JSON.stringify(docUrl)})" style="color: #3b82f6; background: none; border: none; cursor: pointer; font-weight: 600; padding: 4px 8px;">View</button>` : '<span style="color: #6b7280; font-size: 12px;">Pending</span>'}
+                        ${hasValidUrl ? `<button onclick="adminDashboard.viewDocument('${user.id}', '${docType.replace(/'/g, "\\'")}', '${docUrl.replace(/'/g, "\\'")}')" style="color: #3b82f6; background: none; border: none; cursor: pointer; font-weight: 600; padding: 4px 8px;">View</button>` : '<span style="color: #6b7280; font-size: 12px;">Pending</span>'}
                         <button onclick="adminDashboard.reportDocument('${user.id}', '${user.email}', '${docType}')" style="background: #f59e0b; color: #fff; border: none; border-radius: 6px; padding: 4px 12px; cursor: pointer; font-weight: 600; font-size: 12px;">Report Issue</button>
                       </div>
                     </div>
@@ -1209,7 +1209,7 @@ const adminDashboard = {
           <td>${date}</td>
           <td><span class="status-badge ${statusClass}">${status}</span></td>
           <td class="actions-cell">
-            ${docUrl && !docUrl.startsWith('pending_') ? `<button onclick="adminDashboard.viewDocument('${doc.userId}', '${docType}', ${JSON.stringify(docUrl)})" class="btn-action btn-view" title="View Document"><i class="fas fa-eye"></i></button>` : '<span style="color: #6b7280; font-size: 12px;">No URL</span>'}
+            ${docUrl && !docUrl.startsWith('pending_') ? `<button onclick="adminDashboard.viewDocument('${doc.userId}', '${docType.replace(/'/g, "\\'")}', '${docUrl.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" class="btn-action btn-view" title="View Document"><i class="fas fa-eye"></i></button>` : '<span style="color: #6b7280; font-size: 12px;">No URL</span>'}
             <button onclick="adminDashboard.reportDocument('${doc.userId}', '${doc.userEmail}', '${docType}')" class="btn-action btn-suspend" title="Report Issue"><i class="fas fa-flag"></i></button>
           </td>
         </tr>
@@ -1218,12 +1218,21 @@ const adminDashboard = {
   },
   
   viewDocument(userId, docType, docUrl) {
-    if (!docUrl || docUrl.startsWith('pending_')) {
+    if (!docUrl || docUrl === 'undefined' || docUrl.startsWith('pending_')) {
       alert('Document URL not available yet. The document is still being processed.');
       return;
     }
     
-    this.showDocumentModal(docType, docUrl);
+    // Handle base64 data URLs (they can be very long)
+    let cleanUrl = docUrl;
+    if (typeof docUrl === 'string') {
+      // If it's already a string, use it directly
+      cleanUrl = docUrl;
+    } else if (docUrl && docUrl.toString) {
+      cleanUrl = docUrl.toString();
+    }
+    
+    this.showDocumentModal(docType, cleanUrl);
   },
   
   viewDocumentFromCache(userId, docType, docDataId) {
@@ -1241,14 +1250,21 @@ const adminDashboard = {
     modal.id = 'document-viewer-modal';
     modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;';
     
+    // Ensure docUrl is a string
+    const urlString = String(docUrl || '');
+    
     // Determine if it's an image or PDF
-    const isImage = docUrl.startsWith('data:image') || 
-                   docUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ||
-                   (docUrl.startsWith('data:') && docUrl.includes('image'));
-    const isPDF = docUrl.match(/\.pdf$/i) || docUrl.includes('application/pdf');
+    const isImage = urlString.startsWith('data:image') || 
+                   urlString.match(/\.(jpg|jpeg|png|gif|webp)$/i) ||
+                   (urlString.startsWith('data:') && urlString.includes('image'));
+    const isPDF = urlString.match(/\.pdf$/i) || urlString.includes('application/pdf') || urlString.startsWith('data:application/pdf');
     
     // Escape HTML in docType
-    const safeDocType = docType.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const safeDocType = String(docType || 'Document').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    
+    // For base64 data URLs, use them directly in src/href
+    // For other URLs, escape quotes
+    const safeUrl = urlString;
     
     modal.innerHTML = `
       <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; max-width: 90%; max-height: 90%; overflow: auto; position: relative;">
@@ -1258,12 +1274,12 @@ const adminDashboard = {
         </div>
         <div style="padding: 20px;">
           ${isImage ? 
-            `<img src="${docUrl.replace(/"/g, '&quot;')}" style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;" />` :
+            `<img src="${safeUrl}" style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;" onerror="this.parentElement.innerHTML='<div style=\\'padding: 40px; text-align: center; color: #6b7280;\\'><p>Failed to load image.</p><a href=\\'${safeUrl.replace(/'/g, '\\&#39;')}\\' target=\\'_blank\\' style=\\'color: #f2c64b; text-decoration: underline;\\'>Open in new tab</a></div>'" />` :
             isPDF ?
-            `<iframe src="${docUrl.replace(/"/g, '&quot;')}" style="width: 100%; min-height: 600px; border: none; border-radius: 8px;"></iframe>` :
+            `<iframe src="${safeUrl}" style="width: 100%; min-height: 600px; border: none; border-radius: 8px;" onerror="this.parentElement.innerHTML='<div style=\\'padding: 40px; text-align: center; color: #6b7280;\\'><p>Failed to load PDF.</p><a href=\\'${safeUrl.replace(/'/g, '\\&#39;')}\\' target=\\'_blank\\' style=\\'color: #f2c64b; text-decoration: underline;\\'>Open in new tab</a></div>'"></iframe>` :
             `<div style="padding: 40px; text-align: center; color: #6b7280;">
               <p>Document preview not available for this file type.</p>
-              <a href="${docUrl.replace(/"/g, '&quot;')}" target="_blank" style="color: #f2c64b; text-decoration: underline;">Open in new tab</a>
+              <a href="${safeUrl}" target="_blank" style="color: #f2c64b; text-decoration: underline;">Open in new tab</a>
             </div>`
           }
         </div>
@@ -1378,7 +1394,8 @@ const adminDashboard = {
         body: reportMessage.body,
         created_at: reportMessage.created_at,
         read_at: null,
-        unread: true
+        unread: true,
+        action: reportMessage.action // Include action for button
       });
       localStorage.setItem('ch122_user_messages', JSON.stringify(userMessages));
       

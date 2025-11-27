@@ -880,6 +880,17 @@
             const senderName = senderUser ? (senderUser.name || senderUser.email) : 'Unknown';
             const senderLogo = senderUser?.logo_url || '';
 
+            // Check if message has an action (e.g., document report with fix button)
+            const hasAction = msg.action && msg.action.type === 'fix_document';
+            const actionButton = hasAction ? `
+              <div style="margin-top: 12px;">
+                <a href="${escapeHtml(msg.action.redirectUrl || '/owner-form.html#documents')}" 
+                   style="display: inline-block; padding: 10px 20px; background: linear-gradient(135deg, #0095f6, #1877f2); color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; transition: opacity 0.2s;">
+                  <i class="fas fa-edit"></i> Update Document
+                </a>
+              </div>
+            ` : '';
+            
             return `
               <div class="message ${isSent ? 'sent' : 'received'}">
                 ${!isSent ? `
@@ -891,7 +902,7 @@
                   </div>
                 ` : ''}
                 <div>
-                  <div class="message-bubble">${escapeHtml(messageBody)}</div>
+                  <div class="message-bubble">${escapeHtml(messageBody)}${actionButton}</div>
                   <div class="message-time">${messageTime}</div>
                 </div>
               </div>
