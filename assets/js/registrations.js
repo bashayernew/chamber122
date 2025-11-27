@@ -1,7 +1,8 @@
 // Registrations Management for MSME Owners
-// Load and display registrations for events and bulletins
+// Load and display registrations for events and bulletins using localStorage
 
 import { getCurrentUser, getMyBusiness } from '/js/api.js';
+import { getPublicEvents, getPublicBulletins } from '/js/api.js';
 
 export async function loadRegistrations() {
   try {
@@ -13,7 +14,8 @@ export async function loadRegistrations() {
     }
 
     // Get user's business
-    const business = await getMyBusiness();
+    const businessResponse = await getMyBusiness();
+    const business = businessResponse && businessResponse.business ? businessResponse.business : null;
     if (!business) {
       console.log('No business found for user');
       return { events: [], bulletins: [], all: [] };
@@ -21,19 +23,43 @@ export async function loadRegistrations() {
 
     const businessId = business.id;
 
-    // Get events for this business
-    const eventsRes = await fetch(`/api/dashboard/my-events`, {
-      credentials: 'include'
-    });
-    const eventsData = eventsRes.ok ? await eventsRes.json() : { events: [] };
-    const events = eventsData.events || [];
+    // Get events for this business from localStorage
+    const allEvents = await getPublicEvents();
+    const events = allEvents.filter(e => e.business_id === businessId || e.owner_id === user.id);
+    
+    // Also check localStorage for all events (including drafts)
+    const storedEvents = localStorage.getItem('chamber122_events');
+    if (storedEvents) {
+      try {
+        const allStoredEvents = JSON.parse(storedEvents);
+        const draftEvents = allStoredEvents.filter(e => 
+          (e.business_id === businessId || e.owner_id === user.id) && 
+          (!e.status || e.status !== 'published')
+        );
+        events.push(...draftEvents);
+      } catch (e) {
+        console.warn('[registrations] Error parsing stored events:', e);
+      }
+    }
 
-    // Get bulletins for this business
-    const bulletinsRes = await fetch(`/api/dashboard/my-bulletins`, {
-      credentials: 'include'
-    });
-    const bulletinsData = bulletinsRes.ok ? await bulletinsRes.json() : { bulletins: [] };
-    const bulletins = bulletinsData.bulletins || [];
+    // Get bulletins for this business from localStorage
+    const allBulletins = await getPublicBulletins();
+    const bulletins = allBulletins.filter(b => b.business_id === businessId || b.owner_id === user.id);
+    
+    // Also check localStorage for all bulletins (including drafts)
+    const storedBulletins = localStorage.getItem('chamber122_bulletins');
+    if (storedBulletins) {
+      try {
+        const allStoredBulletins = JSON.parse(storedBulletins);
+        const draftBulletins = allStoredBulletins.filter(b => 
+          (b.business_id === businessId || b.owner_id === user.id) && 
+          (!b.status || b.status !== 'published')
+        );
+        bulletins.push(...draftBulletins);
+      } catch (e) {
+        console.warn('[registrations] Error parsing stored bulletins:', e);
+      }
+    }
 
     console.log('[registrations] Loaded items:', {
       eventCount: events?.length || 0,
@@ -44,50 +70,46 @@ export async function loadRegistrations() {
     const eventIds = events?.map(e => e.id) || [];
     const bulletinIds = bulletins?.map(b => b.id) || [];
 
-    // Get registrations for these events and bulletins
+    // Get registrations from localStorage
     let allRegistrations = [];
 
-    // Load event registrations
-    for (const eventId of eventIds) {
+    // Load event registrations from localStorage
+    const eventRegistrationsStr = localStorage.getItem('chamber122_event_registrations');
+    if (eventRegistrationsStr) {
       try {
-        const regRes = await fetch(`/api/dashboard/registrations/${eventId}`, {
-          credentials: 'include'
-        });
-        if (regRes.ok) {
-          const regData = await regRes.json();
-          const registrations = regData.registrations || [];
-          const eventTitle = events.find(e => e.id === eventId)?.title || 'Unknown Event';
-          allRegistrations.push(...registrations.map(r => ({
+        const eventRegistrations = JSON.parse(eventRegistrationsStr);
+        const myEventRegistrations = eventRegistrations.filter(r => eventIds.includes(r.event_id));
+        myEventRegistrations.forEach(r => {
+          const event = events.find(e => e.id === r.event_id);
+          allRegistrations.push({
             ...r,
             type: 'event',
-            item_id: eventId,
-            item_title: eventTitle
-          })));
-        }
-      } catch (err) {
-        console.error(`[registrations] Error loading registrations for event ${eventId}:`, err);
+            item_id: r.event_id,
+            item_title: event ? event.title : 'Unknown Event'
+          });
+        });
+      } catch (e) {
+        console.warn('[registrations] Error parsing event registrations:', e);
       }
     }
 
-    // Load bulletin registrations
-    for (const bulletinId of bulletinIds) {
+    // Load bulletin registrations from localStorage
+    const bulletinRegistrationsStr = localStorage.getItem('chamber122_bulletin_registrations');
+    if (bulletinRegistrationsStr) {
       try {
-        const regRes = await fetch(`/api/dashboard/bulletin-registrations/${bulletinId}`, {
-          credentials: 'include'
-        });
-        if (regRes.ok) {
-          const regData = await regRes.json();
-          const registrations = regData.registrations || [];
-          const bulletinTitle = bulletins.find(b => b.id === bulletinId)?.title || 'Unknown Bulletin';
-          allRegistrations.push(...registrations.map(r => ({
+        const bulletinRegistrations = JSON.parse(bulletinRegistrationsStr);
+        const myBulletinRegistrations = bulletinRegistrations.filter(r => bulletinIds.includes(r.bulletin_id));
+        myBulletinRegistrations.forEach(r => {
+          const bulletin = bulletins.find(b => b.id === r.bulletin_id);
+          allRegistrations.push({
             ...r,
             type: 'bulletin',
-            item_id: bulletinId,
-            item_title: bulletinTitle
-          })));
-        }
-      } catch (err) {
-        console.error(`[registrations] Error loading registrations for bulletin ${bulletinId}:`, err);
+            item_id: r.bulletin_id,
+            item_title: bulletin ? bulletin.title : 'Unknown Bulletin'
+          });
+        });
+      } catch (e) {
+        console.warn('[registrations] Error parsing bulletin registrations:', e);
       }
     }
 
