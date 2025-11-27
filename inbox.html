@@ -921,9 +921,31 @@
           return;
         }
         
-        const { messages, userId, userName, userLogo } = cache;
+        const { userId, userName, userLogo } = cache;
         const user = await getCurrentUser();
         if (!user) return;
+        
+        // RELOAD ALL MESSAGES from localStorage (both sent and received)
+        const { getMessagesForUser } = await import('/js/messaging.js');
+        const allUserMessages = getMessagesForUser(user.id);
+        
+        // Filter messages for this specific conversation (between current user and the other user)
+        const conversationMessages = allUserMessages.filter(m => 
+          (m.fromUserId === user.id && m.toUserId === userId) ||
+          (m.fromUserId === userId && m.toUserId === user.id)
+        );
+        
+        console.log('[inbox] Loaded conversation messages:', {
+          userId: userId,
+          totalMessages: conversationMessages.length,
+          sent: conversationMessages.filter(m => m.fromUserId === user.id).length,
+          received: conversationMessages.filter(m => m.toUserId === user.id).length
+        });
+        
+        // Update cache with fresh messages
+        if (window.userMessagesCache) {
+          window.userMessagesCache[messagesId].messages = conversationMessages;
+        }
         
         // Update chat header
         const headerAvatar = document.getElementById('chat-header-avatar');
@@ -954,7 +976,7 @@
         if (!detailContent) return;
         
         // Sort messages by date (oldest first for chat)
-        const sortedMessages = [...messages].sort((a, b) => {
+        const sortedMessages = [...conversationMessages].sort((a, b) => {
           const dateA = new Date(a.created_at || 0);
           const dateB = new Date(b.created_at || 0);
           return dateA - dateB;
@@ -968,7 +990,7 @@
           }
         });
         
-        // Render chat messages
+        // Render chat messages - show ALL messages (both sent and received)
         if (sortedMessages.length === 0) {
           detailContent.innerHTML = `
             <div style="text-align: center; color: #6b7280; padding: 40px;">
@@ -993,7 +1015,9 @@
           }).join('');
           
           // Scroll to bottom
-          detailContent.scrollTop = detailContent.scrollHeight;
+          setTimeout(() => {
+            detailContent.scrollTop = detailContent.scrollHeight;
+          }, 100);
         }
         
         // Show chat view
@@ -1041,7 +1065,7 @@
           return window.userMessagesCache[id].userId === toUserId;
         });
         if (messagesId) {
-          // Reload messages from localStorage
+          // Reload ALL messages from localStorage (both sent and received)
           const { getMessagesForUser } = await import('/js/messaging.js');
           const user = await getCurrentUser();
           const allMessages = getMessagesForUser(user.id);
@@ -1050,8 +1074,16 @@
             (m.fromUserId === toUserId && m.toUserId === user.id)
           );
           
-          window.userMessagesCache[messagesId].messages = conversationMessages;
+          // Update cache with fresh messages
+          if (window.userMessagesCache && window.userMessagesCache[messagesId]) {
+            window.userMessagesCache[messagesId].messages = conversationMessages;
+          }
+          
+          // Reload the chat view
           await showUserChat(messagesId);
+        } else {
+          // If no cache found, reload conversations list to show new conversation
+          loadConversations();
         }
         
         sendBtn.disabled = false;
