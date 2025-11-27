@@ -1,7 +1,7 @@
 // Events page controller
 import { listEventsPublic, toast, createEvent, getOwnerBusinessId, uploadEventCover } from './api.js';
 import { requireAuthOrPrompt } from './auth-guard.js';
-import { supabase } from './supabase-client.global.js';
+// Removed Supabase import - using API instead
 
 let allEvents = [];
 let filteredEvents = [];
@@ -302,17 +302,33 @@ function setupEventListeners() {
 // Load businesses for the dropdown
 async function loadBusinessesForForm() {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    // Get user from API instead of Supabase
+    const { getCurrentUser } = await import('/js/api.js');
+    const user = await getCurrentUser();
     if (!user?.id) return;
 
-    const { data: businesses, error } = await supabase
-      .from('businesses')
-      .select('id, name')
-      .eq('owner_id', user.id);
-
-    if (error) {
+    // Get businesses from API
+    const { api } = await import('/js/api.js');
+    let businesses = [];
+    try {
+      const response = await api.get('/businesses/owner');
+      if (response.ok && response.businesses) {
+        businesses = response.businesses;
+      } else if (response.business) {
+        // Single business response
+        businesses = [response.business];
+      }
+    } catch (error) {
       console.error('Error loading businesses:', error);
-      return;
+      // Fallback: try to get from localStorage
+      try {
+        const stored = localStorage.getItem('chamber122_user_businesses');
+        if (stored) {
+          businesses = JSON.parse(stored);
+        }
+      } catch (e) {
+        console.warn('Could not load businesses from localStorage:', e);
+      }
     }
 
     const select = document.getElementById('event-business-select');
