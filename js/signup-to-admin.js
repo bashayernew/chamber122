@@ -3,14 +3,31 @@
  * This hooks into the signup process to save user data to localStorage
  */
 
-import { saveUsers, saveDocuments, getAllUsers } from './admin-auth.js';
+import { getAllUsers, generateId } from './auth-localstorage.js';
+
+// Save users to localStorage
+function saveUsers(users) {
+  try {
+    localStorage.setItem('chamber122_users', JSON.stringify(users));
+  } catch (e) {
+    console.error('[signup-to-admin] Error saving users:', e);
+  }
+}
+
+// Save documents to localStorage
+function saveDocuments(documents) {
+  try {
+    localStorage.setItem('chamber122_documents', JSON.stringify(documents));
+  } catch (e) {
+    console.error('[signup-to-admin] Error saving documents:', e);
+  }
+}
 
 /**
  * Save user signup data to admin system
  */
-export async function saveSignupToAdmin(userData) {
+export function saveSignupToAdmin(userData) {
   try {
-    const { getAllUsers, saveUsers } = await import('./auth-localstorage.js');
     const users = getAllUsers();
     
     console.log('[signup-to-admin] Saving user:', userData.email, 'Current users count:', users.length);
