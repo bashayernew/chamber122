@@ -58,15 +58,53 @@ function applyURLFilters() {
   }
 }
 
-// Load approved accounts from backend API
+// Load approved accounts from backend API or localStorage
 async function loadBusinesses() {
   try {
     console.log('[directory] Loading businesses from API...');
     const response = await fetch('/api/businesses/public');
+    
+    // Check if response is OK before trying to parse JSON
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.warn('[directory] API endpoint not available (404), using localStorage fallback');
+        // Fall back to localStorage if available
+        try {
+          const stored = localStorage.getItem('chamber122_businesses');
+          if (stored) {
+            allBusinesses = JSON.parse(stored);
+            console.log(`[directory] Loaded ${allBusinesses.length} businesses from localStorage`);
+          } else {
+            allBusinesses = [];
+            console.log('[directory] No businesses in localStorage, starting with empty list');
+          }
+        } catch (e) {
+          console.warn('[directory] Error reading from localStorage:', e);
+          allBusinesses = [];
+        }
+        filteredBusinesses = [...allBusinesses];
+        updateResultsCount();
+        renderBusinesses();
+        return;
+      }
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Response is not JSON');
+    }
+    
     const data = await response.json();
     
     if (data.ok && data.businesses) {
       allBusinesses = data.businesses;
+      // Store in localStorage for offline/fallback use
+      try {
+        localStorage.setItem('chamber122_businesses', JSON.stringify(allBusinesses));
+      } catch (e) {
+        console.warn('[directory] Could not store in localStorage:', e);
+      }
       console.log(`[directory] Loaded ${allBusinesses.length} businesses`);
     } else {
       console.warn('[directory] No businesses returned from API');
@@ -78,9 +116,21 @@ async function loadBusinesses() {
     renderBusinesses();
   } catch (error) {
     console.error('[directory] Error loading businesses:', error);
-    allBusinesses = [];
-    filteredBusinesses = [];
+    // Try localStorage fallback
+    try {
+      const stored = localStorage.getItem('chamber122_businesses');
+      if (stored) {
+        allBusinesses = JSON.parse(stored);
+        console.log(`[directory] Using ${allBusinesses.length} businesses from localStorage fallback`);
+      } else {
+        allBusinesses = [];
+      }
+    } catch (e) {
+      allBusinesses = [];
+    }
+    filteredBusinesses = [...allBusinesses];
     updateResultsCount();
+    renderBusinesses();
   }
 }
 

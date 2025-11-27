@@ -270,6 +270,10 @@ function startPolling() {
     if (!slot) return;
     
     try {
+      // Stop polling if backend is unavailable
+      if (hasBackendError) {
+        return;
+      }
       const user = await getCurrentUser();
       const currentUserId = user?.id || null;
       
