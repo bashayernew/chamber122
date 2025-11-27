@@ -110,9 +110,12 @@ const adminDashboard = {
   },
   
   loadSection(section) {
+    console.log('[admin] Loading section:', section);
     switch(section) {
       case 'users':
+        console.log('[admin] Calling loadUsers()...');
         this.loadUsers();
+        console.log('[admin] loadUsers() completed');
         break;
       case 'msmes':
         this.loadMSMEs();
@@ -197,7 +200,16 @@ const adminDashboard = {
     
     // Render users in card format with all details (matching the design shown)
     if (filteredUsers.length === 0) {
-      container.innerHTML = '<div style="text-align: center; padding: 40px; color: #6b7280;">No users found.</div>';
+      const hasSearchOrFilter = searchTerm || filterStatus !== 'all';
+      container.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: #6b7280;">
+          ${hasSearchOrFilter ? 
+            '<p style="font-size: 16px; margin-bottom: 12px;">No users match your search criteria.</p><button onclick="document.getElementById(\'users-search\').value=\'\'; document.getElementById(\'users-filter\').value=\'all\'; adminDashboard.loadUsers();" style="margin-top: 12px; padding: 8px 16px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; cursor: pointer;">Clear Filters</button>' :
+            '<p style="font-size: 16px; margin-bottom: 8px;">No users found.</p><p style="font-size: 14px; color: #9ca3af; margin-top: 8px;">New accounts will appear here automatically when users sign up.</p>'
+          }
+        </div>
+      `;
+      console.log('[admin] No users to display');
       return;
     }
     
