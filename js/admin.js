@@ -718,7 +718,7 @@ const adminDashboard = {
           <td>${date}</td>
           <td><span class="status-badge ${statusClass}">${status}</span></td>
           <td class="actions-cell">
-            ${docUrl ? `<button onclick="adminDashboard.viewDocument('${doc.userId}', '${docType}', '${docUrl.replace(/'/g, "\\'")}')" class="btn-action btn-view" title="View Document"><i class="fas fa-eye"></i></button>` : ''}
+            ${docUrl && !docUrl.startsWith('pending_') ? `<button onclick="adminDashboard.viewDocument('${doc.userId}', '${docType}', ${JSON.stringify(docUrl)})" class="btn-action btn-view" title="View Document"><i class="fas fa-eye"></i></button>` : '<span style="color: #6b7280; font-size: 12px;">No URL</span>'}
             <button onclick="adminDashboard.reportDocument('${doc.userId}', '${doc.userEmail}', '${docType}')" class="btn-action btn-suspend" title="Report Issue"><i class="fas fa-flag"></i></button>
           </td>
         </tr>
@@ -732,6 +732,19 @@ const adminDashboard = {
       return;
     }
     
+    this.showDocumentModal(docType, docUrl);
+  },
+  
+  viewDocumentFromCache(userId, docType, docDataId) {
+    if (!window.adminDocCache || !window.adminDocCache[docDataId]) {
+      alert('Document not found.');
+      return;
+    }
+    const docUrl = window.adminDocCache[docDataId];
+    this.showDocumentModal(docType, docUrl);
+  },
+  
+  showDocumentModal(docType, docUrl) {
     // Create modal to view document
     const modal = document.createElement('div');
     modal.id = 'document-viewer-modal';
@@ -743,26 +756,32 @@ const adminDashboard = {
                    (docUrl.startsWith('data:') && docUrl.includes('image'));
     const isPDF = docUrl.match(/\.pdf$/i) || docUrl.includes('application/pdf');
     
+    // Escape HTML in docType
+    const safeDocType = docType.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    
     modal.innerHTML = `
       <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; max-width: 90%; max-height: 90%; overflow: auto; position: relative;">
         <div style="padding: 20px; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center;">
-          <h3 style="margin: 0; color: #fff;">${docType}</h3>
-          <button onclick="document.getElementById('document-viewer-modal').remove()" style="background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">&times;</button>
+          <h3 style="margin: 0; color: #fff;">${safeDocType}</h3>
+          <button id="close-doc-modal" style="background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">&times;</button>
         </div>
         <div style="padding: 20px;">
           ${isImage ? 
-            `<img src="${docUrl}" style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;" />` :
+            `<img src="${docUrl.replace(/"/g, '&quot;')}" style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;" />` :
             isPDF ?
-            `<iframe src="${docUrl}" style="width: 100%; min-height: 600px; border: none; border-radius: 8px;"></iframe>` :
+            `<iframe src="${docUrl.replace(/"/g, '&quot;')}" style="width: 100%; min-height: 600px; border: none; border-radius: 8px;"></iframe>` :
             `<div style="padding: 40px; text-align: center; color: #6b7280;">
               <p>Document preview not available for this file type.</p>
-              <a href="${docUrl}" target="_blank" style="color: #f2c64b; text-decoration: underline;">Open in new tab</a>
+              <a href="${docUrl.replace(/"/g, '&quot;')}" target="_blank" style="color: #f2c64b; text-decoration: underline;">Open in new tab</a>
             </div>`
           }
         </div>
       </div>
     `;
     document.body.appendChild(modal);
+    
+    // Close button handler
+    document.getElementById('close-doc-modal').onclick = () => modal.remove();
     
     // Close on outside click
     modal.addEventListener('click', (e) => {
