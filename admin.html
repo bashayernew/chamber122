@@ -13,32 +13,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body>
-  <!-- Navigation -->
-  <nav class="navbar">
-    <div class="nav-container">
-      <a href="/index.html" class="logo site-logo">
-        <img src="/images/logo.png" alt="Chamber122 Logo">
-      </a>
-      <div class="nav-menu">
-        <a href="/index.html" class="nav-link" data-i18n="nav.home">Home</a>
-        <a href="/directory.html" class="nav-link" data-i18n="nav.directory">Directory</a>
-        <a href="/events.html" class="nav-link" data-i18n="nav.events">Events</a>
-        <a href="/bulletin.html" class="nav-link" data-i18n="nav.bulletin">Bulletin</a>
-        <a href="/about.html" class="nav-link" data-i18n="nav.about">About</a>
-        <a href="/contact.html" class="nav-link" data-i18n="nav.contact">Contact</a>
-      </div>
-      <div class="nav-actions">
-        <span id="auth-slot">
-          <a class="btn" href="/auth.html#login">Login</a>
-          <a class="btn primary" href="/auth.html#signup">Sign Up & Get Listed</a>
-        </span>
-      </div>
-    </div>
-  </nav>
-
+<body style="background: #0f0f0f; margin: 0; padding: 0;">
   <!-- Admin Login Form (shown when not logged in) -->
-  <div id="admin-login-container" style="display: none; min-height: calc(100vh - 100px); display: flex; align-items: center; justify-content: center; padding: 40px;">
+  <div id="admin-login-container" style="display: none; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 40px;">
     <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 40px; max-width: 400px; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
       <div style="text-align: center; margin-bottom: 32px;">
         <h1 style="color: #fff; font-size: 28px; font-weight: 700; margin: 0 0 8px 0;">Admin Login</h1>
@@ -62,7 +39,7 @@
   </div>
 
   <!-- Admin Dashboard (shown when logged in) -->
-  <main id="admin-dashboard-container" class="admin-dashboard-container" style="display: none;">
+  <main id="admin-dashboard-container" class="admin-dashboard-container" style="display: none; padding-top: 0;">
     <div class="admin-layout">
       <!-- Sidebar -->
       <aside class="admin-sidebar">
