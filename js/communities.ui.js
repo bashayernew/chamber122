@@ -60,11 +60,19 @@ async function initListPage() {
   if (createBtn) {
     if (user) {
       createBtn.style.display = 'block';
+      createBtn.style.visibility = 'visible';
       createBtn.addEventListener('click', () => {
         document.getElementById('create-modal').style.display = 'flex';
       });
     } else {
-      createBtn.style.display = 'none';
+      // If not logged in, show button but redirect to login on click
+      createBtn.style.display = 'block';
+      createBtn.style.visibility = 'visible';
+      createBtn.addEventListener('click', () => {
+        if (confirm('You need to be logged in to create a community. Go to login page?')) {
+          window.location.href = '/auth.html#login';
+        }
+      });
     }
   }
 
