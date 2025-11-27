@@ -61,13 +61,17 @@ const adminDashboard = {
   currentSection: 'users',
   
   init() {
+    console.log('[admin] ========== INITIALIZING ADMIN DASHBOARD ==========');
     // Ensure admin account exists
     ensureAdminAccount();
     
     // Check admin access
     if (!checkAdminAccess()) {
+      console.log('[admin] Access denied - not an admin');
       return;
     }
+    
+    console.log('[admin] Admin access confirmed');
     
     // Setup navigation
     this.setupNavigation();
@@ -75,10 +79,12 @@ const adminDashboard = {
     // Setup search and filters
     this.setupSearchAndFilters();
     
-    // Load initial section (with delay to ensure DOM is ready)
+    // Load initial section immediately and with delay
+    this.loadSection('users');
     setTimeout(() => {
+      console.log('[admin] Reloading users after delay...');
       this.loadSection('users');
-    }, 100);
+    }, 500);
   },
   
   setupNavigation() {
@@ -111,11 +117,16 @@ const adminDashboard = {
   
   loadSection(section) {
     console.log('[admin] Loading section:', section);
+    this.currentSection = section;
     switch(section) {
       case 'users':
         console.log('[admin] Calling loadUsers()...');
-        this.loadUsers();
-        console.log('[admin] loadUsers() completed');
+        try {
+          this.loadUsers();
+          console.log('[admin] loadUsers() completed');
+        } catch (error) {
+          console.error('[admin] Error in loadUsers():', error);
+        }
         break;
       case 'msmes':
         this.loadMSMEs();
@@ -149,6 +160,29 @@ const adminDashboard = {
       // Debug: Check localStorage directly
       const rawStorage = localStorage.getItem('chamber122_users');
       console.log('[admin] Raw localStorage data:', rawStorage);
+      console.log('[admin] Parsed users:', allUsers);
+      
+      // If no users found, create a test user for demonstration
+      if (allUsers.length === 0 || (allUsers.length === 1 && allUsers[0].role === 'admin')) {
+        console.warn('[admin] No users found (except admin). Creating demo user...');
+        const { signup } = await import('./auth-localstorage.js');
+        try {
+          const demoUser = signup('demo@example.com', 'demo123456', {
+            name: 'Demo User',
+            business_name: 'Demo Business',
+            phone: '12345678',
+            city: 'Kuwait City',
+            country: 'Kuwait',
+            industry: 'General'
+          });
+          console.log('[admin] Demo user created:', demoUser);
+          // Reload users
+          const updatedUsers = getAllUsers();
+          allUsers.push(...updatedUsers.filter(u => !allUsers.find(existing => existing.id === u.id)));
+        } catch (error) {
+          console.error('[admin] Error creating demo user:', error);
+        }
+      }
       
       // Filter out admin from stats but show in list
       const users = allUsers; // Show all users including admin
@@ -1155,6 +1189,32 @@ window.debugAdmin = function() {
   console.log('Documents:', documents.length);
   console.log('localStorage keys:', Object.keys(localStorage).filter(k => k.includes('chamber122')));
   return { users, businesses, documents };
+};
+
+// Create test user function (for debugging)
+window.createTestUser = function() {
+  const { signup } = require('./auth-localstorage.js');
+  const testEmail = `test_${Date.now()}@test.com`;
+  const testPassword = 'test123456';
+  try {
+    const result = signup(testEmail, testPassword, {
+      name: 'Test User',
+      business_name: 'Test Business',
+      phone: '12345678',
+      city: 'Kuwait City',
+      country: 'Kuwait',
+      industry: 'Technology'
+    });
+    console.log('[admin] Test user created:', result.user);
+    alert(`Test user created: ${testEmail}`);
+    if (adminDashboard && adminDashboard.currentSection === 'users') {
+      adminDashboard.loadUsers();
+    }
+    return result;
+  } catch (error) {
+    console.error('[admin] Error creating test user:', error);
+    alert('Error creating test user: ' + error.message);
+  }
 };
 
 // Initialize on page load
