@@ -786,6 +786,12 @@
       if (detailContainer) {
         detailContainer.style.display = 'none';
       }
+      // Hide chat input
+      const chatInputContainer = document.getElementById('chat-input-container');
+      if (chatInputContainer) {
+        chatInputContainer.style.display = 'none';
+        chatInputContainer.removeAttribute('data-chat-user-id');
+      }
     }
 
     async function markMessageAsRead(messageId) {
