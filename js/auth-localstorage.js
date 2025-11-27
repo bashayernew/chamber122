@@ -23,7 +23,7 @@ export function getAllUsers() {
 }
 
 // Save users to localStorage
-function saveUsers(users) {
+export function saveUsers(users) {
   try {
     localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
   } catch (e) {
