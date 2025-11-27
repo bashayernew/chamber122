@@ -416,21 +416,63 @@
 
   <!-- Scripts -->
   <script type="module">
-    // Admin auth guard - check before loading anything
-    import { getCurrentUser, isAdmin } from '/js/auth-localstorage.js';
-    
-    const user = getCurrentUser();
-    if (!user) {
-      alert('Please login to access the admin dashboard.');
-      window.location.href = '/auth.html#login';
-    } else if (!isAdmin()) {
-      alert('Access denied. Admin privileges required.');
-      window.location.href = '/index.html';
-    } else {
-      // User is admin, load the dashboard
-      import('/public/js/header-auth-slot.js');
-      import('/js/admin.js');
+    import { getCurrentUser, login, isAdmin } from '/js/auth-localstorage.js';
+    import { ensureAdminAccount } from '/js/admin.js';
+
+    // Ensure admin account exists
+    ensureAdminAccount();
+
+    // Check if already logged in as admin
+    function checkAdminLogin() {
+      const user = getCurrentUser();
+      if (user && isAdmin()) {
+        // Show dashboard, hide login
+        document.getElementById('admin-login-container').style.display = 'none';
+        document.getElementById('admin-dashboard-container').style.display = 'block';
+        // Initialize dashboard
+        import('/js/admin.js').then(module => {
+          if (module.adminDashboard) {
+            module.adminDashboard.init();
+          }
+        });
+      } else {
+        // Show login, hide dashboard
+        document.getElementById('admin-login-container').style.display = 'flex';
+        document.getElementById('admin-dashboard-container').style.display = 'none';
+      }
     }
+
+    // Handle login form submission
+    document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('admin-email').value.trim();
+      const password = document.getElementById('admin-password').value;
+      const errorDiv = document.getElementById('admin-login-error');
+      const loginBtn = document.getElementById('admin-login-btn');
+
+      errorDiv.style.display = 'none';
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+
+      try {
+        const result = login(email, password);
+        if (result && result.user && result.user.role === 'admin') {
+          // Success - reload to show dashboard
+          window.location.reload();
+        } else {
+          throw new Error('Invalid admin credentials');
+        }
+      } catch (error) {
+        errorDiv.textContent = error.message || 'Invalid email or password';
+        errorDiv.style.display = 'block';
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = 'Login';
+      }
+    });
+
+    // Check on page load
+    checkAdminLogin();
   </script>
+  <script type="module" src="/js/admin.js"></script>
 </body>
 </html>
