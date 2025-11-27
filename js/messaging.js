@@ -24,7 +24,7 @@ function saveMessages(messages) {
 }
 
 // Send a message from current user to another user
-export async function sendMessage(toUserId, subject, body) {
+export async function sendMessage(toUserId, subject, body, imageBase64 = null, location = null) {
   const user = getCurrentUser();
   if (!user) {
     throw new Error('You must be logged in to send messages');
@@ -42,6 +42,12 @@ export async function sendMessage(toUserId, subject, body) {
   const allUsers = getAllUsers();
   const recipientUser = allUsers.find(u => u.id === toUserId);
   
+  // If image is provided and no body, use image URL as body for display
+  let messageBody = body || '';
+  if (imageBase64 && !messageBody) {
+    messageBody = imageBase64;
+  }
+  
   const message = {
     id: generateId(),
     fromUserId: user.id,
@@ -51,7 +57,9 @@ export async function sendMessage(toUserId, subject, body) {
     toUserEmail: recipientUser ? recipientUser.email : null,
     toUserName: recipientUser ? (recipientUser.name || recipientUser.email) : 'Unknown User',
     subject: subject || 'Message',
-    body: body || '',
+    body: messageBody,
+    image_url: imageBase64 || null,
+    location: location || null,
     created_at: new Date().toISOString(),
     read_at: null,
     unread: true
@@ -287,7 +295,7 @@ export function removeMemberFromGroup(groupId, userId) {
 }
 
 // Send message to group
-export async function sendGroupMessage(groupId, body) {
+export async function sendGroupMessage(groupId, body, imageBase64 = null, location = null) {
   const user = getCurrentUser();
   if (!user) {
     throw new Error('You must be logged in to send messages');
@@ -315,6 +323,12 @@ export async function sendGroupMessage(groupId, body) {
   const { getAllUsers } = await import('./auth-localstorage.js');
   const allUsers = getAllUsers();
   
+  // If image is provided and no body, use image URL as body for display
+  let messageBody = body || '';
+  if (imageBase64 && !messageBody) {
+    messageBody = imageBase64;
+  }
+  
   const message = {
     id: generateId(),
     fromUserId: user.id,
@@ -324,7 +338,9 @@ export async function sendGroupMessage(groupId, body) {
     groupName: group.name,
     groupMembers: group.memberIds,
     subject: `Group: ${group.name}`,
-    body: body || '',
+    body: messageBody,
+    image_url: imageBase64 || null,
+    location: location || null,
     created_at: new Date().toISOString(),
     read_at: null,
     unread: true

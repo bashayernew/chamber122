@@ -489,17 +489,27 @@
       
       <!-- Chat Input (hidden by default) -->
       <div class="chat-input-container" id="chat-input-container" style="display: none;">
-        <div class="chat-input-wrapper">
-          <textarea 
-            id="chat-input" 
-            class="chat-input" 
-            placeholder="Message..."
-            rows="1"
-          ></textarea>
+        <div id="message-preview" style="display: none; padding: 8px 12px; background: #1a1a1a; border-top: 1px solid #2a2a2a;"></div>
+        <div style="display: flex; align-items: flex-end; gap: 8px; padding: 12px;">
+          <input type="file" id="chat-image-input" accept="image/*" style="display: none;">
+          <button type="button" id="chat-attach-image-btn" onclick="document.getElementById('chat-image-input').click()" style="padding: 10px; background: #2a2a2a; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; flex-shrink: 0;" title="Attach Image">
+            <i class="fas fa-image"></i>
+          </button>
+          <button type="button" id="chat-share-location-btn" onclick="shareLocationInbox()" style="padding: 10px; background: #2a2a2a; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; flex-shrink: 0;" title="Share Location">
+            <i class="fas fa-map-marker-alt"></i>
+          </button>
+          <div class="chat-input-wrapper" style="flex: 1;">
+            <textarea 
+              id="chat-input" 
+              class="chat-input" 
+              placeholder="Message..."
+              rows="1"
+            ></textarea>
+          </div>
+          <button id="chat-send-btn" class="chat-send-btn" onclick="sendChatMessage()">
+            <i class="fas fa-paper-plane"></i>
+          </button>
         </div>
-        <button id="chat-send-btn" class="chat-send-btn" onclick="sendChatMessage()">
-          <i class="fas fa-paper-plane"></i>
-        </button>
       </div>
     </div>
   </div>
@@ -797,6 +807,10 @@
             const isSent = msg.fromUserId === user.id;
             const messageTime = formatTime(msg.created_at);
             const messageBody = msg.body || msg.subject || '';
+            const isImage = msg.image_url || (messageBody && messageBody.startsWith('data:image'));
+            const isLocation = msg.location;
+            const imageUrl = msg.image_url || (messageBody && messageBody.startsWith('data:image') ? messageBody : null);
+            const textBody = isImage && imageUrl === messageBody ? '' : messageBody;
             
             const senderUser = allUsers.find(u => u.id === msg.fromUserId);
             const senderName = senderUser ? (senderUser.name || senderUser.email) : 'Unknown';
@@ -814,7 +828,21 @@
                 ` : ''}
                 <div>
                   ${!isSent ? `<div style="font-size: 11px; color: #a8a8a8; margin-bottom: 4px; font-weight: 600;">${escapeHtml(senderName)}</div>` : ''}
-                  <div class="message-bubble">${escapeHtml(messageBody)}</div>
+                  <div class="message-bubble">
+                    ${imageUrl ? 
+                      `<img src="${escapeHtml(imageUrl)}" style="max-width: 300px; max-height: 300px; border-radius: 8px; margin-bottom: ${textBody ? '8px' : '0'}; display: block; cursor: pointer;" onclick="window.open('${escapeHtml(imageUrl)}', '_blank')" />` :
+                      ''
+                    }
+                    ${isLocation ? 
+                      `<div style="margin-bottom: ${textBody ? '8px' : '0'};">
+                        <a href="https://www.google.com/maps?q=${escapeHtml(msg.location.lat)},${escapeHtml(msg.location.lng)}" target="_blank" style="color: ${isSent ? '#fff' : '#0095f6'}; text-decoration: none; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(255,255,255,0.1); border-radius: 6px;">
+                          <i class="fas fa-map-marker-alt"></i> <span>View Location on Map</span>
+                        </a>
+                      </div>` :
+                      ''
+                    }
+                    ${textBody ? `<div style="white-space: pre-wrap;">${escapeHtml(textBody)}</div>` : ''}
+                  </div>
                   <div class="message-time">${messageTime}</div>
                 </div>
               </div>
@@ -927,11 +955,16 @@
       const chatInput = document.getElementById('chat-input');
       const chatInputContainer = document.getElementById('chat-input-container');
       const sendBtn = document.getElementById('chat-send-btn');
+      const imageInput = document.getElementById('chat-image-input');
+      const previewDiv = document.getElementById('message-preview');
       
       if (!chatInput || !chatInputContainer || !sendBtn) return;
       
       const messageText = chatInput.value.trim();
-      if (!messageText) return;
+      const hasImage = imageInput && imageInput.files && imageInput.files.length > 0;
+      const hasLocation = window.pendingLocationInbox;
+      
+      if (!messageText && !hasImage && !hasLocation) return;
       
       // Check if it's a group chat or individual chat
       const groupId = chatInputContainer.getAttribute('data-chat-group-id');
@@ -946,21 +979,34 @@
         sendBtn.disabled = true;
         sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         
+        // Handle image upload
+        let imageBase64 = null;
+        if (hasImage) {
+          const file = imageInput.files[0];
+          imageBase64 = await fileToBase64(file);
+        }
+        
         if (groupId) {
           // Send group message
-          await sendGroupMessage(groupId, messageText);
+          await sendGroupMessage(groupId, messageText, imageBase64, window.pendingLocationInbox);
           // Reload group messages
           await loadGroupMessages(groupId);
         } else {
           // Send individual message
-          await sendMessage(toUserId, 'Message', messageText);
+          await sendMessage(toUserId, 'Message', messageText, imageBase64, window.pendingLocationInbox);
           // Reload chat messages
           await loadChatMessages(toUserId);
         }
         
-        // Clear input
+        // Clear input and preview
         chatInput.value = '';
         chatInput.style.height = 'auto';
+        if (imageInput) imageInput.value = '';
+        if (previewDiv) {
+          previewDiv.style.display = 'none';
+          previewDiv.innerHTML = '';
+        }
+        window.pendingLocationInbox = null;
         
         // Reload conversations
         await loadConversations();
@@ -973,6 +1019,99 @@
         sendBtn.disabled = false;
         sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
       }
+    };
+    
+    // Helper function to convert file to base64
+    window.fileToBase64 = function(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    };
+    
+    // Handle image selection
+    const chatImageInput = document.getElementById('chat-image-input');
+    if (chatImageInput) {
+      chatImageInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        if (!file.type.startsWith('image/')) {
+          alert('Please select an image file');
+          e.target.value = '';
+          return;
+        }
+        
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+          alert('Image size must be less than 5MB');
+          e.target.value = '';
+          return;
+        }
+        
+        const previewDiv = document.getElementById('message-preview');
+        if (previewDiv) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            previewDiv.innerHTML = `
+              <div style="position: relative; display: inline-block;">
+                <img src="${event.target.result}" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #2a2a2a;">
+                <button onclick="document.getElementById('chat-image-input').value=''; document.getElementById('message-preview').style.display='none'; document.getElementById('message-preview').innerHTML='';" style="position: absolute; top: -8px; right: -8px; background: #ef4444; color: #fff; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 12px;">×</button>
+              </div>
+            `;
+            previewDiv.style.display = 'block';
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+    
+    // Handle location sharing
+    window.shareLocationInbox = async function() {
+      if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser');
+        return;
+      }
+      
+      const shareBtn = document.getElementById('chat-share-location-btn');
+      if (shareBtn) {
+        shareBtn.disabled = true;
+        shareBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+      }
+      
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          window.pendingLocationInbox = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          
+          const previewDiv = document.getElementById('message-preview');
+          if (previewDiv) {
+            previewDiv.innerHTML = `
+              <div style="padding: 12px; background: #2a2a2a; border-radius: 8px; display: flex; align-items: center; gap: 8px; color: #fff;">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Location ready to share</span>
+                <button onclick="window.pendingLocationInbox=null; document.getElementById('message-preview').style.display='none'; document.getElementById('message-preview').innerHTML='';" style="margin-left: auto; background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px;">Remove</button>
+              </div>
+            `;
+            previewDiv.style.display = 'block';
+          }
+          
+          if (shareBtn) {
+            shareBtn.disabled = false;
+            shareBtn.innerHTML = '<i class="fas fa-map-marker-alt"></i>';
+          }
+        },
+        (error) => {
+          alert('Error getting location: ' + error.message);
+          if (shareBtn) {
+            shareBtn.disabled = false;
+            shareBtn.innerHTML = '<i class="fas fa-map-marker-alt"></i>';
+          }
+        }
+      );
     };
 
     // Auto-resize textarea
