@@ -116,18 +116,17 @@ export function bulletinCard(b, showRegistration = false) {
               ${description.substring(0, 100)}${description.length > 100 ? '...' : ''}
             </p>
           ` : ''}
+          ${showRegistration && isOngoing ? `
+            <div style="margin-top: 12px;">
+              <button onclick="event.stopPropagation(); if(typeof window.showBulletinDetails === 'function') { window.showBulletinDetails('${b.id}'); } else { window.location.href='/bulletin.html?id=${encodeURIComponent(b.id)}'; }" 
+                      style="width: 100%; padding: 10px; background: linear-gradient(135deg, #f2c64b, #f59e0b); color: #111; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                      onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 12px rgba(242,198,75,0.3)';"
+                      onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                Register Now
+              </button>
+            </div>
+          ` : ''}
         </div>
-      </a>
-      ${showRegistration && isOngoing ? `
-        <div style="padding: 0 16px 16px 16px;">
-          <button onclick="event.stopPropagation(); window.registerForBulletin('${b.id}')" 
-                  style="width: 100%; padding: 10px; background: linear-gradient(135deg, #f2c64b, #f59e0b); color: #111; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
-                  onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 12px rgba(242,198,75,0.3)';"
-                  onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
-            Register Now
-          </button>
-        </div>
-      ` : ''}
     </div>
   `);
 }
