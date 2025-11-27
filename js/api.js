@@ -86,10 +86,12 @@ export async function logout() {
 // Get public businesses (replaces /api/businesses/public)
 export async function getPublicBusinesses() {
   const businesses = getAllBusinesses();
-  // Only return approved businesses
+  // Return all businesses (approved, pending, or no status) - let admin filter if needed
+  // Only exclude explicitly suspended businesses
   const publicBusinesses = businesses.filter(b => 
-    b.status === 'approved' && b.is_active !== false
+    b.status !== 'suspended' && b.is_active !== false
   );
+  console.log('[api] getPublicBusinesses: Total businesses:', businesses.length, 'Public:', publicBusinesses.length);
   return createResponse({ businesses: publicBusinesses });
 }
 

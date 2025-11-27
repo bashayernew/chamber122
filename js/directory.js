@@ -63,9 +63,9 @@ async function loadBusinesses() {
     // Get all businesses from localStorage
     allBusinesses = getAllBusinesses();
     
-    // Filter to only approved and active businesses
+    // Filter to show all businesses except suspended ones
     allBusinesses = allBusinesses.filter(b => 
-      (b.status === 'approved' || !b.status) && 
+      b.status !== 'suspended' && 
       (b.is_active !== false)
     );
     
