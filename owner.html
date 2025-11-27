@@ -534,9 +534,28 @@
           // Check if hash is set to scroll to registrations
           if (window.location.hash === '#my-registrations') {
             setTimeout(() => {
-              myRegistrationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              const anchor = document.getElementById('my-registrations');
+              if (anchor) {
+                anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              } else {
+                myRegistrationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
             }, 500);
           }
+          
+          // Also check on hash change (if user clicks a link with hash)
+          window.addEventListener('hashchange', () => {
+            if (window.location.hash === '#my-registrations') {
+              setTimeout(() => {
+                const anchor = document.getElementById('my-registrations');
+                if (anchor) {
+                  anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                  myRegistrationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }, 300);
+            }
+          });
         }
       } catch (err) {
         console.warn('[owner] Could not load my registrations:', err);
