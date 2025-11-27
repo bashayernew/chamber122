@@ -208,22 +208,14 @@ export function sendCommunityMessage(communityId, msmeId, messageBody, msmeName,
     msme_name: msmeName || 'Unknown',
     msme_email: msmeEmail || '',
     body: messageBody ? messageBody.trim() : '',
-    image_url: null,
-    location: null,
+    image_url: imageBase64 || null,
+    location: location || null,
     created_at: new Date().toISOString()
   };
   
-  // Add image if provided
-  if (arguments.length > 5 && arguments[5]) {
-    newMessage.image_url = arguments[5]; // imageBase64
-    if (!newMessage.body) {
-      newMessage.body = arguments[5]; // Use image as body if no text
-    }
-  }
-  
-  // Add location if provided
-  if (arguments.length > 6 && arguments[6]) {
-    newMessage.location = arguments[6];
+  // If image is provided and no body, use image URL as body for display
+  if (imageBase64 && !newMessage.body) {
+    newMessage.body = imageBase64;
   }
 
   messages.push(newMessage);
