@@ -11,22 +11,23 @@ export async function loadOwnerEventsAndBulletins(ownerId, isOwnerViewingOwnProf
       
       // Load events from localStorage
       try {
-        const allEvents = await getPublicEvents();
-        // Filter events by business_id (ownerId is the business ID)
-        ownerEvents = allEvents.filter(e => {
-          // Check if event belongs to this business
-          return e.business_id === ownerId || e.owner_id === ownerId;
-        });
-        
-        // If owner viewing own profile, also include drafts (events without status='published')
         if (isOwnerViewingOwnProfile) {
+          // Owner viewing own profile: Load ALL events (including drafts) directly from localStorage
           const stored = localStorage.getItem('chamber122_events');
-          const allEventsWithDrafts = stored ? JSON.parse(stored) : [];
-          const draftEvents = allEventsWithDrafts.filter(e => 
-            (e.business_id === ownerId || e.owner_id === ownerId) && 
-            (!e.status || e.status !== 'published')
-          );
-          ownerEvents = [...ownerEvents, ...draftEvents];
+          const allEvents = stored ? JSON.parse(stored) : [];
+          // Filter events by business_id (ownerId is the business ID)
+          ownerEvents = allEvents.filter(e => {
+            // Check if event belongs to this business
+            return e.business_id === ownerId || e.owner_id === ownerId;
+          });
+        } else {
+          // Non-owner viewing: Only load published events
+          const allEvents = await getPublicEvents();
+          // Filter events by business_id (ownerId is the business ID)
+          ownerEvents = allEvents.filter(e => {
+            // Check if event belongs to this business
+            return e.business_id === ownerId || e.owner_id === ownerId;
+          });
         }
       } catch (err) {
         console.error('[profile-events] Error loading events:', err);
@@ -54,22 +55,32 @@ export async function loadOwnerEventsAndBulletins(ownerId, isOwnerViewingOwnProf
       
       // Load bulletins from localStorage
       try {
-        const allBulletins = await getPublicBulletins();
-        // Filter bulletins by business_id (ownerId is the business ID)
-        pubs = allBulletins.filter(b => {
-          // Check if bulletin belongs to this business
-          return b.business_id === ownerId || b.owner_id === ownerId;
-        });
-        
-        // If owner viewing own profile, also include drafts
         if (isOwnerViewingOwnProfile) {
+          // Owner viewing own profile: Load ALL bulletins (including drafts) directly from localStorage
           const stored = localStorage.getItem('chamber122_bulletins');
-          const allBulletinsWithDrafts = stored ? JSON.parse(stored) : [];
-          const draftBulletins = allBulletinsWithDrafts.filter(b => 
-            (b.business_id === ownerId || b.owner_id === ownerId) && 
-            (!b.status || b.status !== 'published')
-          );
-          pubs = [...pubs, ...draftBulletins];
+          let allBulletins = [];
+          if (stored) {
+            try {
+              const parsed = JSON.parse(stored);
+              allBulletins = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
+            } catch (e) {
+              console.warn('[profile-events] Error parsing bulletins:', e);
+              allBulletins = [];
+            }
+          }
+          // Filter bulletins by business_id (ownerId is the business ID)
+          pubs = allBulletins.filter(b => {
+            // Check if bulletin belongs to this business
+            return b.business_id === ownerId || b.owner_id === ownerId;
+          });
+        } else {
+          // Non-owner viewing: Only load published bulletins
+          const allBulletins = await getPublicBulletins();
+          // Filter bulletins by business_id (ownerId is the business ID)
+          pubs = allBulletins.filter(b => {
+            // Check if bulletin belongs to this business
+            return b.business_id === ownerId || b.owner_id === ownerId;
+          });
         }
       } catch (err) {
         console.error('[profile-events] Error loading bulletins:', err);
