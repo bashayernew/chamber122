@@ -311,9 +311,14 @@ async function loadCommunityDetail(communityId) {
     // Load messages
     const messagesData = await CommunitiesAPI.getCommunityMessages(communityId);
     const messages = messagesData.messages || [];
+    
+    // Load user data for avatars
+    const { getAllUsers, getAllBusinesses } = await import('./auth-localstorage.js');
+    const allUsers = getAllUsers();
+    const allBusinesses = getAllBusinesses();
 
     // Render community detail
-    container.innerHTML = renderCommunityDetail(community, isMember, messages, user);
+    container.innerHTML = renderCommunityDetail(community, isMember, messages, user, allUsers, allBusinesses);
 
     // Setup join/leave button
     const joinLeaveBtn = document.getElementById('join-leave-btn');
@@ -325,7 +330,16 @@ async function loadCommunityDetail(communityId) {
     const messageForm = document.getElementById('message-form');
     if (messageForm && isMember) {
       messageForm.addEventListener('submit', (e) => handleSendMessage(e, communityId));
+      
+      // Setup image upload
+      const imageInput = document.getElementById('message-image-input');
+      if (imageInput) {
+        imageInput.addEventListener('change', (e) => handleImageSelect(e, communityId));
+      }
     }
+    
+    // Make shareLocation available globally
+    window.shareLocation = () => handleShareLocation(communityId);
 
     // Auto-scroll to bottom of messages
     const messagesContainer = document.getElementById('messages-container');
@@ -348,7 +362,7 @@ async function loadCommunityDetail(communityId) {
 /**
  * Render community detail page
  */
-function renderCommunityDetail(community, isMember, messages, user) {
+function renderCommunityDetail(community, isMember, messages, user, allUsers = [], allBusinesses = []) {
   const canJoin = user && !isMember && community.status === 'active';
   const canMessage = user && isMember && community.status === 'active';
   const isSuspended = community.status === 'suspended';
@@ -371,12 +385,22 @@ function renderCommunityDetail(community, isMember, messages, user) {
       <h2 style="color: #fff; font-size: 1.5rem; margin: 0 0 20px 0;">Messages</h2>
       <div id="messages-container" style="max-height: 500px; overflow-y: auto; margin-bottom: 20px; padding: 16px; background: #0f0f0f; border-radius: 8px;">
         ${messages.length === 0 ? '<p style="color: #6b7280; text-align: center; padding: 40px;">No messages yet. Be the first to start the conversation!</p>' : ''}
-        ${messages.map(msg => renderMessage(msg, user)).join('')}
+        ${messages.map(msg => renderMessage(msg, user, allUsers, allBusinesses)).join('')}
       </div>
       ${canMessage ? `
-        <form id="message-form" style="display: flex; gap: 12px;">
-          <input type="text" id="message-input" placeholder="Type your message..." required style="flex: 1; padding: 12px; background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 8px; color: #fff; font-size: 14px;">
-          <button type="submit" style="padding: 12px 24px; background: #0095f6; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;"><i class="fas fa-paper-plane"></i> Send</button>
+        <form id="message-form" style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; gap: 12px; align-items: end;">
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+              <input type="text" id="message-input" placeholder="Type your message..." style="flex: 1; padding: 12px; background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 8px; color: #fff; font-size: 14px;">
+              <div id="message-preview" style="display: none; margin-top: 8px;"></div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <input type="file" id="message-image-input" accept="image/*" style="display: none;">
+              <button type="button" id="attach-image-btn" onclick="document.getElementById('message-image-input').click()" style="padding: 12px; background: #2a2a2a; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;" title="Attach Image"><i class="fas fa-image"></i></button>
+              <button type="button" id="share-location-btn" onclick="shareLocation()" style="padding: 12px; background: #2a2a2a; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;" title="Share Location"><i class="fas fa-map-marker-alt"></i></button>
+              <button type="submit" style="padding: 12px 24px; background: #0095f6; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;"><i class="fas fa-paper-plane"></i> Send</button>
+            </div>
+          </div>
         </form>
       ` : ''}
       ${!user ? '<p style="color: #6b7280; text-align: center; padding: 20px;">Please <a href="/auth.html#login" style="color: #0095f6;">login</a> to join and send messages.</p>' : ''}
@@ -388,14 +412,13 @@ function renderCommunityDetail(community, isMember, messages, user) {
 /**
  * Render a message
  */
-function renderMessage(message, currentUser) {
+function renderMessage(message, currentUser, allUsers = [], allBusinesses = []) {
   // Check if message is from current user (check both user ID and business ID)
   let isOwn = false;
   if (currentUser) {
     isOwn = message.msme_id === currentUser.id;
     // Also check if user has a business and message is from that business
     if (!isOwn) {
-      // We'll check business ID dynamically if needed
       const businessId = currentUser.business_id || (currentUser.business ? currentUser.business.id : null);
       if (businessId) {
         isOwn = message.msme_id === businessId;
@@ -403,15 +426,64 @@ function renderMessage(message, currentUser) {
     }
   }
   
+  // Get sender info for avatar
+  let senderAvatar = null;
+  let senderName = message.msme_name || 'Unknown';
+  
+  // Try to find sender in businesses first, then users
+  const senderBusiness = allBusinesses.find(b => b.id === message.msme_id || b.owner_id === message.msme_id);
+  if (senderBusiness && senderBusiness.logo_url) {
+    senderAvatar = senderBusiness.logo_url;
+    senderName = senderBusiness.name || senderBusiness.business_name || senderName;
+  } else {
+    const senderUser = allUsers.find(u => u.id === message.msme_id);
+    if (senderUser) {
+      if (senderUser.logo_url) {
+        senderAvatar = senderUser.logo_url;
+      }
+      senderName = senderUser.name || senderUser.email || senderName;
+    }
+  }
+  
   const time = new Date(message.created_at).toLocaleString();
+  const isImage = message.image_url || (message.body && message.body.startsWith('data:image'));
+  const isLocation = message.location;
   
   return `
-    <div style="margin-bottom: 16px; display: flex; ${isOwn ? 'justify-content: flex-end;' : 'justify-content: flex-start;'}">
-      <div style="max-width: 70%; background: ${isOwn ? '#0095f6' : '#2a2a2a'}; color: #fff; padding: 12px 16px; border-radius: 12px;">
-        <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">${escapeHtml(message.msme_name || 'Unknown')}</div>
-        <div>${escapeHtml(message.body)}</div>
-        <div style="font-size: 11px; opacity: 0.6; margin-top: 4px;">${time}</div>
+    <div style="margin-bottom: 20px; display: flex; ${isOwn ? 'flex-direction: row-reverse;' : 'flex-direction: row;'} align-items: flex-start; gap: 12px;">
+      ${!isOwn ? `
+        <div style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg, #0095f6, #1877f2); display: flex; align-items: center; justify-content: center;">
+          ${senderAvatar ? 
+            `<img src="${escapeHtml(senderAvatar)}" alt="${escapeHtml(senderName)}" style="width: 100%; height: 100%; object-fit: cover;">` :
+            `<span style="color: #fff; font-weight: 600; font-size: 16px;">${escapeHtml(senderName.charAt(0).toUpperCase())}</span>`
+          }
+        </div>
+      ` : ''}
+      <div style="max-width: 70%; display: flex; flex-direction: column; ${isOwn ? 'align-items: flex-end;' : 'align-items: flex-start;'}">
+        ${!isOwn ? `<div style="font-size: 12px; color: #a8a8a8; margin-bottom: 4px; font-weight: 500;">${escapeHtml(senderName)}</div>` : ''}
+        <div style="background: ${isOwn ? 'linear-gradient(135deg, #0095f6, #1877f2)' : '#2a2a2a'}; color: #fff; padding: 12px 16px; border-radius: ${isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px'}; max-width: 100%; word-wrap: break-word;">
+          ${isImage ? 
+            `<img src="${escapeHtml(message.image_url || message.body)}" style="max-width: 300px; border-radius: 8px; margin-bottom: 8px; display: block;" />` :
+            isLocation ?
+            `<div style="margin-bottom: 8px;">
+              <a href="https://www.google.com/maps?q=${escapeHtml(message.location.lat)},${escapeHtml(message.location.lng)}" target="_blank" style="color: #fff; text-decoration: underline; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-map-marker-alt"></i> View Location
+              </a>
+            </div>` :
+            ''
+          }
+          ${message.body && !isImage ? `<div style="line-height: 1.5;">${escapeHtml(message.body)}</div>` : ''}
+        </div>
+        <div style="font-size: 11px; color: #6b7280; margin-top: 4px; padding: 0 4px;">${time}</div>
       </div>
+      ${isOwn ? `
+        <div style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg, #0095f6, #1877f2); display: flex; align-items: center; justify-content: center;">
+          ${currentUser.logo_url || (currentUser.business && currentUser.business.logo_url) ? 
+            `<img src="${escapeHtml(currentUser.logo_url || currentUser.business.logo_url)}" alt="${escapeHtml(currentUser.name || currentUser.email)}" style="width: 100%; height: 100%; object-fit: cover;">` :
+            `<span style="color: #fff; font-weight: 600; font-size: 16px;">${escapeHtml((currentUser.name || currentUser.email || 'U').charAt(0).toUpperCase())}</span>`
+          }
+        </div>
+      ` : ''}
     </div>
   `;
 }
@@ -479,36 +551,60 @@ async function handleSendMessage(e, communityId) {
 
   const input = document.getElementById('message-input');
   const messageBody = input.value.trim();
-
-  if (!messageBody) {
+  const imageInput = document.getElementById('message-image-input');
+  const previewDiv = document.getElementById('message-preview');
+  
+  // Check if there's an image or location to send
+  const hasImage = imageInput && imageInput.files && imageInput.files.length > 0;
+  const hasLocation = window.pendingLocation;
+  
+  if (!messageBody && !hasImage && !hasLocation) {
     return;
   }
 
   const submitBtn = e.target.querySelector('button[type="submit"]');
   submitBtn.disabled = true;
-  submitBtn.textContent = 'Sending...';
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
   try {
     const business = await getBusinessForUser(user.id);
     const msmeId = business ? business.id : user.id;
     const msmeName = business ? (business.name || business.business_name) : (user.name || user.email);
     const msmeEmail = user.email;
-
-    await CommunitiesAPI.sendCommunityMessage(communityId, msmeId, messageBody, msmeName, msmeEmail);
+    
+    // Handle image upload
+    let imageBase64 = null;
+    if (hasImage) {
+      const file = imageInput.files[0];
+      imageBase64 = await fileToBase64(file);
+    }
+    
+    // Send message with image or location
+    await CommunitiesAPI.sendCommunityMessage(communityId, msmeId, messageBody, msmeName, msmeEmail, imageBase64, window.pendingLocation);
     
     input.value = '';
+    if (imageInput) imageInput.value = '';
+    if (previewDiv) {
+      previewDiv.style.display = 'none';
+      previewDiv.innerHTML = '';
+    }
+    window.pendingLocation = null;
     submitBtn.disabled = false;
     submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
     
     // Reload messages immediately without full page reload
     setTimeout(async () => {
+      const { getAllUsers, getAllBusinesses } = await import('./auth-localstorage.js');
+      const allUsers = getAllUsers();
+      const allBusinesses = getAllBusinesses();
+      
       const messagesData = await CommunitiesAPI.getCommunityMessages(communityId);
       const messages = messagesData.messages || [];
       const messagesContainer = document.getElementById('messages-container');
       if (messagesContainer) {
         messagesContainer.innerHTML = messages.length === 0 
           ? '<p style="color: #6b7280; text-align: center; padding: 40px;">No messages yet. Be the first to start the conversation!</p>'
-          : messages.map(msg => renderMessage(msg, user)).join('');
+          : messages.map(msg => renderMessage(msg, user, allUsers, allBusinesses)).join('');
         // Auto-scroll to bottom
         setTimeout(() => {
           messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -524,9 +620,106 @@ async function handleSendMessage(e, communityId) {
 }
 
 /**
+ * Handle image selection
+ */
+async function handleImageSelect(e, communityId) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  if (!file.type.startsWith('image/')) {
+    alert('Please select an image file');
+    e.target.value = '';
+    return;
+  }
+  
+  if (file.size > 5 * 1024 * 1024) { // 5MB limit
+    alert('Image size must be less than 5MB');
+    e.target.value = '';
+    return;
+  }
+  
+  const previewDiv = document.getElementById('message-preview');
+  if (previewDiv) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      previewDiv.innerHTML = `
+        <div style="position: relative; display: inline-block;">
+          <img src="${event.target.result}" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #2a2a2a;">
+          <button onclick="document.getElementById('message-image-input').value=''; document.getElementById('message-preview').style.display='none'; document.getElementById('message-preview').innerHTML='';" style="position: absolute; top: -8px; right: -8px; background: #ef4444; color: #fff; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 12px;">×</button>
+        </div>
+      `;
+      previewDiv.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+/**
+ * Handle location sharing
+ */
+async function handleShareLocation(communityId) {
+  if (!navigator.geolocation) {
+    alert('Geolocation is not supported by your browser');
+    return;
+  }
+  
+  const shareBtn = document.getElementById('share-location-btn');
+  if (shareBtn) {
+    shareBtn.disabled = true;
+    shareBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+  }
+  
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      window.pendingLocation = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+      };
+      
+      const previewDiv = document.getElementById('message-preview');
+      if (previewDiv) {
+        previewDiv.innerHTML = `
+          <div style="padding: 12px; background: #2a2a2a; border-radius: 8px; display: flex; align-items: center; gap: 8px; color: #fff;">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>Location ready to share</span>
+            <button onclick="window.pendingLocation=null; document.getElementById('message-preview').style.display='none'; document.getElementById('message-preview').innerHTML='';" style="margin-left: auto; background: #ef4444; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px;">Remove</button>
+          </div>
+        `;
+        previewDiv.style.display = 'block';
+      }
+      
+      if (shareBtn) {
+        shareBtn.disabled = false;
+        shareBtn.innerHTML = '<i class="fas fa-map-marker-alt"></i>';
+      }
+    },
+    (error) => {
+      alert('Error getting location: ' + error.message);
+      if (shareBtn) {
+        shareBtn.disabled = false;
+        shareBtn.innerHTML = '<i class="fas fa-map-marker-alt"></i>';
+      }
+    }
+  );
+}
+
+/**
+ * Convert file to base64
+ */
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
  * Escape HTML to prevent XSS
  */
 function escapeHtml(text) {
+  if (!text) return '';
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;

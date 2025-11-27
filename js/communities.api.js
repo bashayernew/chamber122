@@ -216,13 +216,13 @@ export async function getCommunityMessages(communityId, limit = 50) {
  * @param {string} msmeEmail - MSME email
  * @returns {Promise<Object>} Created message
  */
-export async function sendCommunityMessage(communityId, msmeId, messageBody, msmeName, msmeEmail) {
+export async function sendCommunityMessage(communityId, msmeId, messageBody, msmeName, msmeEmail, imageBase64 = null, location = null) {
   try {
-    if (!messageBody || !messageBody.trim()) {
-      throw new Error('Message body is required');
+    if (!messageBody && !imageBase64 && !location) {
+      throw new Error('Message body, image, or location is required');
     }
 
-    const message = Storage.sendCommunityMessage(communityId, msmeId, messageBody, msmeName, msmeEmail);
+    const message = Storage.sendCommunityMessage(communityId, msmeId, messageBody || '', msmeName, msmeEmail, imageBase64, location);
     return {
       ok: true,
       message: message

@@ -181,7 +181,7 @@ export function leaveCommunity(communityId, msmeId) {
 /**
  * Send a message to a community
  */
-export function sendCommunityMessage(communityId, msmeId, messageBody, msmeName, msmeEmail) {
+export function sendCommunityMessage(communityId, msmeId, messageBody, msmeName, msmeEmail, imageBase64 = null, location = null) {
   const communities = getAllCommunities();
   const community = communities.find(c => c.id === communityId);
   if (!community) {
@@ -207,9 +207,24 @@ export function sendCommunityMessage(communityId, msmeId, messageBody, msmeName,
     msme_id: msmeId,
     msme_name: msmeName || 'Unknown',
     msme_email: msmeEmail || '',
-    body: messageBody.trim(),
+    body: messageBody ? messageBody.trim() : '',
+    image_url: null,
+    location: null,
     created_at: new Date().toISOString()
   };
+  
+  // Add image if provided
+  if (arguments.length > 5 && arguments[5]) {
+    newMessage.image_url = arguments[5]; // imageBase64
+    if (!newMessage.body) {
+      newMessage.body = arguments[5]; // Use image as body if no text
+    }
+  }
+  
+  // Add location if provided
+  if (arguments.length > 6 && arguments[6]) {
+    newMessage.location = arguments[6];
+  }
 
   messages.push(newMessage);
   saveCommunityMessages(messages);
