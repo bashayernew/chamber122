@@ -257,9 +257,7 @@ async function loadAndDisplayBusiness(businessId = null) {
         console.log('[owner] Business object keys:', Object.keys(business));
       }
     } else {
-      console.warn('[owner] Logo element not found in DOM');
-    } else {
-      console.log('[owner] Logo element not found. Tried: biz-logo, logo');
+      console.warn('[owner] Logo element not found in DOM. Tried: biz-logo, logo');
     }
     
     // Gallery
