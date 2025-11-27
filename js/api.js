@@ -86,12 +86,20 @@ export async function logout() {
 // Get public businesses (replaces /api/businesses/public)
 export async function getPublicBusinesses() {
   const businesses = getAllBusinesses();
-  // Return all businesses (approved, pending, or no status) - let admin filter if needed
-  // Only exclude explicitly suspended businesses
-  const publicBusinesses = businesses.filter(b => 
-    b.status !== 'suspended' && b.is_active !== false
-  );
-  console.log('[api] getPublicBusinesses: Total businesses:', businesses.length, 'Public:', publicBusinesses.length);
+  // Return ALL businesses except explicitly suspended ones
+  // Show pending, approved, or businesses with no status
+  const publicBusinesses = businesses.filter(b => {
+    // Exclude only if explicitly suspended
+    if (b.status === 'suspended') return false;
+    // Exclude only if explicitly inactive
+    if (b.is_active === false) return false;
+    // Include everything else (pending, approved, or no status)
+    return true;
+  });
+  console.log('[api] getPublicBusinesses: Total businesses in localStorage:', businesses.length, 'Public (non-suspended):', publicBusinesses.length);
+  if (businesses.length > 0) {
+    console.log('[api] Sample businesses:', businesses.slice(0, 3).map(b => ({ id: b.id, name: b.name || b.business_name, status: b.status || 'no status', is_active: b.is_active })));
+  }
   return createResponse({ businesses: publicBusinesses });
 }
 

@@ -365,6 +365,20 @@
         
         console.log(`[home] Loaded ${businesses.length} businesses for featured section`);
         console.log('[home] Businesses data:', businesses);
+        if (businesses.length === 0) {
+          console.warn('[home] No businesses found! Checking localStorage...');
+          const { getAllBusinesses } = await import('/js/auth-localstorage.js');
+          const allBusinesses = getAllBusinesses();
+          console.log('[home] Total businesses in localStorage:', allBusinesses.length);
+          if (allBusinesses.length > 0) {
+            console.log('[home] Sample businesses:', allBusinesses.slice(0, 3).map(b => ({ 
+              id: b.id, 
+              name: b.name || b.business_name, 
+              status: b.status || 'no status',
+              is_active: b.is_active 
+            })));
+          }
+        }
 
         // Check if current user has a business
         const user = await getCurrentUser();

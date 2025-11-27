@@ -63,11 +63,15 @@ async function loadBusinesses() {
     // Get all businesses from localStorage
     allBusinesses = getAllBusinesses();
     
-    // Filter to show all businesses except suspended ones
-    allBusinesses = allBusinesses.filter(b => 
-      b.status !== 'suspended' && 
-      (b.is_active !== false)
-    );
+    // Filter to show ALL businesses except explicitly suspended ones
+    allBusinesses = allBusinesses.filter(b => {
+      // Exclude only if explicitly suspended
+      if (b.status === 'suspended') return false;
+      // Exclude only if explicitly inactive
+      if (b.is_active === false) return false;
+      // Include everything else (pending, approved, or no status)
+      return true;
+    });
     
     console.log(`[directory] Loaded ${allBusinesses.length} businesses from localStorage`);
     
