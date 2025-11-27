@@ -150,10 +150,10 @@ const adminDashboard = {
   },
   
   // Users Management
-  loadUsers() {
+  async loadUsers() {
     try {
       console.log('[admin] ========== LOADING USERS ==========');
-      const allUsers = getAllUsers();
+      let allUsers = getAllUsers();
       console.log('[admin] Found users in localStorage:', allUsers.length);
       console.log('[admin] Users data:', JSON.stringify(allUsers, null, 2));
       
@@ -165,8 +165,8 @@ const adminDashboard = {
       // If no users found, create a test user for demonstration
       if (allUsers.length === 0 || (allUsers.length === 1 && allUsers[0].role === 'admin')) {
         console.warn('[admin] No users found (except admin). Creating demo user...');
-        const { signup } = await import('./auth-localstorage.js');
         try {
+          const { signup } = await import('./auth-localstorage.js');
           const demoUser = signup('demo@example.com', 'demo123456', {
             name: 'Demo User',
             business_name: 'Demo Business',
@@ -177,8 +177,7 @@ const adminDashboard = {
           });
           console.log('[admin] Demo user created:', demoUser);
           // Reload users
-          const updatedUsers = getAllUsers();
-          allUsers.push(...updatedUsers.filter(u => !allUsers.find(existing => existing.id === u.id)));
+          allUsers = getAllUsers();
         } catch (error) {
           console.error('[admin] Error creating demo user:', error);
         }
@@ -343,28 +342,39 @@ const adminDashboard = {
     }
   },
   
-  approveUser(userId) {
+  async approveUser(userId) {
     if (!confirm('Approve this user?')) return;
-    const users = getAllUsers();
-    const user = users.find(u => u.id === userId);
-    if (!user) return;
-    
-    updateUser(userId, { status: 'approved' });
-    
-    // Send approval message to user
-    this.sendStatusMessage(userId, user.email, 'approved', 'Your account has been approved! You can now access all features.');
-    
-    // Also approve their business if exists
-    const businesses = getAllBusinesses();
-    const userBusiness = businesses.find(b => b.owner_id === userId);
-    if (userBusiness) {
-      updateBusiness(userBusiness.id, { status: 'approved', is_published: true });
+    try {
+      const users = getAllUsers();
+      const user = users.find(u => u.id === userId);
+      if (!user) {
+        alert('User not found');
+        return;
+      }
+      
+      updateUser(userId, { status: 'approved', updated_at: new Date().toISOString() });
+      
+      // Send approval message to user
+      await this.sendStatusMessage(userId, user.email, 'approved', 'Your account has been approved! You can now access all features.');
+      
+      // Also approve their business if exists
+      const businesses = getAllBusinesses();
+      const userBusiness = businesses.find(b => b.owner_id === userId);
+      if (userBusiness) {
+        updateBusiness(userBusiness.id, { status: 'approved', is_published: true, updated_at: new Date().toISOString() });
+      }
+      
+      // Reload users to show updated status
+      await this.loadUsers();
+      
+      alert('User approved successfully! They have been notified in their inbox.');
+    } catch (error) {
+      console.error('[admin] Error approving user:', error);
+      alert('Error approving user: ' + error.message);
     }
-    
-    this.loadUsers();
   },
   
-  suspendUser(userId) {
+  async suspendUser(userId) {
     if (!confirm('Suspend this user?')) return;
     try {
       const users = getAllUsers();
@@ -377,7 +387,7 @@ const adminDashboard = {
       updateUser(userId, { status: 'suspended', updated_at: new Date().toISOString() });
       
       // Send suspension message to user
-      this.sendStatusMessage(userId, user.email, 'suspended', 'Your account has been suspended. Please contact support for more information.');
+      await this.sendStatusMessage(userId, user.email, 'suspended', 'Your account has been suspended. Please contact support for more information.');
       
       // Also suspend their business if exists
       const businesses = getAllBusinesses();
@@ -386,13 +396,10 @@ const adminDashboard = {
         updateBusiness(userBusiness.id, { status: 'suspended', is_published: false, updated_at: new Date().toISOString() });
       }
       
-      // Reload users
-      this.loadUsers();
+      // Reload users to show updated status
+      await this.loadUsers();
       
-      // Dispatch event to update inbox badge
-      window.dispatchEvent(new CustomEvent('inbox-updated'));
-      
-      alert('User suspended successfully!');
+      alert('User suspended successfully! They have been notified in their inbox.');
     } catch (error) {
       console.error('[admin] Error suspending user:', error);
       alert('Error suspending user: ' + error.message);
