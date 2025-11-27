@@ -503,22 +503,19 @@ window.showEventDetails = async function(eventId) {
           alert('Registration successful!');
           modal.style.display = 'none';
           
-          // Check if we're on owner page and scroll to registrations
+          // Always redirect to owner page to show registrations
           if (window.location.pathname.includes('owner.html')) {
+            // Already on owner page - reload and scroll to registrations
             setTimeout(() => {
-              const myRegistrationsSection = document.getElementById('my-registrations-section');
-              if (myRegistrationsSection) {
-                myRegistrationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                // Reload registrations if function exists
-                if (window.reloadMyRegistrations) {
-                  window.reloadMyRegistrations();
-                }
-              }
+              // Reload the page to ensure registrations section is visible
+              window.location.reload();
             }, 500);
           } else {
-            // If not on owner page, suggest going to profile
-            if (confirm('Registration successful! Would you like to view your registrations on your profile?')) {
-              window.location.href = '/owner.html';
+            // Not on owner page - redirect to show registrations
+            if (confirm('Registration successful! View your registrations on your profile?')) {
+              window.location.href = '/owner.html#my-registrations';
+            } else {
+              window.location.href = '/owner.html#my-registrations';
             }
           }
         } catch (error) {

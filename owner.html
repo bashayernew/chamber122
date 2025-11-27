@@ -495,13 +495,22 @@
           const myRegistrationsContainer = document.getElementById('my-registrations-container');
           
           if (myRegistrationsSection && myRegistrationsContainer) {
+            // Always show the section for logged-in users
             myRegistrationsSection.style.display = 'block';
             
             // Load and display user's registrations
             window.reloadMyRegistrations = async () => {
               try {
                 const regData = await loadMyRegistrations();
+                console.log('[owner] Loaded registrations:', regData.all.length, 'total');
                 renderMyRegistrations(myRegistrationsContainer, regData.all);
+                
+                // If hash is set to my-registrations, scroll to it
+                if (window.location.hash === '#my-registrations') {
+                  setTimeout(() => {
+                    myRegistrationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 300);
+                }
               } catch (err) {
                 console.error('[owner] Error loading my registrations:', err);
                 myRegistrationsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #AFAFAF;">Error loading your registrations</div>';
@@ -520,6 +529,13 @@
                 myRegistrationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }, 100);
             });
+            
+            // Check if hash is set to scroll to registrations
+            if (window.location.hash === '#my-registrations') {
+              setTimeout(() => {
+                myRegistrationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 500);
+            }
           }
         } catch (err) {
           console.warn('[owner] Could not load my registrations:', err);

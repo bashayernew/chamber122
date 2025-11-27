@@ -122,30 +122,20 @@ window.showBulletinDetails = async function(bulletinId) {
           registerMessage.textContent = '✓ Registration successful!';
           registerForm.reset();
           
-          // Check if we're on owner page and scroll to registrations
-          if (window.location.pathname.includes('owner.html')) {
-            setTimeout(() => {
-              const myRegistrationsSection = document.getElementById('my-registrations-section');
-              if (myRegistrationsSection) {
-                myRegistrationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                // Reload registrations if function exists
-                if (window.reloadMyRegistrations) {
-                  window.reloadMyRegistrations();
-                }
-              }
-            }, 500);
-          } else {
-            // If not on owner page, suggest going to profile
-            setTimeout(() => {
-              if (confirm('Registration successful! Would you like to view your registrations on your profile?')) {
-                window.location.href = '/owner.html';
-              }
-            }, 2000);
-          }
-          
+          // Always redirect to owner page to show registrations
           setTimeout(() => {
-            registerMessage.style.display = 'none';
-          }, 3000);
+            if (window.location.pathname.includes('owner.html')) {
+              // Already on owner page - reload to show registrations
+              window.location.reload();
+            } else {
+              // Not on owner page - redirect to show registrations
+              if (confirm('Registration successful! View your registrations on your profile?')) {
+                window.location.href = '/owner.html#my-registrations';
+              } else {
+                window.location.href = '/owner.html#my-registrations';
+              }
+            }
+          }, 2000);
         } catch (error) {
           registerMessage.style.display = 'block';
           registerMessage.style.color = '#ef4444';

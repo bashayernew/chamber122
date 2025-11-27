@@ -14,12 +14,25 @@ export async function loadMyRegistrations() {
     // Load event registrations
     const eventRegistrationsStr = localStorage.getItem('chamber122_event_registrations');
     const eventRegistrations = eventRegistrationsStr ? JSON.parse(eventRegistrationsStr) : [];
-    const myEventRegistrations = eventRegistrations.filter(r => r.user_id === userId || r.email === user.email);
+    console.log('[my-registrations] All event registrations:', eventRegistrations.length);
+    const myEventRegistrations = eventRegistrations.filter(r => {
+      const matchesUserId = r.user_id === userId;
+      const matchesEmail = r.email === user.email;
+      console.log('[my-registrations] Checking registration:', { regUserId: r.user_id, userId, matchesUserId, regEmail: r.email, userEmail: user.email, matchesEmail });
+      return matchesUserId || matchesEmail;
+    });
+    console.log('[my-registrations] My event registrations:', myEventRegistrations.length);
 
     // Load bulletin registrations
     const bulletinRegistrationsStr = localStorage.getItem('chamber122_bulletin_registrations');
     const bulletinRegistrations = bulletinRegistrationsStr ? JSON.parse(bulletinRegistrationsStr) : [];
-    const myBulletinRegistrations = bulletinRegistrations.filter(r => r.user_id === userId || r.email === user.email);
+    console.log('[my-registrations] All bulletin registrations:', bulletinRegistrations.length);
+    const myBulletinRegistrations = bulletinRegistrations.filter(r => {
+      const matchesUserId = r.user_id === userId;
+      const matchesEmail = r.email === user.email;
+      return matchesUserId || matchesEmail;
+    });
+    console.log('[my-registrations] My bulletin registrations:', myBulletinRegistrations.length);
 
     // Get event/bulletin details for each registration
     const allEvents = await getPublicEvents();
