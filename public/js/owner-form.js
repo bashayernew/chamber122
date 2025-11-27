@@ -224,23 +224,21 @@ function renderGallery() {
 // Load existing gallery
 async function loadExistingGallery(businessId) {
   try {
-    const response = await fetch('/api/business/me', {
-      credentials: 'include',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('session_token')}`
-      }
-    });
+    // Get business from localStorage
+    const { getBusinessByOwner, getCurrentUser } = await import('/js/auth-localstorage.js');
+    const user = getCurrentUser();
+    if (!user) return;
     
-    if (!response.ok) return;
+    const business = getBusinessByOwner(user.id);
+    if (!business) return;
     
-    const data = await response.json();
-    const media = data.media || [];
+    // Get gallery URLs from business
+    const galleryUrls = business.gallery_urls || [];
     
-    existingMedia = media
-      .filter(m => m.document_type === 'gallery' || !m.document_type)
-      .map(r => ({
-        id: r.id,
-        url: r.public_url || r.url || ''
+    existingMedia = galleryUrls
+      .map((url, idx) => ({
+        id: idx.toString(),
+        url: url
       }))
       .filter(r => {
         // Filter out blob URLs - they're temporary and can't be used
@@ -266,24 +264,18 @@ async function preloadEdit() {
     return;
   }
 
-  // Fetch business data - getMyBusiness might return business with media
-  let business = await getMyBusiness();
+  // Fetch business data from localStorage
+  const businessResponse = await getMyBusiness();
+  let business = businessResponse && businessResponse.business ? businessResponse.business : null;
   
-  // If business doesn't have media, fetch it separately
-  if (business && (!business.media || business.media.length === 0)) {
-    try {
-      const { apiRequest } = await import('/js/api.js');
-      const businessResponse = await apiRequest('/business/me', { method: 'GET' });
-      if (businessResponse && businessResponse.media) {
-        business.media = businessResponse.media;
-      }
-    } catch (err) {
-      console.warn('[owner-form] Could not fetch media separately:', err);
-    }
+  // Get media from response
+  if (businessResponse && businessResponse.media) {
+    business = business || {};
+    business.media = businessResponse.media;
   }
   
-  console.log('[owner-form] Raw business data from API:', business);
-  console.log('[owner-form] Business media:', business?.media?.length || 0, 'items');
+  console.log('[owner-form] Raw business data from localStorage:', business);
+  console.log('[owner-form] Business media:', business && business.media ? business.media.length : 0, 'items');
   
   if (!business) {
     // CREATE mode - check if we have signup data to pre-populate
@@ -841,48 +833,76 @@ async function saveProfile(ev) {
       }
     }
     
-    // Send FormData to backend
-    const token = localStorage.getItem('session_token');
-    const headers = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    // Save to localStorage instead of API
+    const { getCurrentUser: getCurrentUserFromAuth, getBusinessByOwner, updateBusiness, saveBusinesses, getAllBusinesses, generateId } = await import('/js/auth-localstorage.js');
+    const user = getCurrentUser();
+    if (!user) {
+      throw new Error('Not authenticated');
     }
     
-    console.log('[owner-form] Sending PUT request to /api/businesses/me');
-    const response = await fetch('/api/businesses/me', {
-      method: 'PUT',
-      credentials: 'include',
-      headers,
-      body: fd
-    });
-    
-    console.log('[owner-form] Response status:', response.status, response.statusText);
-    
-    if (!response.ok) {
-      let errorMessage = 'Failed to save profile';
-      try {
-        const errorText = await response.text();
-        console.error('[owner-form] Error response text:', errorText);
-        try {
-          const error = JSON.parse(errorText);
-          errorMessage = error?.error || error?.message || response.statusText || 'Failed to save profile';
-        } catch (parseError) {
-          // If JSON parsing fails, use the text as error message
-          errorMessage = errorText || response.statusText || 'Failed to save profile';
+    // Convert FormData to object
+    const businessData = {};
+    for (const [key, value] of fd.entries()) {
+      if (key.endsWith('[]')) {
+        // Handle array fields (gallery)
+        const fieldName = key.replace('[]', '');
+        if (!businessData[fieldName]) businessData[fieldName] = [];
+        if (value instanceof File) {
+          // Convert file to base64
+          const base64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.readAsDataURL(value);
+          });
+          businessData[fieldName].push(base64);
+        } else {
+          businessData[fieldName].push(value);
         }
-        // Ensure error message is a string
-        if (typeof errorMessage !== 'string') {
-          errorMessage = String(errorMessage);
-        }
-      } catch (e) {
-        console.error('[owner-form] Error parsing response:', e);
-        errorMessage = response.statusText || 'Failed to save profile';
+      } else if (value instanceof File) {
+        // Convert file to base64
+        const base64 = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(value);
+        });
+        businessData[key] = base64;
+      } else {
+        businessData[key] = value;
       }
-      throw new Error(errorMessage);
     }
     
-    const result = await response.json();
-    console.log('[owner-form] Profile saved successfully:', result);
+    // Get existing business or create new
+    let business = getBusinessByOwner(user.id);
+    
+    if (business) {
+      // Update existing business
+      business = updateBusiness(business.id, businessData);
+    } else {
+      // Create new business
+      const businesses = getAllBusinesses();
+      business = {
+        id: generateId(),
+        owner_id: user.id,
+        ...businessData,
+        created_at: new Date().toISOString()
+      };
+      businesses.push(business);
+      saveBusinesses(businesses);
+    }
+    
+    const result = {
+      ok: true,
+      business: business,
+      media: business.gallery_urls ? business.gallery_urls.map((url, idx) => ({
+        id: idx.toString(),
+        business_id: business.id,
+        public_url: url,
+        file_type: 'image',
+        created_at: business.created_at
+      })) : []
+    };
+    
+    console.log('[owner-form] Profile saved successfully to localStorage:', result);
     console.log('[owner-form] Updated business data:', result.business);
     
     // Mark account as updated after fixing documents (for admin dashboard)
