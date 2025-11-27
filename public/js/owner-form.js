@@ -890,20 +890,48 @@ async function saveProfile(ev) {
     // Get existing business or create new
     let business = getBusinessByOwner(user.id);
     
+    // Clean up businessData - remove duplicate fields and handle special cases
+    const cleanData = {
+      name: businessData.name || businessData.business_name || '',
+      business_name: businessData.name || businessData.business_name || '',
+      description: businessData.description || '',
+      story: businessData.story || '',
+      industry: businessData.industry || businessData.category || '',
+      category: businessData.category || businessData.industry || '',
+      country: businessData.country || 'Kuwait',
+      city: businessData.city || '',
+      area: businessData.area || '',
+      block: businessData.block || '',
+      street: businessData.street || '',
+      floor: businessData.floor || '',
+      office_no: businessData.office_no || '',
+      phone: businessData.phone || '',
+      whatsapp: businessData.whatsapp || '',
+      website: businessData.website || '',
+      instagram: businessData.instagram || '',
+      logo_url: businessData.logo_url || null,
+      gallery_urls: businessData.gallery_urls || [],
+      updated_at: new Date().toISOString()
+    };
+    
     if (business) {
       // Update existing business
-      business = updateBusiness(business.id, businessData);
+      business = updateBusiness(business.id, cleanData);
+      console.log('[owner-form] Updated existing business:', business.id);
     } else {
       // Create new business
       const businesses = getAllBusinesses();
       business = {
         id: generateId(),
         owner_id: user.id,
-        ...businessData,
+        ...cleanData,
+        status: 'pending',
+        is_active: true,
         created_at: new Date().toISOString()
       };
       businesses.push(business);
       saveBusinesses(businesses);
+      console.log('[owner-form] Created new business:', business.id);
     }
     
     const result = {
