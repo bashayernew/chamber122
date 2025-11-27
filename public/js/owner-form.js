@@ -813,10 +813,16 @@ async function saveProfile(ev) {
     fd.append('category', industryValue);
     
     const descriptionEl = $('description');
-    fd.append('description', descriptionEl ? safeTrim(descriptionEl.value) : '');
+    const descriptionValue = descriptionEl ? safeTrim(descriptionEl.value) : '';
+    // Don't save placeholder text
+    const finalDescription = (descriptionValue && !descriptionValue.includes('Describe what you offer')) ? descriptionValue : '';
+    fd.append('description', finalDescription);
     
     const storyEl = $('story');
-    fd.append('story', storyEl ? safeTrim(storyEl.value) : '');
+    const storyValue = storyEl ? safeTrim(storyEl.value) : '';
+    // Don't save placeholder text
+    const finalStory = (storyValue && !storyValue.includes('Share your journey')) ? storyValue : '';
+    fd.append('story', finalStory);
     
     console.log('[owner-form] Form values being sent:', {
       name: nameValue,
