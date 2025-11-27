@@ -137,26 +137,41 @@ function wireOneInput(el) {
           URL.revokeObjectURL(logoPreview.src);
         }
         
+        // Set the image source first
         logoPreview.src = localUrl;
+        
+        // Remove hidden class
         logoPreview.classList.remove('hidden');
-        // Ensure visibility with inline styles - override any CSS
+        
+        // Force visibility with inline styles - build complete style string
+        const styleString = [
+          'display: block',
+          'visibility: visible',
+          'opacity: 1',
+          'max-width: 200px',
+          'max-height: 120px',
+          'border-radius: 8px',
+          'margin-top: 0.5rem',
+          'object-fit: contain',
+          'border: 2px solid rgba(212, 175, 55, 0.3)',
+          'padding: 0.5rem',
+          'background: rgba(255, 255, 255, 0.05)'
+        ].join('; ');
+        
+        logoPreview.setAttribute('style', styleString);
+        
+        // Also set individual properties as backup
         logoPreview.style.display = 'block';
         logoPreview.style.visibility = 'visible';
         logoPreview.style.opacity = '1';
-        logoPreview.style.maxWidth = '200px';
-        logoPreview.style.maxHeight = '120px';
-        logoPreview.style.borderRadius = '8px';
-        logoPreview.style.marginTop = '0.5rem';
-        logoPreview.style.objectFit = 'contain';
-        logoPreview.style.border = '2px solid rgba(212, 175, 55, 0.3)';
-        logoPreview.style.padding = '0.5rem';
-        logoPreview.style.background = 'rgba(255, 255, 255, 0.05)';
-        
-        // Force show with !important via setAttribute
-        logoPreview.setAttribute('style', logoPreview.style.cssText + ' !important');
         
         console.log('[signup] Logo preview updated:', file.name, 'URL:', localUrl);
-        console.log('[signup] Logo preview computed display:', window.getComputedStyle(logoPreview).display);
+        console.log('[signup] Logo preview element:', {
+          display: logoPreview.style.display,
+          visibility: logoPreview.style.visibility,
+          hasSrc: !!logoPreview.src,
+          computedDisplay: window.getComputedStyle(logoPreview).display
+        });
       } else {
         console.error('[signup] Logo preview element not found!');
       }
@@ -378,7 +393,7 @@ function renderGalleryPreview(galleryPreview) {
 }
 
 export function initSignupPage() {
-  console.log('Initializing signup page...');
+  console.log('[signup] Initializing signup page...');
   
   // Ensure your inputs have these attributes in HTML:
   // id="licenseInput" data-doc="license"
@@ -387,10 +402,15 @@ export function initSignupPage() {
   // id="articlesInput" data-doc="articles"
   // (optional) id="logoInput" data-doc="logo"
   const fileInputs = document.querySelectorAll('input[type="file"][data-doc]');
-  console.log(`Found ${fileInputs.length} file inputs:`, fileInputs);
+  console.log(`[signup] Found ${fileInputs.length} file inputs:`, Array.from(fileInputs).map(inp => ({ id: inp.id, doc: inp.dataset.doc })));
+  
+  if (fileInputs.length === 0) {
+    console.warn('[signup] No file inputs found with data-doc attribute!');
+    return;
+  }
   
   fileInputs.forEach((input, index) => {
-    console.log(`Wiring input ${index + 1}:`, input.id, input.dataset.doc);
+    console.log(`[signup] Wiring input ${index + 1}:`, input.id, input.dataset.doc);
     wireOneInput(input);
   });
   
