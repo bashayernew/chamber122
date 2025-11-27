@@ -99,7 +99,7 @@ async function loadAndDisplayBusiness(businessId = null) {
           } else {
             // Also check from users array
             try {
-              const { getAllUsers } = await import('./admin-auth.js');
+              const { getAllUsers } = await import('./auth-localstorage.js');
               const users = getAllUsers();
               const userData = users.find(u => u.id === user.id);
               if (userData && userData.status) {
