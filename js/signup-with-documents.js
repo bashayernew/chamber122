@@ -50,6 +50,7 @@ function wireOneInput(el) {
       console.log('[signup] Gallery files now:', state.galleryFiles.length, 'total');
       
       // Render all gallery previews
+      console.log('[signup] Rendering gallery preview with', state.galleryFiles.length, 'files');
       renderGalleryPreview(galleryPreview);
       
       // Reset input to allow selecting same files again
@@ -124,8 +125,11 @@ function wireOneInput(el) {
     
     // Special handling for logo preview
     if (type === 'logo') {
+      console.log('[signup] Processing logo file:', file.name);
       const logoPreview = document.getElementById('logo-preview');
       const logoStatus = document.getElementById('logo-upload-status');
+      
+      console.log('[signup] Logo preview element found:', !!logoPreview);
       
       if (logoPreview) {
         // Clean up previous URL to prevent memory leaks
@@ -135,7 +139,7 @@ function wireOneInput(el) {
         
         logoPreview.src = localUrl;
         logoPreview.classList.remove('hidden');
-        // Ensure visibility with inline styles
+        // Ensure visibility with inline styles - override any CSS
         logoPreview.style.display = 'block';
         logoPreview.style.visibility = 'visible';
         logoPreview.style.opacity = '1';
@@ -148,7 +152,13 @@ function wireOneInput(el) {
         logoPreview.style.padding = '0.5rem';
         logoPreview.style.background = 'rgba(255, 255, 255, 0.05)';
         
-        console.log('[signup] Logo preview updated:', file.name);
+        // Force show with !important via setAttribute
+        logoPreview.setAttribute('style', logoPreview.style.cssText + ' !important');
+        
+        console.log('[signup] Logo preview updated:', file.name, 'URL:', localUrl);
+        console.log('[signup] Logo preview computed display:', window.getComputedStyle(logoPreview).display);
+      } else {
+        console.error('[signup] Logo preview element not found!');
       }
       
       // Store file in state for later upload
