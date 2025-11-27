@@ -333,22 +333,33 @@ const adminDashboard = {
                   if (!doc) return '';
                   
                   // Check all possible URL fields - prioritize base64 data URLs
-                  let docUrl = doc.base64 || doc.file_url || doc.url || doc.public_url || doc.fileUrl || '';
+                  let docUrl = doc.base64 || doc.file_url || doc.url || doc.public_url || doc.fileUrl || doc.signedUrl || '';
                   
                   // If we have signup docs, check for base64 there too
                   if (!docUrl && signupDocs[docType]) {
-                    docUrl = signupDocs[docType].base64 || signupDocs[docType].url || signupDocs[docType].file_url || '';
+                    docUrl = signupDocs[docType].base64 || signupDocs[docType].url || signupDocs[docType].file_url || signupDocs[docType].signedUrl || '';
+                  }
+                  
+                  // Also check if doc has a file object that we can convert
+                  if (!docUrl && doc.file) {
+                    // If we have a file object, we can't display it directly, but mark it as having a file
+                    console.log('[admin] Document has file object but no URL:', docType);
                   }
                   
                   // Validate URL - must be base64 data URL, HTTP URL, or valid file path
-                  const hasValidUrl = docUrl && docUrl.trim() && 
+                  // More lenient validation - accept any non-empty string that's not 'undefined' or 'pending_'
+                  const hasValidUrl = docUrl && 
+                                     typeof docUrl === 'string' &&
+                                     docUrl.trim() && 
                                      docUrl !== 'undefined' && 
+                                     docUrl !== 'null' &&
                                      !docUrl.startsWith('pending_') && 
                                      !docUrl.startsWith('blob:') &&
                                      (docUrl.startsWith('data:') || 
                                       docUrl.startsWith('http://') || 
                                       docUrl.startsWith('https://') ||
-                                      (docUrl.length > 100 && docUrl.includes('base64')));
+                                      docUrl.startsWith('/') ||
+                                      (docUrl.length > 50)); // Accept any reasonably long string as potential base64
                   
                   // For onclick, we need to escape properly and handle long base64 strings
                   // Store in a data attribute instead of inline onclick for long URLs
