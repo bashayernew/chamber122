@@ -3,63 +3,69 @@ import { signupWithEmailPassword, resendConfirmation } from './auth-signup-utils
 import { createBusinessRecord } from './businesses-utils.js';
 import { isEmailConfirmationBypassed } from './auth-dev.js';
 
-export const state = { localPreviews: {}, uploaded: {} };
+export const state = { localPreviews: {}, uploaded: {}, galleryFiles: [] };
 
 function wireOneInput(el) {
   console.log(`Wiring file input: ${el.id} (${el.dataset.doc})`);
   
   el.addEventListener('change', async (e) => {
     console.log(`File input changed: ${e.target.id}`);
-    const file = e.target.files?.[0];
     const type = e.target.dataset.doc; // "license" | "iban" | "signature_auth" | "articles" | "logo" | "gallery"
-    
-    if (!file) {
-      console.log('No file selected');
-      return;
-    }
     
     if (!type) {
       console.log('No document type specified');
       return;
     }
     
-    console.log(`Processing file: ${file.name} (${file.size} bytes) for type: ${type}`);
-    
     // For gallery, handle multiple files separately (only preview, no upload to temp)
     if (type === 'gallery') {
-      // Handle gallery files (multiple)
+      // Handle gallery files (multiple) - accumulate files
       const galleryPreview = document.getElementById('gallery-preview');
-      if (galleryPreview && e.target.files) {
-        const files = Array.from(e.target.files).slice(0, 5); // Limit to 5
-        galleryPreview.innerHTML = ''; // Clear previous previews
-        
-        console.log('[signup] Showing gallery preview for', files.length, 'files');
-        
-        files.forEach((galleryFile, index) => {
-          const fileUrl = URL.createObjectURL(galleryFile);
-          const img = document.createElement('img');
-          img.src = fileUrl;
-          img.style.width = '100px';
-          img.style.height = '100px';
-          img.style.objectFit = 'cover';
-          img.style.borderRadius = '8px';
-          img.style.border = '2px solid rgba(212, 175, 55, 0.3)';
-          img.style.display = 'block';
-          img.alt = `Gallery preview ${index + 1}`;
-          galleryPreview.appendChild(img);
-        });
-        
-        galleryPreview.style.display = 'grid';
-        galleryPreview.style.gridTemplateColumns = 'repeat(auto-fill, minmax(100px, 1fr))';
-        galleryPreview.style.gap = '0.5rem';
-        galleryPreview.style.marginTop = '0.5rem';
-        
-        console.log('[signup] Gallery preview updated with', files.length, 'images');
-      } else {
+      if (!galleryPreview || !e.target.files || e.target.files.length === 0) {
         console.warn('[signup] Gallery preview element not found or no files');
+        // Reset input to allow selecting same files again
+        e.target.value = '';
+        return;
       }
+      
+      const newFiles = Array.from(e.target.files);
+      const MAX_GALLERY = 5;
+      const currentCount = state.galleryFiles.length;
+      const remainingSlots = MAX_GALLERY - currentCount;
+      
+      if (remainingSlots <= 0) {
+        alert(`You can only add up to ${MAX_GALLERY} gallery images. Please remove some images first.`);
+        e.target.value = '';
+        return;
+      }
+      
+      // Add new files up to the limit
+      const filesToAdd = newFiles.slice(0, remainingSlots);
+      if (newFiles.length > remainingSlots) {
+        alert(`You can only add ${remainingSlots} more image(s). Maximum ${MAX_GALLERY} images allowed.`);
+      }
+      
+      // Add new files to state
+      state.galleryFiles = [...state.galleryFiles, ...filesToAdd];
+      console.log('[signup] Gallery files now:', state.galleryFiles.length, 'total');
+      
+      // Render all gallery previews
+      renderGalleryPreview(galleryPreview);
+      
+      // Reset input to allow selecting same files again
+      e.target.value = '';
       return; // Don't proceed with upload for gallery files
     }
+    
+    // For non-gallery files, get single file
+    const file = e.target.files?.[0];
+    
+    if (!file) {
+      console.log('No file selected');
+      return;
+    }
+    
+    console.log(`Processing file: ${file.name} (${file.size} bytes) for type: ${type}`);
     
     // Show loading state
     const status = document.querySelector(`[data-upload-status="${type}"]`);
@@ -77,6 +83,45 @@ function wireOneInput(el) {
     // Create local preview URL
     const localUrl = URL.createObjectURL(file);
     
+    // Show preview immediately for documents (before upload completes)
+    if (type !== 'logo' && type !== 'gallery') {
+      const previewContainer = document.getElementById(`${type}-preview`) || 
+                               document.getElementById(`${type === 'articles' ? 'incorporation' : type === 'signature_auth' ? 'signature' : type}-preview`);
+      const img = previewContainer?.querySelector(`[data-local-preview="${type}"]`);
+      const fileName = previewContainer?.querySelector('.file-name');
+      const fileLink = previewContainer?.querySelector('.file-link');
+      
+      if (previewContainer) {
+        previewContainer.style.display = 'block';
+      }
+      
+      // Check if file is an image
+      const isImage = file.type.startsWith('image/');
+      
+      if (isImage && img) {
+        // Clean up previous URL to prevent memory leaks
+        if (img.src && img.src.startsWith('blob:')) {
+          URL.revokeObjectURL(img.src);
+        }
+        img.src = localUrl;
+        img.style.display = 'block';
+      } else if (img) {
+        // Hide image preview for non-image files
+        img.style.display = 'none';
+      }
+      
+      // Show file name immediately
+      if (fileName) {
+        fileName.textContent = file.name;
+      }
+      
+      // Set file link to preview URL
+      if (fileLink) {
+        fileLink.href = localUrl;
+        fileLink.download = file.name;
+      }
+    }
+    
     // Special handling for logo preview
     if (type === 'logo') {
       const logoPreview = document.getElementById('logo-preview');
@@ -90,11 +135,20 @@ function wireOneInput(el) {
         
         logoPreview.src = localUrl;
         logoPreview.classList.remove('hidden');
+        // Ensure visibility with inline styles
         logoPreview.style.display = 'block';
+        logoPreview.style.visibility = 'visible';
+        logoPreview.style.opacity = '1';
         logoPreview.style.maxWidth = '200px';
         logoPreview.style.maxHeight = '120px';
         logoPreview.style.borderRadius = '8px';
         logoPreview.style.marginTop = '0.5rem';
+        logoPreview.style.objectFit = 'contain';
+        logoPreview.style.border = '2px solid rgba(212, 175, 55, 0.3)';
+        logoPreview.style.padding = '0.5rem';
+        logoPreview.style.background = 'rgba(255, 255, 255, 0.05)';
+        
+        console.log('[signup] Logo preview updated:', file.name);
       }
       
       // Store file in state for later upload
@@ -102,14 +156,50 @@ function wireOneInput(el) {
       state.uploaded.logo.file = file;
       console.log('[signup] Logo file stored in state:', file.name, file.size);
     } else {
-      // Local preview for other documents
-      const img = document.querySelector(`[data-local-preview="${type}"]`);
-      if (img) {
-        // Clean up previous URL to prevent memory leaks
-        if (img.src && img.src.startsWith('blob:')) {
-          URL.revokeObjectURL(img.src);
-        }
-        img.src = localUrl;
+      // Preview already shown above, just add remove button handler
+      const previewContainer = document.getElementById(`${type}-preview`) || 
+                               document.getElementById(`${type === 'articles' ? 'incorporation' : type === 'signature_auth' ? 'signature' : type}-preview`);
+      const img = previewContainer?.querySelector(`[data-local-preview="${type}"]`);
+      
+      // Add remove button handler
+      const removeBtn = previewContainer?.querySelector('.remove-file');
+      if (removeBtn && !removeBtn.dataset.handlerAdded) {
+        removeBtn.dataset.handlerAdded = 'true';
+        removeBtn.addEventListener('click', () => {
+          // Clear file input
+          el.value = '';
+          
+          // Hide preview container
+          if (previewContainer) {
+            previewContainer.style.display = 'none';
+          }
+          
+          // Clean up blob URL
+          if (localUrl) {
+            URL.revokeObjectURL(localUrl);
+          }
+          
+          // Clear state
+          delete state.uploaded[type];
+          
+          // Reset status
+          if (status) {
+            status.textContent = 'Required';
+            status.style.color = '#9ca3af';
+          }
+          
+          // Hide image preview
+          if (img) {
+            img.src = '';
+            img.style.display = 'none';
+          }
+          
+          // Clear file name
+          const fileName = previewContainer?.querySelector('.file-name');
+          if (fileName) {
+            fileName.textContent = '';
+          }
+        });
       }
     }
 
@@ -148,6 +238,15 @@ function wireOneInput(el) {
         }
       }
 
+      // Show preview container for documents (already shown above, but ensure it's visible)
+      if (type !== 'logo' && type !== 'gallery') {
+        const previewContainer = document.getElementById(`${type}-preview`) || 
+                                 document.getElementById(`${type === 'articles' ? 'incorporation' : type === 'signature_auth' ? 'signature' : type}-preview`);
+        if (previewContainer) {
+          previewContainer.style.display = 'block';
+        }
+      }
+
       const link = document.querySelector(`[data-upload-preview="${type}"]`);
       if (link && res.signedUrl) {
         link.href = res.signedUrl;
@@ -177,6 +276,97 @@ function wireOneInput(el) {
   });
 }
 
+// Render gallery preview with all accumulated files
+function renderGalleryPreview(galleryPreview) {
+  if (!galleryPreview) return;
+  
+  galleryPreview.innerHTML = ''; // Clear existing previews
+  
+  if (state.galleryFiles.length === 0) {
+    galleryPreview.style.display = 'none';
+    return;
+  }
+  
+  galleryPreview.style.display = 'grid';
+  galleryPreview.style.gridTemplateColumns = 'repeat(auto-fill, minmax(100px, 1fr))';
+  galleryPreview.style.gap = '0.5rem';
+  galleryPreview.style.marginTop = '0.5rem';
+  
+  state.galleryFiles.forEach((galleryFile, index) => {
+    const fileUrl = URL.createObjectURL(galleryFile);
+    
+    // Create container for each image
+    const container = document.createElement('div');
+    container.style.position = 'relative';
+    container.style.width = '100px';
+    container.style.height = '100px';
+    
+    const img = document.createElement('img');
+    img.src = fileUrl;
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    img.style.borderRadius = '8px';
+    img.style.border = '2px solid rgba(212, 175, 55, 0.3)';
+    img.style.display = 'block';
+    img.style.cursor = 'pointer';
+    img.alt = `Gallery preview ${index + 1}`;
+    img.title = galleryFile.name;
+    
+    // Add click handler to view full image
+    img.addEventListener('click', () => {
+      window.open(fileUrl, '_blank');
+    });
+    
+    // Create remove button
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.innerHTML = '×';
+    removeBtn.style.cssText = `
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #ef4444;
+      color: white;
+      border: 2px solid white;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    `;
+    
+    removeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      
+      // Clean up blob URL
+      URL.revokeObjectURL(fileUrl);
+      
+      // Remove file from state
+      state.galleryFiles = state.galleryFiles.filter((_, i) => i !== index);
+      
+      // Re-render preview
+      renderGalleryPreview(galleryPreview);
+      
+      console.log('[signup] Removed gallery image, remaining:', state.galleryFiles.length);
+    });
+    
+    container.appendChild(img);
+    container.appendChild(removeBtn);
+    galleryPreview.appendChild(container);
+  });
+  
+  console.log('[signup] Gallery preview rendered with', state.galleryFiles.length, 'images');
+}
+
 export function initSignupPage() {
   console.log('Initializing signup page...');
   
@@ -194,6 +384,12 @@ export function initSignupPage() {
     wireOneInput(input);
   });
   
+  // Initialize gallery preview if there are existing files
+  const galleryPreview = document.getElementById('gallery-preview');
+  if (galleryPreview && state.galleryFiles.length > 0) {
+    renderGalleryPreview(galleryPreview);
+  }
+  
   // Cleanup blob URLs when page is unloaded
   window.addEventListener('beforeunload', () => {
     // Clean up any blob URLs to prevent memory leaks
@@ -203,6 +399,9 @@ export function initSignupPage() {
         URL.revokeObjectURL(img.src);
       }
     });
+    
+    // Clear gallery files state
+    state.galleryFiles = [];
   });
 
   // Initialize character counter for description
@@ -226,7 +425,7 @@ export function initSignupPage() {
 }
 
 export function missingRequiredDocs() {
-  const required = ['license', 'iban', 'signature_auth', 'articles'];
+  const required = ['license', 'iban', 'signature_auth', 'articles', 'civil_id_front', 'civil_id_back', 'owner_proof'];
   return required.filter((k) => !state.uploaded[k]?.path);
 }
 
@@ -245,27 +444,12 @@ export async function onCreateAccount(emailSelector, passwordSelector) {
   }
   
   try {
-    // TODO: Re-enable email confirmation in production
-    if (isEmailConfirmationBypassed()) {
-      // Development mode - bypass email confirmation
-      const { requiresConfirm, user } = await signupWithEmailPassword(email, password);
-      console.log('DEV: User signed up and auto-confirmed:', user?.id);
-      
-      // User is immediately signed in, proceed to complete signup
-      return { requiresConfirm: false, user };
-    } else {
-      // Production mode - normal signup with email confirmation
-      const { requiresConfirm, user } = await signupWithEmailPassword(email, password);
-      
-      if (requiresConfirm) {
-        // Show email confirmation UI
-        showEmailConfirmationUI(email);
-        return { requiresConfirm: true, user };
-      } else {
-        // User is immediately signed in
-        return { requiresConfirm: false, user };
-      }
-    }
+    // Signup with backend API (no email confirmation needed)
+    const { requiresConfirm, user } = await signupWithEmailPassword(email, password);
+    console.log('[signup] User signed up:', user?.id);
+    
+    // User is immediately signed in, proceed to complete signup
+    return { requiresConfirm: false, user };
   } catch (error) {
     console.error('Signup error:', error);
     throw error;
@@ -363,106 +547,9 @@ export async function onCompleteSignup(fields) {
     }
   }
 
-  // Get gallery files from input
-  let galleryFiles = [];
-  const galleryInput = document.getElementById('gallery-files');
-  if (galleryInput && galleryInput.files && galleryInput.files.length > 0) {
-    galleryFiles = Array.from(galleryInput.files).slice(0, 5); // Limit to 5
-    console.log('[signup] Gallery files found:', galleryFiles.length);
-  }
-  
-  const row = await createBusinessRecord({
-    ...fields,
-    logo_file: logoFile, // Pass the actual file for upload
-    logo_url: fields.logo_url ?? state.uploaded.logo?.signedUrl ?? null,
-    gallery_files: galleryFiles, // Pass gallery files for upload
-  });
-  
-  console.log('[signup] Business created with logo:', row.logo_url);
-  return row;
-}
-      <p style="color: #0c4a6e; margin-bottom: 1.5rem;">
-        Click the link in your email to complete your account setup, then return here to finish your business listing.
-      </p>
-      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-        <button id="resend-confirmation" class="btn btn-outline" style="padding: 0.5rem 1rem;">
-          Resend Email
-        </button>
-        <button id="back-to-signup" class="btn btn-ghost" style="padding: 0.5rem 1rem;">
-          Back to Signup
-        </button>
-      </div>
-    </div>
-  `;
-  
-  // Insert after the form
-  if (signupForm) {
-    signupForm.parentNode.insertBefore(confirmationDiv, signupForm.nextSibling);
-  }
-  
-  // Add event listeners
-  document.getElementById('resend-confirmation')?.addEventListener('click', async () => {
-    try {
-      await resendConfirmation(email);
-      alert('Confirmation email resent!');
-    } catch (error) {
-      alert('Error resending email: ' + error.message);
-    }
-  });
-  
-  document.getElementById('back-to-signup')?.addEventListener('click', () => {
-    confirmationDiv.remove();
-    if (signupForm) {
-      signupForm.style.display = 'block';
-    }
-  });
-}
-
-export async function onCompleteSignup(fields) {
-  // Get logo file from state if available
-  let logoFile = null;
-  if (state.uploaded.logo) {
-    // First try to get the file object stored in state
-    if (state.uploaded.logo.file) {
-      logoFile = state.uploaded.logo.file;
-      console.log('[signup] Logo file found in state:', logoFile.name);
-    } else {
-      // Try to get the actual file from the file input
-      const logoInput = document.getElementById('logo-file');
-      if (logoInput && logoInput.files && logoInput.files.length > 0) {
-        logoFile = logoInput.files[0];
-        console.log('[signup] Logo file found from input:', logoFile.name);
-      } else {
-        // Try to get from sessionStorage fallback
-        const fallbackKey = state.uploaded.logo.fallbackKey;
-        if (fallbackKey) {
-          const fileData = sessionStorage.getItem(fallbackKey);
-          if (fileData) {
-            try {
-              const parsed = JSON.parse(fileData);
-              if (parsed.localUrl) {
-                // Fetch the blob from the local URL
-                const response = await fetch(parsed.localUrl);
-                const blob = await response.blob();
-                logoFile = new File([blob], parsed.name, { type: parsed.type });
-                console.log('[signup] Logo file retrieved from sessionStorage');
-              }
-            } catch (err) {
-              console.error('[signup] Error retrieving logo from sessionStorage:', err);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  // Get gallery files from input
-  let galleryFiles = [];
-  const galleryInput = document.getElementById('gallery-files');
-  if (galleryInput && galleryInput.files && galleryInput.files.length > 0) {
-    galleryFiles = Array.from(galleryInput.files).slice(0, 5); // Limit to 5
-    console.log('[signup] Gallery files found:', galleryFiles.length);
-  }
+  // Get gallery files from state (accumulated from multiple selections)
+  const galleryFiles = state.galleryFiles || [];
+  console.log('[signup] Gallery files from state:', galleryFiles.length);
   
   const row = await createBusinessRecord({
     ...fields,
