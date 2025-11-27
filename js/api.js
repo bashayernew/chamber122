@@ -298,6 +298,28 @@ export async function getOwnerBusinessId(ownerId) {
 }
 
 // API helper functions (for compatibility)
+// Check if account is suspended
+export async function isAccountSuspended() {
+  try {
+    const user = getCurrentUserFromAuth();
+    if (!user) {
+      return false; // Not logged in, can't be suspended
+    }
+    
+    const business = getBusinessByOwner(user.id);
+    if (!business) {
+      return false; // No business, can't be suspended
+    }
+    
+    // Check if business status is 'suspended'
+    const status = business.status || business.is_active;
+    return status === 'suspended' || status === false;
+  } catch (error) {
+    console.error('[api] Error checking account suspension:', error);
+    return false; // Default to not suspended on error
+  }
+}
+
 export const api = {
   get: async (endpoint) => {
     // Handle different endpoints
