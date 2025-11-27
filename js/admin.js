@@ -45,12 +45,14 @@ export function ensureAdminAccount() {
 function checkAdminAccess() {
   const user = getCurrentUser();
   if (!user) {
-    // Don't redirect - let the login form show
+    // Not logged in - let the login form show (handled by admin.html)
     return false;
   }
   if (!isAdmin()) {
-    alert('Access denied. Admin privileges required.');
-    window.location.href = '/admin.html';
+    // Logged in but not admin - logout and show login form
+    console.log('[admin] User is logged in but not an admin, logging out...');
+    logout();
+    // Don't show alert - just let the login form appear
     return false;
   }
   return true;

@@ -451,6 +451,12 @@
         });
       } else {
         // Show login, hide dashboard
+        // If user is logged in but not admin, logout first
+        if (user && !isAdmin()) {
+          import('/js/auth-localstorage.js').then(module => {
+            module.logout();
+          });
+        }
         document.getElementById('admin-login-container').style.display = 'flex';
         document.getElementById('admin-dashboard-container').style.display = 'none';
       }
