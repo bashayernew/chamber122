@@ -12,37 +12,12 @@
   <link rel="stylesheet" href="/css/header.css?v=1">
   <link rel="stylesheet" href="css/style.css?v=18">
   <link rel="stylesheet" href="css/auth.css?v=18">
+  <link rel="stylesheet" href="css/responsive-enhancements.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   
-  <!-- Supabase Bootstrap Loader with multiple fallbacks -->
-  <script type="module" id="supabase-loader">
-    (async () => {
-      const sources = [
-        'https://esm.sh/@supabase/supabase-js@2',
-        'https://unpkg.com/@supabase/supabase-js@2.45.3/dist/module/index.js',
-        'https://cdn.skypack.dev/@supabase/supabase-js@2'
-      ];
-      
-      for (const src of sources) {
-        try {
-          console.log('[bootstrap] Trying to load Supabase from:', src);
-          window.__supabaseMod = await import(src);
-          console.log('[bootstrap] Successfully loaded from:', src);
-          window.__supabaseReady = true;
-          return;
-        } catch (e) {
-          console.warn('[bootstrap] Failed to load from', src, e);
-        }
-      }
-      
-      console.error('[bootstrap] All Supabase sources failed. Network may be down.');
-      window.__supabaseReady = true; // Set ready anyway to prevent infinite wait
-    })();
-  </script>
-  
-  <!-- Supabase client initialization -->
-  <script type="module" src="/js/supabase-client.global.js"></script>
+  <!-- Backend API helper -->
+  <script type="module" src="/js/api.js"></script>
   
   <!-- Auth login handler loaded separately for immediate execution -->
   <script type="module" src="/public/js/auth-login.js?v=2"></script>
@@ -340,9 +315,7 @@
                 <i class="fas fa-check-circle"></i>
                 <span>Logo uploaded successfully!</span>
               </div>
-              <img id="logo-preview" class="logo-preview hidden" alt="Logo preview" 
-                   src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='180'><rect width='100%25' height='100%25' fill='%23222222'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23aaaaaa' font-family='Arial' font-size='16'>Logo preview</text></svg>"
-                   onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22320%22 height=%22180%22><rect width=%22100%25%22 height=%22100%25%22 fill=%22%23222222%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23aaaaaa%22 font-family=%22Arial%22 font-size=%2216%22>Logo preview</text></svg>'">
+              <img id="logo-preview" class="logo-preview hidden" alt="Logo preview" style="display: none; max-width: 200px; max-height: 120px; border-radius: 8px; margin-top: 0.5rem; object-fit: contain; border: 2px solid rgba(212, 175, 55, 0.3); padding: 0.5rem; background: rgba(255, 255, 255, 0.05);">
             </div>
           </div>
 
@@ -373,7 +346,7 @@
                 </div>
               </div>
               <div class="document-upload">
-                <input type="file" id="license-file" accept=".pdf,.jpg,.jpeg,.png" class="file-input" data-doc="license" style="display: none;">
+                <input type="file" id="license-file" accept=".pdf,.jpg,.jpeg,.png" class="file-input" data-doc="license" style="display: none;" required>
                 <label for="license-file" class="file-label" style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 2rem; border: 2px dashed rgba(212, 175, 55, 0.5); border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: center;">
                   <span class="file-icon" style="font-size: 2rem; color: #6b7280;">📄</span>
                   <span class="file-text" style="color: #9ca3af; font-weight: 500;">Choose File | اختر ملف</span>
@@ -384,9 +357,13 @@
                   <span>Uploading...</span>
                 </div>
               </div>
-              <div class="document-preview" id="license-preview" style="display: none;">
-                <a href="#" class="file-link" target="_blank" style="color: #10b981; text-decoration: none; font-weight: 500;">View File | عرض الملف</a>
-                <button type="button" class="remove-file" style="background: #ef4444; color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer; margin-left: 1rem;">Remove | إزالة</button>
+              <div class="document-preview" id="license-preview" style="display: none; margin-top: 1rem;">
+                <img data-local-preview="license" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 0.5rem; display: none; object-fit: contain; background: rgba(255, 255, 255, 0.05); padding: 0.5rem;" alt="Preview">
+                <div class="file-info" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: rgba(34, 197, 94, 0.1); border-radius: 6px; margin-bottom: 0.5rem;">
+                  <span class="file-name" style="color: #22c55e; font-weight: 500; flex: 1;"></span>
+                  <a href="#" class="file-link" target="_blank" style="color: #10b981; text-decoration: none; font-weight: 500; margin-right: 0.5rem;">View File | عرض الملف</a>
+                  <button type="button" class="remove-file" style="background: #ef4444; color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">Remove | إزالة</button>
+                </div>
               </div>
             </div>
 
@@ -400,7 +377,7 @@
                 </div>
               </div>
               <div class="document-upload">
-                <input type="file" id="incorporation-file" accept=".pdf,.jpg,.jpeg,.png" class="file-input" data-doc="articles" style="display: none;">
+                <input type="file" id="incorporation-file" accept=".pdf,.jpg,.jpeg,.png" class="file-input" data-doc="articles" style="display: none;" required>
                 <label for="incorporation-file" class="file-label" style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 2rem; border: 2px dashed rgba(212, 175, 55, 0.5); border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: center;">
                   <span class="file-icon" style="font-size: 2rem; color: #6b7280;">📄</span>
                   <span class="file-text" style="color: #9ca3af; font-weight: 500;">Choose File | اختر ملف</span>
@@ -411,9 +388,13 @@
                   <span>Uploading...</span>
                 </div>
               </div>
-              <div class="document-preview" id="incorporation-preview" style="display: none;">
-                <a href="#" class="file-link" target="_blank" style="color: #10b981; text-decoration: none; font-weight: 500;">View File | عرض الملف</a>
-                <button type="button" class="remove-file" style="background: #ef4444; color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer; margin-left: 1rem;">Remove | إزالة</button>
+              <div class="document-preview" id="incorporation-preview" style="display: none; margin-top: 1rem;">
+                <img data-local-preview="articles" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 0.5rem; display: none; object-fit: contain; background: rgba(255, 255, 255, 0.05); padding: 0.5rem;" alt="Preview">
+                <div class="file-info" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: rgba(34, 197, 94, 0.1); border-radius: 6px; margin-bottom: 0.5rem;">
+                  <span class="file-name" style="color: #22c55e; font-weight: 500; flex: 1;"></span>
+                  <a href="#" class="file-link" target="_blank" style="color: #10b981; text-decoration: none; font-weight: 500; margin-right: 0.5rem;">View File | عرض الملف</a>
+                  <button type="button" class="remove-file" style="background: #ef4444; color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">Remove | إزالة</button>
+                </div>
               </div>
             </div>
 
@@ -427,7 +408,7 @@
                 </div>
               </div>
               <div class="document-upload">
-                <input type="file" id="signature-file" accept=".pdf,.jpg,.jpeg,.png" class="file-input" data-doc="signature_auth" style="display: none;">
+                <input type="file" id="signature-file" accept=".pdf,.jpg,.jpeg,.png" class="file-input" data-doc="signature_auth" style="display: none;" required>
                 <label for="signature-file" class="file-label" style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 2rem; border: 2px dashed rgba(212, 175, 55, 0.5); border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: center;">
                   <span class="file-icon" style="font-size: 2rem; color: #6b7280;">📄</span>
                   <span class="file-text" style="color: #9ca3af; font-weight: 500;">Choose File | اختر ملف</span>
@@ -438,9 +419,13 @@
                   <span>Uploading...</span>
                 </div>
               </div>
-              <div class="document-preview" id="signature-preview" style="display: none;">
-                <a href="#" class="file-link" target="_blank" style="color: #10b981; text-decoration: none; font-weight: 500;">View File | عرض الملف</a>
-                <button type="button" class="remove-file" style="background: #ef4444; color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer; margin-left: 1rem;">Remove | إزالة</button>
+              <div class="document-preview" id="signature-preview" style="display: none; margin-top: 1rem;">
+                <img data-local-preview="signature_auth" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 0.5rem; display: none; object-fit: contain; background: rgba(255, 255, 255, 0.05); padding: 0.5rem;" alt="Preview">
+                <div class="file-info" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: rgba(34, 197, 94, 0.1); border-radius: 6px; margin-bottom: 0.5rem;">
+                  <span class="file-name" style="color: #22c55e; font-weight: 500; flex: 1;"></span>
+                  <a href="#" class="file-link" target="_blank" style="color: #10b981; text-decoration: none; font-weight: 500; margin-right: 0.5rem;">View File | عرض الملف</a>
+                  <button type="button" class="remove-file" style="background: #ef4444; color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">Remove | إزالة</button>
+                </div>
               </div>
           </div>
           
@@ -454,7 +439,7 @@
                 </div>
               </div>
               <div class="document-upload">
-                <input type="file" id="iban-file" accept=".pdf,.jpg,.jpeg,.png" class="file-input" data-doc="iban" style="display: none;">
+                <input type="file" id="iban-file" accept=".pdf,.jpg,.jpeg,.png" class="file-input" data-doc="iban" style="display: none;" required>
                 <label for="iban-file" class="file-label" style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 2rem; border: 2px dashed rgba(212, 175, 55, 0.5); border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: center;">
                   <span class="file-icon" style="font-size: 2rem; color: #6b7280;">📄</span>
                   <span class="file-text" style="color: #9ca3af; font-weight: 500;">Choose File | اختر ملف</span>
@@ -465,9 +450,106 @@
                   <span>Uploading...</span>
                 </div>
               </div>
-              <div class="document-preview" id="iban-preview" style="display: none;">
-                <a href="#" class="file-link" target="_blank" style="color: #10b981; text-decoration: none; font-weight: 500;">View File | عرض الملف</a>
-                <button type="button" class="remove-file" style="background: #ef4444; color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer; margin-left: 1rem;">Remove | إزالة</button>
+              <div class="document-preview" id="iban-preview" style="display: none; margin-top: 1rem;">
+                <img data-local-preview="iban" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 0.5rem; display: none; object-fit: contain; background: rgba(255, 255, 255, 0.05); padding: 0.5rem;" alt="Preview">
+                <div class="file-info" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: rgba(34, 197, 94, 0.1); border-radius: 6px; margin-bottom: 0.5rem;">
+                  <span class="file-name" style="color: #22c55e; font-weight: 500; flex: 1;"></span>
+                  <a href="#" class="file-link" target="_blank" style="color: #10b981; text-decoration: none; font-weight: 500; margin-right: 0.5rem;">View File | عرض الملف</a>
+                  <button type="button" class="remove-file" style="background: #ef4444; color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">Remove | إزالة</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Civil ID Front -->
+            <div class="document-card" data-document="civil_id_front" style="background: rgba(17, 24, 39, 0.8); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 12px; padding: 1.5rem;">
+              <div class="document-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h4 style="color: white; font-size: 1.1rem; font-weight: 600; margin: 0;">Civil ID Front | الهوية المدنية (الوجه الأمامي)</h4>
+                <div class="document-status" style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span class="status-icon" style="font-size: 1.2rem; color: #9ca3af;">📄</span>
+                  <span class="status-text" data-upload-status="civil_id_front" style="color: #9ca3af; font-size: 0.9rem;">Required</span>
+                </div>
+              </div>
+              <div class="document-upload">
+                <input type="file" id="civil_id_front-file" accept=".pdf,.jpg,.jpeg,.png" class="file-input" data-doc="civil_id_front" style="display: none;" required>
+                <label for="civil_id_front-file" class="file-label" style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 2rem; border: 2px dashed rgba(212, 175, 55, 0.5); border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: center;">
+                  <span class="file-icon" style="font-size: 2rem; color: #6b7280;">📄</span>
+                  <span class="file-text" style="color: #9ca3af; font-weight: 500;">Choose File | اختر ملف</span>
+                  <span style="color: #6b7280; font-size: 0.8rem;">JPG, PNG, PDF (max 25MB)</span>
+                </label>
+                <div class="upload-progress" id="civil_id_front-progress" style="display: none; margin-top: 0.5rem; padding: 0.5rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; color: #3b82f6; font-size: 0.9rem;">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>Uploading...</span>
+                </div>
+              </div>
+              <div class="document-preview" id="civil_id_front-preview" style="display: none; margin-top: 1rem;">
+                <img data-local-preview="civil_id_front" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 0.5rem; display: none; object-fit: contain; background: rgba(255, 255, 255, 0.05); padding: 0.5rem;" alt="Preview">
+                <div class="file-info" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: rgba(34, 197, 94, 0.1); border-radius: 6px; margin-bottom: 0.5rem;">
+                  <span class="file-name" style="color: #22c55e; font-weight: 500; flex: 1;"></span>
+                  <a href="#" class="file-link" target="_blank" style="color: #10b981; text-decoration: none; font-weight: 500; margin-right: 0.5rem;">View File | عرض الملف</a>
+                  <button type="button" class="remove-file" style="background: #ef4444; color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">Remove | إزالة</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Civil ID Back -->
+            <div class="document-card" data-document="civil_id_back" style="background: rgba(17, 24, 39, 0.8); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 12px; padding: 1.5rem;">
+              <div class="document-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h4 style="color: white; font-size: 1.1rem; font-weight: 600; margin: 0;">Civil ID Back | الهوية المدنية (الوجه الخلفي)</h4>
+                <div class="document-status" style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span class="status-icon" style="font-size: 1.2rem; color: #9ca3af;">📄</span>
+                  <span class="status-text" data-upload-status="civil_id_back" style="color: #9ca3af; font-size: 0.9rem;">Required</span>
+                </div>
+              </div>
+              <div class="document-upload">
+                <input type="file" id="civil_id_back-file" accept=".pdf,.jpg,.jpeg,.png" class="file-input" data-doc="civil_id_back" style="display: none;" required>
+                <label for="civil_id_back-file" class="file-label" style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 2rem; border: 2px dashed rgba(212, 175, 55, 0.5); border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: center;">
+                  <span class="file-icon" style="font-size: 2rem; color: #6b7280;">📄</span>
+                  <span class="file-text" style="color: #9ca3af; font-weight: 500;">Choose File | اختر ملف</span>
+                  <span style="color: #6b7280; font-size: 0.8rem;">JPG, PNG, PDF (max 25MB)</span>
+                </label>
+                <div class="upload-progress" id="civil_id_back-progress" style="display: none; margin-top: 0.5rem; padding: 0.5rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; color: #3b82f6; font-size: 0.9rem;">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>Uploading...</span>
+                </div>
+              </div>
+              <div class="document-preview" id="civil_id_back-preview" style="display: none; margin-top: 1rem;">
+                <img data-local-preview="civil_id_back" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 0.5rem; display: none; object-fit: contain; background: rgba(255, 255, 255, 0.05); padding: 0.5rem;" alt="Preview">
+                <div class="file-info" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: rgba(34, 197, 94, 0.1); border-radius: 6px; margin-bottom: 0.5rem;">
+                  <span class="file-name" style="color: #22c55e; font-weight: 500; flex: 1;"></span>
+                  <a href="#" class="file-link" target="_blank" style="color: #10b981; text-decoration: none; font-weight: 500; margin-right: 0.5rem;">View File | عرض الملف</a>
+                  <button type="button" class="remove-file" style="background: #ef4444; color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">Remove | إزالة</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Owner Proof -->
+            <div class="document-card" data-document="owner_proof" style="background: rgba(17, 24, 39, 0.8); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 12px; padding: 1.5rem;">
+              <div class="document-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h4 style="color: white; font-size: 1.1rem; font-weight: 600; margin: 0;">Owner Proof | إثبات الملكية</h4>
+                <div class="document-status" style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span class="status-icon" style="font-size: 1.2rem; color: #9ca3af;">📄</span>
+                  <span class="status-text" data-upload-status="owner_proof" style="color: #9ca3af; font-size: 0.9rem;">Required</span>
+                </div>
+              </div>
+              <div class="document-upload">
+                <input type="file" id="owner_proof-file" accept=".pdf,.jpg,.jpeg,.png" class="file-input" data-doc="owner_proof" style="display: none;" required>
+                <label for="owner_proof-file" class="file-label" style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 2rem; border: 2px dashed rgba(212, 175, 55, 0.5); border-radius: 8px; cursor: pointer; transition: all 0.3s ease; text-align: center;">
+                  <span class="file-icon" style="font-size: 2rem; color: #6b7280;">📄</span>
+                  <span class="file-text" style="color: #9ca3af; font-weight: 500;">Choose File | اختر ملف</span>
+                  <span style="color: #6b7280; font-size: 0.8rem;">JPG, PNG, PDF (max 25MB)</span>
+                </label>
+                <div class="upload-progress" id="owner_proof-progress" style="display: none; margin-top: 0.5rem; padding: 0.5rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; color: #3b82f6; font-size: 0.9rem;">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>Uploading...</span>
+                </div>
+              </div>
+              <div class="document-preview" id="owner_proof-preview" style="display: none; margin-top: 1rem;">
+                <img data-local-preview="owner_proof" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 0.5rem; display: none; object-fit: contain; background: rgba(255, 255, 255, 0.05); padding: 0.5rem;" alt="Preview">
+                <div class="file-info" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: rgba(34, 197, 94, 0.1); border-radius: 6px; margin-bottom: 0.5rem;">
+                  <span class="file-name" style="color: #22c55e; font-weight: 500; flex: 1;"></span>
+                  <a href="#" class="file-link" target="_blank" style="color: #10b981; text-decoration: none; font-weight: 500; margin-right: 0.5rem;">View File | عرض الملف</a>
+                  <button type="button" class="remove-file" style="background: #ef4444; color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">Remove | إزالة</button>
+                </div>
               </div>
             </div>
           </div>
@@ -585,8 +667,8 @@
   <!-- Signup modules (loaded separately for auth page) -->
   <script type="module" src="./js/i18n.js"></script>
   <script type="module" src="/js/businesses.api.js"></script>
-  <script type="module" src="js/signup-with-documents.js?v=21"></script>
-  <script type="module" src="js/auth-signup.js"></script>
+  <script type="module" src="/js/signup-with-documents.js?v=21"></script>
+  <script type="module" src="/js/auth-signup.js"></script>
   <script type="module">
     import { initSignupPage } from '/js/signup-with-documents.js';
     document.addEventListener('DOMContentLoaded', () => {
@@ -1126,173 +1208,8 @@
           try {
             // Import the signup utils
             const { ensureSignedIn, collectStepOneFields, collectStepTwoFields, collectStepThreeFields, collectStepFourFields } = await import('./js/signup-utils.js');
-            const { supabase, getAccountAndCompleteness } = await import('/js/supabase-client.js');
-            
-            // Ensure user is signed in
-            const user = await ensureSignedIn();
-            if (!user) {
-              console.log('[Stepper] User not signed in - showing sign-in modal');
-              return; // User will complete sign-in and click Next again
-            }
-
-            console.log('[Stepper] User signed in:', user.email);
-
-            // Collect and save step data
-            let stepData = {};
-            if (stepNumber === 1) {
-              stepData = collectStepOneFields();
-              // Save to businesses table
-              const { error } = await supabase.from('businesses').upsert({
-                owner_id: user.id,
-                name: stepData.name,
-                industry: stepData.category,
-                country: stepData.country,
-                city: stepData.city,
-                short_description: stepData.description,
-                whatsapp: stepData.whatsapp
-              }, { onConflict: 'owner_id' });
-              
-              if (error) {
-                console.error('[Stepper] Error saving step 1:', error);
-                showToast('Error saving business information: ' + error.message, 'error');
-                return;
-              }
-            }
-            // Add other steps as needed...
-
-            // Check completeness and determine next step
-            const { data: completenessData, error: completenessError } = await getAccountAndCompleteness();
-            if (completenessError) {
-              console.error('[Stepper] Error checking completeness:', completenessError);
-              showToast('Error checking progress: ' + completenessError.message, 'error');
-              return;
-            }
-
-            const nextStep = completenessData?.next_step;
-            console.log('[Stepper] Next step from completeness:', nextStep);
-
-            if (nextStep === 'done' || nextStep === 'dashboard') {
-              console.log('[Stepper] Signup complete - redirecting to dashboard');
-              window.location.assign('/owner.html');
-              return;
-            }
-
-          } catch (error) {
-            console.error('[Stepper] Error processing step:', error);
-            showToast('Error processing step: ' + error.message, 'error');
-            return;
-          }
-        }
-
-        console.log('[Stepper] Moving to next step');
-        showStep(stepNumber + 1);
-      }
-
-      // Handle back button click
-      function handleBackClick(event) {
-        event.preventDefault();
-        
-        const { number: stepNumber } = getCurrentStep();
-        const previousStep = Math.max(1, stepNumber - 1);
-        
-        console.log(`[Stepper] Back clicked - going from step ${stepNumber} to ${previousStep}`);
-        showStep(previousStep);
-      }
-
-      // Initialize event listeners
-      function initializeEventListeners() {
-        if (isInitialized) {
-          console.warn('[Stepper] Already initialized - skipping');
-          return;
-        }
-
-        // OLD BUTTON BINDING DISABLED - Using new validation system
-        // const nextButtons = $$(CONFIG.nextSelectors);
-        // nextButtons.forEach(button => {
-        //   if (button) {
-        //     button.type = 'button'; // Prevent form submission
-        //     button.addEventListener('click', handleNextClick);
-        //     console.log('[Stepper] Bound next button:', button.id || button.className);
-        //   }
-        // });
-
-        // Bind back buttons
-        const backButtons = $$(CONFIG.backSelectors);
-        backButtons.forEach(button => {
-          if (button) {
-            button.type = 'button'; // Prevent form submission
-            button.addEventListener('click', handleBackClick);
-            console.log('[Stepper] Bound back button:', button.id || button.className);
-          }
-        });
-
-        // Initialize step display
-        showStep(1);
-        
-        isInitialized = true;
-        console.log('[Stepper] Initialization complete');
-      }
-
-      // Initialize when DOM is ready
-      function initialize() {
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', initializeEventListeners);
-        } else {
-          initializeEventListeners();
-        }
-      }
-
-      // Start initialization
-      initialize();
-
-      // Debug helpers
-      window.__signupDebug = {
-        getCurrentStep: () => getCurrentStep().number,
-        showStep: (n) => showStep(n),
-        forceNext: () => handleNextClick(new Event('click')),
-        validateStep1: () => validateStep1(getCurrentStep().element),
-        validateStep2: () => validateStep2(getCurrentStep().element),
-        bypass: () => { window.SIGNUP_DEBUG_BYPASS = true; },
-        unbypass: () => { window.SIGNUP_DEBUG_BYPASS = false; }
-      };
-
-    })();
-  -->
-
-</body>
-</html>
-
-
-          return;
-        }
-
-        // Validate current step
-        let validationPassed = true;
-        
-        if (stepNumber === 1) {
-          validationPassed = validateStep1(currentElement);
-        } else if (stepNumber === 2) {
-          validationPassed = validateStep2(currentElement);
-        } else if (stepNumber === 3) {
-          validationPassed = validateStep3(currentElement);
-        } else if (stepNumber === 4) {
-          validationPassed = validateStep4(currentElement);
-        }
-
-        if (!validationPassed) {
-          console.log('[Stepper] Validation failed - staying on current step');
-          return;
-        }
-
-        console.log('[Stepper] Validation passed - processing step data');
-
-        // OLD VALIDATION SYSTEM COMPLETELY DISABLED - Using new per-step validation instead
-        // This entire block is disabled to prevent email prompts on Step 1
-        if (false) {
-          try {
-            // Import the signup utils
-            const { ensureSignedIn, collectStepOneFields, collectStepTwoFields, collectStepThreeFields, collectStepFourFields } = await import('./js/signup-utils.js');
-            const { supabase, getAccountAndCompleteness } = await import('/js/supabase-client.js');
+            // Supabase removed - using backend API
+            // const { supabase, getAccountAndCompleteness } = await import('/js/api.js');
             
             // Ensure user is signed in
             const user = await ensureSignedIn();
