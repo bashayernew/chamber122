@@ -2,6 +2,7 @@
 // Uses localStorage for now (can be upgraded to Netlify Functions later)
 
 import * as Storage from './communities-storage.js';
+import { getCurrentUser, isCurrentUserSuspended } from './auth-localstorage.js';
 
 /**
  * Get all communities with optional filters
@@ -94,6 +95,11 @@ export async function getCommunity(communityId) {
  */
 export async function createCommunity(communityData) {
   try {
+    // Check if user is suspended
+    if (isCurrentUserSuspended()) {
+      throw new Error('Your account is suspended. You cannot create communities.');
+    }
+    
     if (!communityData.name || !communityData.name.trim()) {
       throw new Error('Community name is required');
     }
@@ -147,6 +153,11 @@ export async function updateCommunityStatus(communityId, status, adminUserId) {
  */
 export async function joinCommunity(communityId, msmeId) {
   try {
+    // Check if user is suspended
+    if (isCurrentUserSuspended()) {
+      throw new Error('Your account is suspended. You cannot join communities.');
+    }
+    
     Storage.joinCommunity(communityId, msmeId);
     return {
       ok: true,

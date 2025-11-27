@@ -1,5 +1,5 @@
 // js/messaging.js - User-to-user messaging using localStorage only
-import { getCurrentUser, generateId } from './auth-localstorage.js';
+import { getCurrentUser, generateId, isCurrentUserSuspended } from './auth-localstorage.js';
 
 const STORAGE_KEY_MESSAGES = 'ch122_user_messages';
 const STORAGE_KEY_GROUPS = 'ch122_user_groups';
@@ -28,6 +28,11 @@ export async function sendMessage(toUserId, subject, body) {
   const user = getCurrentUser();
   if (!user) {
     throw new Error('You must be logged in to send messages');
+  }
+  
+  // Check if user is suspended
+  if (isCurrentUserSuspended()) {
+    throw new Error('Your account is suspended. You cannot send or receive messages.');
   }
 
   const messages = getAllMessages();
@@ -209,6 +214,11 @@ export async function createGroup(groupName, memberIds) {
   if (!user) {
     throw new Error('You must be logged in to create a group');
   }
+  
+  // Check if user is suspended
+  if (isCurrentUserSuspended()) {
+    throw new Error('Your account is suspended. You cannot create groups.');
+  }
 
   const groups = getAllGroups();
   
@@ -281,6 +291,11 @@ export async function sendGroupMessage(groupId, body) {
   const user = getCurrentUser();
   if (!user) {
     throw new Error('You must be logged in to send messages');
+  }
+  
+  // Check if user is suspended
+  if (isCurrentUserSuspended()) {
+    throw new Error('Your account is suspended. You cannot send or receive messages.');
   }
 
   const groups = getAllGroups();

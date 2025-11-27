@@ -255,6 +255,19 @@ export function isAdmin() {
   return user && user.role === 'admin';
 }
 
+// Check if user is suspended
+export function isSuspended(userId = null) {
+  const user = userId ? getAllUsers().find(u => u.id === userId) : getCurrentUser();
+  if (!user) return false;
+  const status = (user.status || 'pending').toLowerCase();
+  return status === 'suspended';
+}
+
+// Check if current user is suspended
+export function isCurrentUserSuspended() {
+  return isSuspended();
+}
+
 // Update user
 export function updateUser(userId, updates) {
   const users = getAllUsers();

@@ -105,6 +105,9 @@ async function loadAndDisplayBusiness(businessId = null) {
               if (userData && userData.status) {
                 status = userData.status.toLowerCase();
                 console.log('[owner] Using status from users array:', status);
+              } else if (userData) {
+                // Default to pending if no status
+                status = 'pending';
               }
             } catch (err) {
               console.debug('[owner] Could not check users array:', err);

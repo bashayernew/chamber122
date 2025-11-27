@@ -12,7 +12,8 @@ import {
   updateBusiness,
   generateId,
   isAdmin,
-  requireAuth
+  requireAuth,
+  isCurrentUserSuspended
 } from './auth-localstorage.js';
 
 // File to base64 conversion
@@ -268,6 +269,12 @@ export async function registerForEvent(eventId, registrationData) {
 // Create event (replaces /api/events/create)
 export async function createEvent(eventData) {
   const user = requireAuth();
+  
+  // Check if user is suspended
+  if (isCurrentUserSuspended()) {
+    throw new Error('Your account is suspended. You cannot create or publish events.');
+  }
+  
   try {
     // Get user's business to attach business info
     const business = getBusinessByOwner(user.id);
@@ -298,6 +305,12 @@ export async function createEvent(eventData) {
 // Update event status (draft/published)
 export async function updateEventStatus(eventId, status) {
   const user = requireAuth();
+  
+  // Check if user is suspended and trying to publish
+  if (isCurrentUserSuspended() && (status === 'published' || status === 'publish')) {
+    throw new Error('Your account is suspended. You cannot publish events.');
+  }
+  
   try {
     const stored = localStorage.getItem('chamber122_events');
     if (!stored) throw new Error('No events found');
@@ -404,6 +417,12 @@ export async function getPublicBulletins() {
 // Create bulletin (replaces /api/bulletins)
 export async function createBulletin(bulletinData) {
   const user = requireAuth();
+  
+  // Check if user is suspended
+  if (isCurrentUserSuspended()) {
+    throw new Error('Your account is suspended. You cannot create or publish bulletins.');
+  }
+  
   try {
     // Get user's business
     const { getBusinessByOwner } = await import('./auth-localstorage.js');
@@ -466,6 +485,12 @@ export async function getBulletinById(bulletinId) {
 // Update bulletin status (draft/published)
 export async function updateBulletinStatus(bulletinId, status) {
   const user = requireAuth();
+  
+  // Check if user is suspended and trying to publish
+  if (isCurrentUserSuspended() && (status === 'published' || status === 'publish')) {
+    throw new Error('Your account is suspended. You cannot publish bulletins.');
+  }
+  
   try {
     const stored = localStorage.getItem('chamber122_bulletins');
     if (!stored) throw new Error('No bulletins found');
