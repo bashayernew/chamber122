@@ -178,14 +178,26 @@
     <div id="bl-previous" class="tab-pane hidden"></div>
   </section>
 
-  <!-- Registrations Section (only visible to owner) -->
-  <section id="registrations-section" class="card mt-8 owner-only" style="display: none;">
-    <h2 class="section-title">Registrations</h2>
-    <p style="color: #AFAFAF; margin-bottom: 20px;">View registrations for your events and bulletins</p>
+  <!-- Registrations Section (visible to owner for their events, and to logged-in users for their own registrations) -->
+  <section id="registrations-section" class="card mt-8" style="display: none;">
+    <h2 class="section-title" id="registrations-title">Registrations</h2>
+    <p style="color: #AFAFAF; margin-bottom: 20px;" id="registrations-description">View registrations for your events and bulletins</p>
     <div id="registrations-container">
       <div style="text-align: center; padding: 40px; color: #AFAFAF;">
         <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 16px;"></i>
         <p>Loading registrations...</p>
+      </div>
+    </div>
+  </section>
+  
+  <!-- My Registrations Section (for logged-in users to see their own registrations) -->
+  <section id="my-registrations-section" class="card mt-8" style="display: none;">
+    <h2 class="section-title">My Registrations</h2>
+    <p style="color: #AFAFAF; margin-bottom: 20px;">Events and bulletins you've registered for</p>
+    <div id="my-registrations-container">
+      <div style="text-align: center; padding: 40px; color: #AFAFAF;">
+        <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 16px;"></i>
+        <p>Loading your registrations...</p>
       </div>
     </div>
   </section>
@@ -437,15 +449,19 @@
             console.log('[owner] Sample bulletin:', data.bulletins.ongoing[0]);
           }
 
-          // Load registrations if owner viewing own profile
+          // Load registrations if owner viewing own profile (for their events/bulletins)
       if (isOwnerViewing) {
         try {
           const { loadRegistrations, renderRegistrations } = await import('/assets/js/registrations.js');
           const registrationsSection = document.getElementById('registrations-section');
           const registrationsContainer = document.getElementById('registrations-container');
+          const registrationsTitle = document.getElementById('registrations-title');
+          const registrationsDescription = document.getElementById('registrations-description');
           
           if (registrationsSection && registrationsContainer) {
             registrationsSection.style.display = 'block';
+            if (registrationsTitle) registrationsTitle.textContent = 'Registrations';
+            if (registrationsDescription) registrationsDescription.textContent = 'View registrations for your events and bulletins';
             
             // Load and display registrations
             window.reloadRegistrations = async () => {
@@ -464,10 +480,55 @@
           console.warn('[owner] Could not load registrations:', err);
         }
       } else {
-        // Hide registrations section for non-owners
+        // Hide owner registrations section for non-owners
         const registrationsSection = document.getElementById('registrations-section');
         if (registrationsSection) {
           registrationsSection.style.display = 'none';
+        }
+      }
+      
+      // Load user's own registrations (for logged-in users)
+      if (user && user.id) {
+        try {
+          const { loadMyRegistrations, renderMyRegistrations } = await import('/assets/js/my-registrations.js');
+          const myRegistrationsSection = document.getElementById('my-registrations-section');
+          const myRegistrationsContainer = document.getElementById('my-registrations-container');
+          
+          if (myRegistrationsSection && myRegistrationsContainer) {
+            myRegistrationsSection.style.display = 'block';
+            
+            // Load and display user's registrations
+            window.reloadMyRegistrations = async () => {
+              try {
+                const regData = await loadMyRegistrations();
+                renderMyRegistrations(myRegistrationsContainer, regData.all);
+              } catch (err) {
+                console.error('[owner] Error loading my registrations:', err);
+                myRegistrationsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #AFAFAF;">Error loading your registrations</div>';
+              }
+            };
+            
+            await window.reloadMyRegistrations();
+            
+            // Listen for registration completion events
+            window.addEventListener('registration-completed', async (e) => {
+              console.log('[owner] Registration completed, reloading my registrations');
+              await window.reloadMyRegistrations();
+              
+              // Scroll to my registrations section
+              setTimeout(() => {
+                myRegistrationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 100);
+            });
+          }
+        } catch (err) {
+          console.warn('[owner] Could not load my registrations:', err);
+        }
+      } else {
+        // Hide my registrations section if not logged in
+        const myRegistrationsSection = document.getElementById('my-registrations-section');
+        if (myRegistrationsSection) {
+          myRegistrationsSection.style.display = 'none';
         }
       }
 

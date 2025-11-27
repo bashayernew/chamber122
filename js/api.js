@@ -183,18 +183,32 @@ export async function getEventById(eventId) {
 // Register for event
 export async function registerForEvent(eventId, registrationData) {
   try {
+    // Get current user ID if logged in
+    let userId = null;
+    try {
+      const user = getCurrentUserFromAuth();
+      if (user) userId = user.id;
+    } catch (e) {
+      // User not logged in, that's okay
+    }
+    
     const stored = localStorage.getItem('chamber122_event_registrations');
     const registrations = stored ? JSON.parse(stored) : [];
     
     const registration = {
       id: generateId(),
       event_id: eventId,
+      user_id: userId, // Save user ID if logged in
       ...registrationData,
       created_at: new Date().toISOString()
     };
     
     registrations.push(registration);
     localStorage.setItem('chamber122_event_registrations', JSON.stringify(registrations));
+    
+    // Dispatch event to update UI
+    window.dispatchEvent(new CustomEvent('registration-completed', { detail: { type: 'event', registration } }));
+    
     return registration;
   } catch (e) {
     throw new Error('Failed to register for event: ' + e.message);
@@ -339,18 +353,32 @@ export async function getBulletinById(bulletinId) {
 // Register for bulletin
 export async function registerForBulletin(bulletinId, registrationData) {
   try {
+    // Get current user ID if logged in
+    let userId = null;
+    try {
+      const user = getCurrentUserFromAuth();
+      if (user) userId = user.id;
+    } catch (e) {
+      // User not logged in, that's okay
+    }
+    
     const stored = localStorage.getItem('chamber122_bulletin_registrations');
     const registrations = stored ? JSON.parse(stored) : [];
     
     const registration = {
       id: generateId(),
       bulletin_id: bulletinId,
+      user_id: userId, // Save user ID if logged in
       ...registrationData,
       created_at: new Date().toISOString()
     };
     
     registrations.push(registration);
     localStorage.setItem('chamber122_bulletin_registrations', JSON.stringify(registrations));
+    
+    // Dispatch event to update UI
+    window.dispatchEvent(new CustomEvent('registration-completed', { detail: { type: 'bulletin', registration } }));
+    
     return { registration: registration };
   } catch (e) {
     throw new Error('Failed to register: ' + e.message);
