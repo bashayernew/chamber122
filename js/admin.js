@@ -256,8 +256,27 @@ const adminDashboard = {
         (d.user_id === user.id || d.userId === user.id)
       );
       
-      // Get documents from signup data
-      const signupData = JSON.parse(localStorage.getItem(`chamber122_signup_data_${user.id}`) || localStorage.getItem('chamber122_signup_data') || '{}');
+      // Get documents from signup data - try multiple storage keys
+      let signupData = {};
+      try {
+        const signupKey1 = localStorage.getItem(`chamber122_signup_data_${user.id}`);
+        const signupKey2 = localStorage.getItem('chamber122_signup_data');
+        const signupKey3 = localStorage.getItem(`signup_data_${user.id}`);
+        const signupKey4 = localStorage.getItem('signup_data');
+        
+        if (signupKey1) signupData = JSON.parse(signupKey1);
+        else if (signupKey2) signupData = JSON.parse(signupKey2);
+        else if (signupKey3) signupData = JSON.parse(signupKey3);
+        else if (signupKey4) signupData = JSON.parse(signupKey4);
+        
+        // Also check if documents are stored directly on the user object
+        if (user.documents) {
+          signupData.documents = user.documents;
+        }
+      } catch (e) {
+        console.warn('[admin] Error parsing signup data:', e);
+      }
+      
       const signupDocs = signupData.documents || {};
       
       // Combine all document types
@@ -1177,10 +1196,16 @@ const adminDashboard = {
         const senderName = senderBusiness ? (senderBusiness.name || senderBusiness.business_name) : 
                           (senderUser ? (senderUser.name || senderUser.email) : msg.msme_name || 'Unknown');
         const date = msg.created_at ? new Date(msg.created_at).toLocaleString() : 'N/A';
-        const isImage = msg.image_url || (msg.body && msg.body.startsWith('data:image'));
-        const isLocation = msg.location;
-        const imageUrl = msg.image_url || (msg.body && msg.body.startsWith('data:image') ? msg.body : null);
-        const textBody = isImage && imageUrl === msg.body ? '' : msg.body;
+        
+        // Check for image - check both image_url field and if body is a base64 image
+        const hasImageUrl = msg.image_url && msg.image_url.trim();
+        const isBodyImage = msg.body && msg.body.trim().startsWith('data:image');
+        const isImage = hasImageUrl || isBodyImage;
+        const imageUrl = hasImageUrl ? msg.image_url : (isBodyImage ? msg.body : null);
+        // Check for location
+        const isLocation = msg.location && typeof msg.location === 'object' && msg.location.lat && msg.location.lng;
+        // Text body - exclude if it's just an image URL
+        const textBody = (isImage && imageUrl === msg.body) ? '' : (msg.body || '');
         
         return `
           <div style="padding: 16px; border-bottom: 1px solid #2a2a2a;">
@@ -1189,18 +1214,18 @@ const adminDashboard = {
               <span style="color: #6b7280; font-size: 12px;">${date}</span>
             </div>
             ${imageUrl ? 
-              `<img src="${this.escapeHtml(imageUrl)}" style="max-width: 300px; max-height: 300px; border-radius: 8px; margin-bottom: 8px; display: block; cursor: pointer;" onclick="window.open('${this.escapeHtml(imageUrl)}', '_blank')" />` :
+              `<img src="${this.escapeHtml(imageUrl)}" style="max-width: 100%; max-width: 300px; max-height: 300px; border-radius: 8px; margin-bottom: ${textBody ? '8px' : '0'}; display: block; cursor: pointer; object-fit: contain;" onclick="window.open('${this.escapeHtml(imageUrl)}', '_blank')" />` :
               ''
             }
             ${isLocation ? 
-              `<div style="margin-bottom: 8px;">
+              `<div style="margin-bottom: ${textBody ? '8px' : '0'};">
                 <a href="https://www.google.com/maps?q=${this.escapeHtml(msg.location.lat)},${this.escapeHtml(msg.location.lng)}" target="_blank" style="color: #0095f6; text-decoration: none; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(255,255,255,0.1); border-radius: 6px;">
                   <i class="fas fa-map-marker-alt"></i> <span>View Location on Map</span>
                 </a>
               </div>` :
               ''
             }
-            ${textBody ? `<div style="color: #a8a8a8; white-space: pre-wrap;">${this.escapeHtml(textBody)}</div>` : ''}
+            ${textBody ? `<div style="color: #a8a8a8; white-space: pre-wrap; word-break: break-word; line-height: 1.6;">${this.escapeHtml(textBody)}</div>` : ''}
           </div>
         `;
       }).join('');
@@ -1209,15 +1234,44 @@ const adminDashboard = {
         messageHtml = '<div style="text-align: center; padding: 40px; color: #6b7280;">No messages in this community yet.</div>';
       }
       
-      const communityData = await CommunitiesAPI.getCommunity(communityId);
-      const community = communityData.community;
+      // Get community name - try multiple ways
+      let communityName = 'Community';
+      try {
+        const communityData = await CommunitiesAPI.getCommunity(communityId);
+        if (communityData && communityData.community) {
+          communityName = communityData.community.name || 'Community';
+        } else if (communityData && communityData.name) {
+          communityName = communityData.name;
+        } else {
+          // Try getting from localStorage directly
+          const { getAllCommunities } = await import('./communities-storage.js');
+          const allCommunities = getAllCommunities();
+          const comm = allCommunities.find(c => c.id === communityId);
+          if (comm) {
+            communityName = comm.name || 'Community';
+          }
+        }
+      } catch (e) {
+        console.warn('[admin] Could not get community name:', e);
+        // Try getting from localStorage directly
+        try {
+          const { getAllCommunities } = await import('./communities-storage.js');
+          const allCommunities = getAllCommunities();
+          const comm = allCommunities.find(c => c.id === communityId);
+          if (comm) {
+            communityName = comm.name || 'Community';
+          }
+        } catch (e2) {
+          console.warn('[admin] Could not get community from storage:', e2);
+        }
+      }
       
       const modal = document.createElement('div');
       modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;';
       modal.innerHTML = `
         <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; max-width: 800px; width: 100%; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column;">
           <div style="padding: 24px; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="color: #fff; margin: 0;">Messages in "${this.escapeHtml(community.name)}"</h2>
+            <h2 style="color: #fff; margin: 0;">Messages in "${this.escapeHtml(communityName)}"</h2>
             <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="background: #2a2a2a; color: #fff; border: none; border-radius: 8px; width: 32px; height: 32px; cursor: pointer; font-size: 18px;">×</button>
           </div>
           <div style="overflow-y: auto; padding: 20px; flex: 1;">
