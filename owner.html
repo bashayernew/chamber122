@@ -380,28 +380,11 @@
         messageBtn.onclick = async () => {
           try {
             // Get business owner ID from the business we're viewing
-            // Get business from localStorage
             const { getBusinessById: getBusinessByIdFromAuth } = await import('/js/auth-localstorage.js');
-            const { sendMessage } = await import('/js/messaging.js');
-            const { getAllUsers } = await import('/js/auth-localstorage.js');
             const business = getBusinessByIdFromAuth(ownerId);
             if (business && business.owner_id) {
               // Show message modal
-              const subject = prompt('Enter message subject:', `Message about ${business.name || business.business_name || 'your business'}`);
-              if (subject) {
-                const body = prompt('Enter your message:');
-                if (body) {
-                  try {
-                    await sendMessage(business.owner_id, subject, body);
-                    alert('Message sent successfully!');
-                    // Optionally redirect to inbox
-                    window.location.href = '/inbox.html';
-                  } catch (err) {
-                    console.error('[owner] Error sending message:', err);
-                    alert('Error sending message: ' + (err.message || 'Please try again'));
-                  }
-                }
-              }
+              openMessageModal(business);
             } else {
               alert('Unable to start conversation. Please try again.');
             }
@@ -412,6 +395,108 @@
         };
       } else if (messageBtn) {
         messageBtn.style.display = 'none';
+      }
+      
+      // Message modal function
+      function openMessageModal(business) {
+        // Create modal if it doesn't exist
+        let modal = document.getElementById('message-modal');
+        if (!modal) {
+          modal = document.createElement('div');
+          modal.id = 'message-modal';
+          modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 10000;';
+          modal.innerHTML = `
+            <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; width: 90%; max-width: 600px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+              <div style="padding: 24px; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+                <h2 style="margin: 0; color: #fff; font-size: 20px; font-weight: 600;">Send Message</h2>
+                <button id="close-message-modal" style="background: none; border: none; color: #AFAFAF; font-size: 24px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.background='#2a2a2a'; this.style.color='#fff'" onmouseout="this.style.background='none'; this.style.color='#AFAFAF'">&times;</button>
+              </div>
+              <div style="padding: 24px; overflow-y: auto; flex: 1;">
+                <div style="margin-bottom: 20px;">
+                  <label style="display: block; color: #AFAFAF; font-size: 14px; font-weight: 500; margin-bottom: 8px;">To</label>
+                  <div style="background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 8px; padding: 12px; color: #fff; font-size: 15px;">
+                    ${business.name || business.business_name || 'Business Owner'}
+                  </div>
+                </div>
+                <div style="margin-bottom: 20px;">
+                  <label for="message-subject" style="display: block; color: #AFAFAF; font-size: 14px; font-weight: 500; margin-bottom: 8px;">Subject *</label>
+                  <input type="text" id="message-subject" placeholder="Enter message subject" style="width: 100%; padding: 12px; background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 8px; color: #fff; font-size: 15px; box-sizing: border-box;" value="Message about ${business.name || business.business_name || 'your business'}">
+                </div>
+                <div style="margin-bottom: 24px;">
+                  <label for="message-body" style="display: block; color: #AFAFAF; font-size: 14px; font-weight: 500; margin-bottom: 8px;">Message *</label>
+                  <textarea id="message-body" placeholder="Enter your message..." rows="6" style="width: 100%; padding: 12px; background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 8px; color: #fff; font-size: 15px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
+                </div>
+              </div>
+              <div style="padding: 20px; border-top: 1px solid #2a2a2a; display: flex; gap: 12px; justify-content: flex-end; flex-shrink: 0;">
+                <button id="cancel-message" style="padding: 10px 20px; background: #2a2a2a; border: 1px solid #3a3a3a; color: #fff; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#333'; this.style.borderColor='#444'" onmouseout="this.style.background='#2a2a2a'; this.style.borderColor='#3a3a3a'">Cancel</button>
+                <button id="send-message" style="padding: 10px 24px; background: linear-gradient(135deg, #f2c64b, #f59e0b); color: #111; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.opacity='0.9'; this.style.transform='translateY(-1px)'" onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)'">
+                  <i class="fas fa-paper-plane" style="margin-right: 6px;"></i> Send Message
+                </button>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(modal);
+          
+          // Close modal handlers
+          document.getElementById('close-message-modal').onclick = () => closeMessageModal();
+          document.getElementById('cancel-message').onclick = () => closeMessageModal();
+          modal.onclick = (e) => {
+            if (e.target === modal) closeMessageModal();
+          };
+          
+          // Send message handler
+          document.getElementById('send-message').onclick = async () => {
+            const subject = document.getElementById('message-subject').value.trim();
+            const body = document.getElementById('message-body').value.trim();
+            
+            if (!subject || !body) {
+              alert('Please fill in both subject and message fields.');
+              return;
+            }
+            
+            try {
+              const sendBtn = document.getElementById('send-message');
+              sendBtn.disabled = true;
+              sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 6px;"></i> Sending...';
+              
+              const { sendMessage } = await import('/js/messaging.js');
+              await sendMessage(business.owner_id, subject, body);
+              
+              closeMessageModal();
+              alert('Message sent successfully!');
+              window.location.href = '/inbox.html';
+            } catch (err) {
+              console.error('[owner] Error sending message:', err);
+              alert('Error sending message: ' + (err.message || 'Please try again'));
+              const sendBtn = document.getElementById('send-message');
+              sendBtn.disabled = false;
+              sendBtn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right: 6px;"></i> Send Message';
+            }
+          };
+        }
+        
+        // Show modal
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        
+        // Focus on subject input
+        setTimeout(() => {
+          const subjectInput = document.getElementById('message-subject');
+          if (subjectInput) subjectInput.focus();
+        }, 100);
+      }
+      
+      function closeMessageModal() {
+        const modal = document.getElementById('message-modal');
+        if (modal) {
+          modal.style.display = 'none';
+          document.body.style.overflow = '';
+          // Clear form
+          const subject = document.getElementById('message-subject');
+          const body = document.getElementById('message-body');
+          if (subject) subject.value = '';
+          if (body) body.value = '';
+        }
       }
 
       // Load events and bulletins - pass isOwner flag to show drafts if viewing own profile
