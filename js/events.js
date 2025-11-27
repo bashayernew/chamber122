@@ -504,20 +504,8 @@ window.showEventDetails = async function(eventId) {
           modal.style.display = 'none';
           
           // Always redirect to owner page to show registrations
-          if (window.location.pathname.includes('owner.html')) {
-            // Already on owner page - reload and scroll to registrations
-            setTimeout(() => {
-              // Reload the page to ensure registrations section is visible
-              window.location.reload();
-            }, 500);
-          } else {
-            // Not on owner page - redirect to show registrations
-            if (confirm('Registration successful! View your registrations on your profile?')) {
-              window.location.href = '/owner.html#my-registrations';
-            } else {
-              window.location.href = '/owner.html#my-registrations';
-            }
-          }
+          // Use hash to scroll to registrations section
+          window.location.href = '/owner.html#my-registrations';
         } catch (error) {
           console.error('[events] Registration error:', error);
           alert('Failed to register: ' + (error.message || 'Unknown error'));
