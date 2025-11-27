@@ -123,18 +123,9 @@ window.showBulletinDetails = async function(bulletinId) {
           registerForm.reset();
           
           // Always redirect to owner page to show registrations
+          // Use hash to scroll to registrations section
           setTimeout(() => {
-            if (window.location.pathname.includes('owner.html')) {
-              // Already on owner page - reload to show registrations
-              window.location.reload();
-            } else {
-              // Not on owner page - redirect to show registrations
-              if (confirm('Registration successful! View your registrations on your profile?')) {
-                window.location.href = '/owner.html#my-registrations';
-              } else {
-                window.location.href = '/owner.html#my-registrations';
-              }
-            }
+            window.location.href = '/owner.html#my-registrations';
           }, 2000);
         } catch (error) {
           registerMessage.style.display = 'block';

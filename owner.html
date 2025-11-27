@@ -190,7 +190,7 @@
     </div>
   </section>
   
-  <!-- My Registrations Section (for logged-in users to see their own registrations) -->
+  <!-- My Registrations Section (for all users to see their own registrations) -->
   <section id="my-registrations-section" class="card mt-8" style="display: none;">
     <h2 class="section-title">My Registrations</h2>
     <p style="color: #AFAFAF; margin-bottom: 20px;">Events and bulletins you've registered for</p>
@@ -488,63 +488,61 @@
       }
       
       // Load user's own registrations (for logged-in users)
-      if (user && user.id) {
-        try {
-          const { loadMyRegistrations, renderMyRegistrations } = await import('/assets/js/my-registrations.js');
-          const myRegistrationsSection = document.getElementById('my-registrations-section');
-          const myRegistrationsContainer = document.getElementById('my-registrations-container');
+      // Always try to load registrations - even if not logged in, we might have registrations by email
+      try {
+        const { loadMyRegistrations, renderMyRegistrations } = await import('/assets/js/my-registrations.js');
+        const myRegistrationsSection = document.getElementById('my-registrations-section');
+        const myRegistrationsContainer = document.getElementById('my-registrations-container');
+        
+        if (myRegistrationsSection && myRegistrationsContainer) {
+          // Always show the section (will show empty if no user)
+          myRegistrationsSection.style.display = 'block';
           
-          if (myRegistrationsSection && myRegistrationsContainer) {
-            // Always show the section for logged-in users
-            myRegistrationsSection.style.display = 'block';
-            
-            // Load and display user's registrations
-            window.reloadMyRegistrations = async () => {
-              try {
-                const regData = await loadMyRegistrations();
-                console.log('[owner] Loaded registrations:', regData.all.length, 'total');
-                renderMyRegistrations(myRegistrationsContainer, regData.all);
-                
-                // If hash is set to my-registrations, scroll to it
-                if (window.location.hash === '#my-registrations') {
-                  setTimeout(() => {
-                    myRegistrationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }, 300);
-                }
-              } catch (err) {
-                console.error('[owner] Error loading my registrations:', err);
-                myRegistrationsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #AFAFAF;">Error loading your registrations</div>';
+          // Load and display user's registrations
+          window.reloadMyRegistrations = async () => {
+            try {
+              const regData = await loadMyRegistrations();
+              console.log('[owner] Loaded registrations:', regData.all.length, 'total');
+              renderMyRegistrations(myRegistrationsContainer, regData.all);
+              
+              // If hash is set to my-registrations, scroll to it
+              if (window.location.hash === '#my-registrations') {
+                setTimeout(() => {
+                  myRegistrationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 300);
               }
-            };
-            
+            } catch (err) {
+              console.error('[owner] Error loading my registrations:', err);
+              myRegistrationsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #AFAFAF;">Error loading your registrations. Please log in to view your registrations.</div>';
+            }
+          };
+          
+          await window.reloadMyRegistrations();
+          
+          // Listen for registration completion events
+          window.addEventListener('registration-completed', async (e) => {
+            console.log('[owner] Registration completed, reloading my registrations');
             await window.reloadMyRegistrations();
             
-            // Listen for registration completion events
-            window.addEventListener('registration-completed', async (e) => {
-              console.log('[owner] Registration completed, reloading my registrations');
-              await window.reloadMyRegistrations();
-              
-              // Scroll to my registrations section
-              setTimeout(() => {
-                myRegistrationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }, 100);
-            });
-            
-            // Check if hash is set to scroll to registrations
-            if (window.location.hash === '#my-registrations') {
-              setTimeout(() => {
-                myRegistrationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }, 500);
-            }
+            // Scroll to my registrations section
+            setTimeout(() => {
+              myRegistrationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+          });
+          
+          // Check if hash is set to scroll to registrations
+          if (window.location.hash === '#my-registrations') {
+            setTimeout(() => {
+              myRegistrationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 500);
           }
-        } catch (err) {
-          console.warn('[owner] Could not load my registrations:', err);
         }
-      } else {
-        // Hide my registrations section if not logged in
+      } catch (err) {
+        console.warn('[owner] Could not load my registrations:', err);
+        // Still show the section even if loading fails
         const myRegistrationsSection = document.getElementById('my-registrations-section');
         if (myRegistrationsSection) {
-          myRegistrationsSection.style.display = 'none';
+          myRegistrationsSection.style.display = 'block';
         }
       }
 
