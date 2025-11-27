@@ -1,10 +1,32 @@
 // js/api.js - Backend API helper (replaces Supabase calls)
 // Support both local development and production backend
-// Set VITE_API_URL or REACT_APP_API_URL environment variable in Vercel for production
-const API_BASE = (typeof window !== 'undefined' && window.API_BASE_URL) || 
-                 (typeof process !== 'undefined' && process.env?.VITE_API_URL) ||
-                 (typeof process !== 'undefined' && process.env?.REACT_APP_API_URL) ||
-                 '/api'; // Default to relative path (same domain)
+// To configure backend URL:
+// 1. Add <meta name="api-base-url" content="https://your-backend-url.com"> in HTML head
+// 2. Or set window.API_BASE_URL = 'https://your-backend-url.com' before this script loads
+// 3. Or set VITE_API_URL environment variable in Vercel (for client-side access)
+
+let API_BASE = '/api'; // Default to relative path (same domain)
+
+// Check for meta tag
+if (typeof document !== 'undefined') {
+  const metaTag = document.querySelector('meta[name="api-base-url"]');
+  if (metaTag && metaTag.content) {
+    API_BASE = metaTag.content;
+    console.log('[api] Using API base from meta tag:', API_BASE);
+  }
+}
+
+// Check for global variable
+if (typeof window !== 'undefined' && window.API_BASE_URL) {
+  API_BASE = window.API_BASE_URL;
+  console.log('[api] Using API base from window.API_BASE_URL:', API_BASE);
+}
+
+// Ensure API_BASE ends with /api if it's a full URL
+if (API_BASE.startsWith('http') && !API_BASE.endsWith('/api')) {
+  API_BASE = API_BASE.replace(/\/+$/, '') + '/api';
+}
+
 const TOKEN_KEY = 'session_token';
 
 // Token management
