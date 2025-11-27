@@ -475,11 +475,15 @@ async function preloadEdit() {
         // Convert to string and handle null/undefined - use safeTrim
         if (value != null && value !== '') {
           const trimmedValue = safeTrim(value);
-          // Don't save placeholder text as actual value
-          if (trimmedValue && !trimmedValue.includes('Describe what you offer') && !trimmedValue.includes('Share your journey')) {
+          // Don't load placeholder text or invalid label text
+          const invalidTexts = ['Describe what you offer', 'Share your journey', 'Business Description', 'Tell us about your business'];
+          const isInvalid = invalidTexts.some(text => trimmedValue.includes(text));
+          if (trimmedValue && !isInvalid) {
             el.value = trimmedValue;
+            console.log(`[owner-form] Loaded ${col}:`, trimmedValue.substring(0, 50) + (trimmedValue.length > 50 ? '...' : ''));
           } else {
             el.value = '';
+            console.log(`[owner-form] Skipped invalid ${col} value (contains placeholder/label text)`);
           }
         } else {
           // Set empty string if field is null/undefined to clear the field
