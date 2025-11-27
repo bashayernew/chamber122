@@ -1104,24 +1104,28 @@ const adminDashboard = {
 window.adminDashboard = adminDashboard;
 
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', () => {
-  adminDashboard.init();
-  
-  // Listen for new user signups
-  window.addEventListener('userSignup', (event) => {
-    console.log('[admin] New user signup detected:', event.detail);
-    // Reload users if we're on the users section
-    if (adminDashboard.currentSection === 'users') {
-      setTimeout(() => {
-        adminDashboard.loadUsers();
-      }, 500);
-    }
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    adminDashboard.init();
   });
-  
-  // Periodically refresh users (every 3 seconds) to catch new signups
-  setInterval(() => {
-    if (adminDashboard.currentSection === 'users') {
+} else {
+  adminDashboard.init();
+}
+
+// Listen for new user signups
+window.addEventListener('userSignup', (event) => {
+  console.log('[admin] New user signup detected:', event.detail);
+  // Reload users if we're on the users section
+  if (adminDashboard.currentSection === 'users') {
+    setTimeout(() => {
       adminDashboard.loadUsers();
-    }
-  }, 3000);
+    }, 500);
+  }
 });
+
+// Periodically refresh users (every 2 seconds) to catch new signups
+setInterval(() => {
+  if (adminDashboard && adminDashboard.currentSection === 'users') {
+    adminDashboard.loadUsers();
+  }
+}, 2000);

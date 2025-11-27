@@ -474,9 +474,10 @@ export async function onCreateAccount(emailSelector, passwordSelector) {
   }
   
   try {
-    // Signup with backend API (no email confirmation needed)
-    const { requiresConfirm, user } = await signupWithEmailPassword(email, password);
-    console.log('[signup] User signed up:', user?.id);
+    // Use localStorage-based signup (no backend, no Supabase)
+    const { signup } = await import('./auth-localstorage.js');
+    const user = signup(email, password, {});
+    console.log('[signup] User signed up (localStorage):', user.id);
     
     // User is immediately signed in, proceed to complete signup
     return { requiresConfirm: false, user };

@@ -177,9 +177,24 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('[auth-signup] Could not store signup data:', err);
       }
       
-      // Also save documents to admin system
+      // Also save user data and documents to admin system
       try {
-        const { interceptSignup } = await import('./signup-to-admin.js');
+        const { saveSignupToAdmin, saveDocumentsToAdmin } = await import('./signup-to-admin.js');
+        
+        // Save user to admin system
+        const savedUser = saveSignupToAdmin({
+          id: user.id,
+          email: user.email,
+          name: fields.business_name || fields.name || user.email.split('@')[0] || '',
+          phone: fields.phone || fields.whatsapp || '',
+          business_name: fields.business_name || fields.name || '',
+          industry: fields.industry || fields.category || '',
+          city: fields.city || '',
+          country: fields.country || 'Kuwait',
+          business_id: (business && business.id) || null,
+          created_at: new Date().toISOString()
+        });
+        console.log('[auth-signup] ✅ User saved to admin system:', savedUser && savedUser.id ? savedUser.id : 'unknown');
         
         // Prepare documents with file references for admin system
         const adminDocuments = {};
@@ -189,24 +204,18 @@ document.addEventListener('DOMContentLoaded', () => {
             adminDocuments[docType] = {
               file: doc.file || null,
               name: (doc.file && doc.file.name) || doc.name || null,
-              url: doc.url || doc.signedUrl || doc.publicUrl || null
+              url: doc.url || doc.signedUrl || doc.publicUrl || doc.base64 || null,
+              base64: doc.base64 || null
             };
           }
         }
         
-        const savedUser = interceptSignup({
-          id: user.id,
-          email: user.email,
-          name: fields.business_name || fields.name || '',
-          phone: fields.phone || fields.whatsapp || '',
-          business_name: fields.business_name || (business && business.name) || '',
-          industry: fields.industry || fields.category || '',
-          city: fields.city || '',
-          country: fields.country || 'Kuwait',
-          business_id: (business && business.id) || null,
-          created_at: new Date().toISOString()
-        }, adminDocuments);
-        console.log('[auth-signup] ✅ Saved to admin system:', savedUser && savedUser.id ? savedUser.id : 'unknown');
+        // Save documents to admin system
+        if (Object.keys(adminDocuments).length > 0) {
+          const businessId = (business && business.id) || user.id;
+          saveDocumentsToAdmin(user.id, businessId, adminDocuments);
+          console.log('[auth-signup] ✅ Documents saved to admin system');
+        }
       } catch (adminError) {
         console.error('[auth-signup] Could not save to admin system:', adminError);
         // Don't fail signup if admin save fails
