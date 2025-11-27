@@ -1238,9 +1238,8 @@ const adminDashboard = {
       let communityName = 'Community';
       try {
         const communityData = await CommunitiesAPI.getCommunity(communityId);
-        if (communityData && communityData.community) {
-          communityName = communityData.community.name || 'Community';
-        } else if (communityData && communityData.name) {
+        // getCommunity returns the community directly, not wrapped
+        if (communityData && communityData.name) {
           communityName = communityData.name;
         } else {
           // Try getting from localStorage directly
