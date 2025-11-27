@@ -317,6 +317,8 @@
     import '/assets/js/registration-modal.js';
     import '/assets/js/refresh-displays.js';
     import { getCurrentUser } from '/js/api.js';
+    // Load events.js to make showEventDetails available globally
+    import '/js/events.js';
 
     const eC = document.getElementById('upcoming-events-grid');
     const bG = document.getElementById('bulletins-grid');
