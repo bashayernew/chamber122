@@ -398,7 +398,7 @@ const adminDashboard = {
                             `<button onclick="adminDashboard.viewDocumentFromCache('${user.id}', '${safeDocType}', '${docId}')" style="color: #3b82f6; background: none; border: none; cursor: pointer; font-weight: 600; padding: 4px 8px;">View</button>` :
                             `<button onclick="adminDashboard.viewDocument('${user.id}', '${safeDocType}', ${JSON.stringify(docUrl)})" style="color: #3b82f6; background: none; border: none; cursor: pointer; font-weight: 600; padding: 4px 8px;">View</button>`
                           ) : 
-                          '<span style="color: #6b7280; font-size: 12px;">Pending</span>'
+                          `<button onclick="adminDashboard.tryViewDocument('${user.id}', '${safeDocType}', '${docId}')" style="color: #3b82f6; background: #e0f2fe; border: 1px solid #3b82f6; border-radius: 6px; cursor: pointer; font-weight: 600; padding: 4px 12px; font-size: 12px;">Try View</button>`
                         }
                         <button onclick="adminDashboard.reportDocument('${user.id}', '${user.email}', '${safeDocType}')" style="background: #f59e0b; color: #fff; border: none; border-radius: 6px; padding: 4px 12px; cursor: pointer; font-weight: 600; font-size: 12px;">Report Issue</button>
                       </div>
@@ -1666,6 +1666,76 @@ const adminDashboard = {
     }
     const docUrl = window.adminDocCache[docDataId];
     this.showDocumentModal(docType, docUrl);
+  },
+  
+  async tryViewDocument(userId, docType, docDataId) {
+    // Try to find the document from multiple sources
+    console.log('[admin] Attempting to view document:', { userId, docType, docDataId });
+    
+    // 1. Check cache first
+    if (window.adminDocCache && window.adminDocCache[docDataId]) {
+      this.showDocumentModal(docType, window.adminDocCache[docDataId]);
+      return;
+    }
+    
+    // 2. Check allDocuments from localStorage
+    const allDocuments = JSON.parse(localStorage.getItem('chamber122_documents') || '[]');
+    const doc = allDocuments.find(d => 
+      (d.user_id === userId || d.userId === userId) && 
+      (d.kind === docType || d.type === docType || d.docType === docType)
+    );
+    
+    if (doc) {
+      const docUrl = doc.base64 || doc.file_url || doc.url || doc.public_url || doc.fileUrl || doc.signedUrl || '';
+      if (docUrl && docUrl !== 'undefined' && docUrl !== 'null' && !docUrl.startsWith('pending_')) {
+        this.showDocumentModal(docType, docUrl);
+        return;
+      }
+    }
+    
+    // 3. Check signup data
+    let signupData = {};
+    try {
+      const signupKey1 = localStorage.getItem(`chamber122_signup_data_${userId}`);
+      const signupKey2 = localStorage.getItem('chamber122_signup_data');
+      if (signupKey1) signupData = JSON.parse(signupKey1);
+      else if (signupKey2) signupData = JSON.parse(signupKey2);
+      
+      if (signupData.documents && signupData.documents[docType]) {
+        const signupDoc = signupData.documents[docType];
+        const docUrl = signupDoc.base64 || signupDoc.url || signupDoc.file_url || signupDoc.signedUrl || '';
+        if (docUrl && docUrl !== 'undefined' && docUrl !== 'null' && !docUrl.startsWith('pending_')) {
+          this.showDocumentModal(docType, docUrl);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('[admin] Error reading signup data:', e);
+    }
+    
+    // 4. Check user object directly
+    const { getAllUsers } = await import('./auth-localstorage.js');
+    const users = getAllUsers();
+    const user = users.find(u => u.id === userId);
+    if (user && user.documents && Array.isArray(user.documents)) {
+      const userDoc = user.documents.find(d => (d.kind === docType || d.type === docType || d.docType === docType));
+      if (userDoc) {
+        const docUrl = userDoc.base64 || userDoc.file_url || userDoc.url || userDoc.public_url || userDoc.fileUrl || userDoc.signedUrl || '';
+        if (docUrl && docUrl !== 'undefined' && docUrl !== 'null' && !docUrl.startsWith('pending_')) {
+          this.showDocumentModal(docType, docUrl);
+          return;
+        }
+      }
+    }
+    
+    // If we get here, document wasn't found
+    alert('Document not found. The document may not have been uploaded yet, or it may be stored in a format that cannot be displayed. Please check the console for more details.');
+    console.log('[admin] Document search failed. Checked:', {
+      cache: !!window.adminDocCache,
+      allDocuments: allDocuments.length,
+      signupData: Object.keys(signupData).length,
+      userDocuments: user && user.documents ? user.documents.length : 0
+    });
   },
   
   showDocumentModal(docType, docUrl) {
