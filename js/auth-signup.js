@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Save documents to admin system
         if (Object.keys(adminDocuments).length > 0) {
           const businessId = (business && business.id) || user.id;
-          saveDocumentsToAdmin(user.id, businessId, adminDocuments);
+          await saveDocumentsToAdmin(user.id, businessId, adminDocuments);
           console.log('[auth-signup] ✅ Documents saved to admin system');
         }
       } catch (adminError) {

@@ -1747,10 +1747,27 @@ const adminDashboard = {
     // Ensure docUrl is a string and handle different formats
     let urlString = String(docUrl || '').trim();
     
-    // If it's a blob URL or invalid file path, try to get the actual data
-    if (urlString.startsWith('blob:') || (urlString.startsWith('/') && !urlString.startsWith('//'))) {
-      console.warn('[admin] Invalid document URL format:', urlString);
-      alert('Document URL is not accessible. The document may need to be re-uploaded.');
+    // If it's a blob URL, it's not accessible - try to find the document elsewhere
+    if (urlString.startsWith('blob:')) {
+      console.warn('[admin] Blob URL detected, cannot display:', urlString);
+      alert('This document was stored as a temporary blob URL and is no longer accessible. The document may need to be re-uploaded by the user.');
+      modal.remove();
+      return;
+    }
+    
+    // If it's a local file path (starts with / but not //), it's not accessible
+    if (urlString.startsWith('/') && !urlString.startsWith('//') && !urlString.startsWith('data:')) {
+      console.warn('[admin] Local file path detected, cannot display:', urlString);
+      alert('This document is stored as a local file path and cannot be displayed. The document may need to be re-uploaded.');
+      modal.remove();
+      return;
+    }
+    
+    // If it's a pending placeholder, it's not accessible
+    if (urlString.startsWith('pending_')) {
+      console.warn('[admin] Pending document URL detected:', urlString);
+      alert('This document is still being processed. Please wait for the upload to complete, or ask the user to re-upload the document.');
+      modal.remove();
       return;
     }
     
