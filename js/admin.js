@@ -251,10 +251,15 @@ const adminDashboard = {
       const createdDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A';
       const updatedDate = user.updated_at ? new Date(user.updated_at).toLocaleDateString() : 'N/A';
       
-      // Get user documents
+      // Get user documents - check multiple possible fields
       const userDocs = allDocuments.filter(d => 
-        (d.user_id === user.id || d.userId === user.id)
+        (d.user_id === user.id || d.userId === user.id || d.owner_id === user.id || d.msme_id === user.id)
       );
+      
+      // Also check if user object has documents directly
+      if (user.documents && Array.isArray(user.documents)) {
+        userDocs.push(...user.documents);
+      }
       
       // Get documents from signup data - try multiple storage keys
       let signupData = {};
