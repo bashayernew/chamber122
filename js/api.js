@@ -288,6 +288,64 @@ export async function createEvent(eventData) {
   }
 }
 
+// Update event status (draft/published)
+export async function updateEventStatus(eventId, status) {
+  const user = requireAuth();
+  try {
+    const stored = localStorage.getItem('chamber122_events');
+    if (!stored) throw new Error('No events found');
+    
+    const events = JSON.parse(stored);
+    const eventIndex = events.findIndex(e => e.id === eventId);
+    
+    if (eventIndex === -1) throw new Error('Event not found');
+    if (events[eventIndex].owner_id !== user.id && !isAdmin()) {
+      throw new Error('Not authorized to update this event');
+    }
+    
+    events[eventIndex].status = status;
+    events[eventIndex].is_published = status === 'published';
+    events[eventIndex].updated_at = new Date().toISOString();
+    
+    localStorage.setItem('chamber122_events', JSON.stringify(events));
+    return events[eventIndex];
+  } catch (e) {
+    throw new Error('Failed to update event status: ' + e.message);
+  }
+}
+
+// Delete event
+export async function deleteEventById(eventId) {
+  const user = requireAuth();
+  try {
+    const stored = localStorage.getItem('chamber122_events');
+    if (!stored) throw new Error('No events found');
+    
+    const events = JSON.parse(stored);
+    const eventIndex = events.findIndex(e => e.id === eventId);
+    
+    if (eventIndex === -1) throw new Error('Event not found');
+    if (events[eventIndex].owner_id !== user.id && !isAdmin()) {
+      throw new Error('Not authorized to delete this event');
+    }
+    
+    events.splice(eventIndex, 1);
+    localStorage.setItem('chamber122_events', JSON.stringify(events));
+    
+    // Also delete related registrations
+    const regStored = localStorage.getItem('chamber122_event_registrations');
+    if (regStored) {
+      const registrations = JSON.parse(regStored);
+      const filtered = registrations.filter(r => r.event_id !== eventId);
+      localStorage.setItem('chamber122_event_registrations', JSON.stringify(filtered));
+    }
+    
+    return true;
+  } catch (e) {
+    throw new Error('Failed to delete event: ' + e.message);
+  }
+}
+
 // Get all bulletins (replaces /api/bulletins)
 export async function getPublicBulletins() {
   try {
@@ -395,6 +453,82 @@ export async function getBulletinById(bulletinId) {
     return bulletins.find(b => b.id === bulletinId) || null;
   } catch (e) {
     return null;
+  }
+}
+
+// Update bulletin status (draft/published)
+export async function updateBulletinStatus(bulletinId, status) {
+  const user = requireAuth();
+  try {
+    const stored = localStorage.getItem('chamber122_bulletins');
+    if (!stored) throw new Error('No bulletins found');
+    
+    let bulletins = [];
+    try {
+      const parsed = JSON.parse(stored);
+      bulletins = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
+    } catch (e) {
+      throw new Error('Invalid bulletins data');
+    }
+    
+    const bulletinIndex = bulletins.findIndex(b => b.id === bulletinId);
+    
+    if (bulletinIndex === -1) throw new Error('Bulletin not found');
+    if (bulletins[bulletinIndex].owner_id !== user.id && !isAdmin()) {
+      throw new Error('Not authorized to update this bulletin');
+    }
+    
+    bulletins[bulletinIndex].status = status;
+    bulletins[bulletinIndex].is_published = status === 'published';
+    bulletins[bulletinIndex].updated_at = new Date().toISOString();
+    
+    localStorage.setItem('chamber122_bulletins', JSON.stringify(bulletins));
+    return bulletins[bulletinIndex];
+  } catch (e) {
+    throw new Error('Failed to update bulletin status: ' + e.message);
+  }
+}
+
+// Delete bulletin
+export async function deleteBulletinById(bulletinId) {
+  const user = requireAuth();
+  try {
+    const stored = localStorage.getItem('chamber122_bulletins');
+    if (!stored) throw new Error('No bulletins found');
+    
+    let bulletins = [];
+    try {
+      const parsed = JSON.parse(stored);
+      bulletins = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
+    } catch (e) {
+      throw new Error('Invalid bulletins data');
+    }
+    
+    const bulletinIndex = bulletins.findIndex(b => b.id === bulletinId);
+    
+    if (bulletinIndex === -1) throw new Error('Bulletin not found');
+    if (bulletins[bulletinIndex].owner_id !== user.id && !isAdmin()) {
+      throw new Error('Not authorized to delete this bulletin');
+    }
+    
+    bulletins.splice(bulletinIndex, 1);
+    localStorage.setItem('chamber122_bulletins', JSON.stringify(bulletins));
+    
+    // Also delete related registrations
+    const regStored = localStorage.getItem('chamber122_bulletin_registrations');
+    if (regStored) {
+      try {
+        const registrations = JSON.parse(regStored);
+        const filtered = Array.isArray(registrations) ? registrations.filter(r => r.bulletin_id !== bulletinId) : [];
+        localStorage.setItem('chamber122_bulletin_registrations', JSON.stringify(filtered));
+      } catch (e) {
+        console.warn('[api] Error cleaning up bulletin registrations:', e);
+      }
+    }
+    
+    return true;
+  } catch (e) {
+    throw new Error('Failed to delete bulletin: ' + e.message);
   }
 }
 
