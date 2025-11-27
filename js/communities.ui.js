@@ -465,8 +465,21 @@ async function handleSendMessage(e, communityId) {
     submitBtn.disabled = false;
     submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
     
-    // Reload messages
-    await loadCommunityDetail(communityId);
+    // Reload messages immediately without full page reload
+    setTimeout(async () => {
+      const messagesData = await CommunitiesAPI.getCommunityMessages(communityId);
+      const messages = messagesData.messages || [];
+      const messagesContainer = document.getElementById('messages-container');
+      if (messagesContainer) {
+        messagesContainer.innerHTML = messages.length === 0 
+          ? '<p style="color: #6b7280; text-align: center; padding: 40px;">No messages yet. Be the first to start the conversation!</p>'
+          : messages.map(msg => renderMessage(msg, user)).join('');
+        // Auto-scroll to bottom
+        setTimeout(() => {
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }, 50);
+      }
+    }, 100);
   } catch (error) {
     console.error('[communities-ui] Error sending message:', error);
     alert('Error sending message: ' + error.message);
