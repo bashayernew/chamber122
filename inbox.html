@@ -471,8 +471,8 @@
 
   <!-- Scripts -->
   <script type="module">
-    import { getCurrentUser } from '/js/auth-localstorage.js';
-    import { getConversationsForUser, getMessagesForUser, sendMessage, markMessageAsRead, getAllUsers } from '/js/messaging.js';
+    import { getCurrentUser, getAllUsers } from '/js/auth-localstorage.js';
+    import { getConversationsForUser, getMessagesForUser, sendMessage, markMessageAsRead } from '/js/messaging.js';
 
     let currentChatUserId = null;
     let conversations = [];
@@ -486,8 +486,8 @@
 
     // Load all users for display
     async function loadAllUsers() {
-      const { getAllUsers } = await import('/js/auth-localstorage.js');
       allUsers = getAllUsers();
+      console.log('[inbox] Loaded users:', allUsers.length);
     }
 
     // Format time (Instagram style)
