@@ -1023,29 +1023,30 @@ async function saveProfile(ev) {
       }
     }
     
-    // Sync profile and document updates to admin dashboard
+    // Sync profile and document updates to admin dashboard (optional - file may not exist)
     try {
-      const { interceptSignup } = await import('/js/signup-to-admin.js');
-      
-      if (user && business) {
-        // Update user profile in admin system with uploaded document URLs
-        interceptSignup({
-          id: user.id,
-          email: user.email,
-          name: business.name || business.business_name || '',
-          phone: business.phone || '',
-          business_name: business.name || business.business_name || '',
-          industry: business.industry || business.category || '',
-          city: business.city || '',
-          country: business.country || 'Kuwait',
-          created_at: business.created_at || new Date().toISOString()
-        }, documentsWithUrls);
-        
-        console.log('[owner-form] Profile and documents synced to admin dashboard');
+      const signupToAdminModule = await import('/js/signup-to-admin.js').catch(() => null);
+      if (signupToAdminModule && signupToAdminModule.interceptSignup) {
+        if (user && business) {
+          // Update user profile in admin system with uploaded document URLs
+          signupToAdminModule.interceptSignup({
+            id: user.id,
+            email: user.email,
+            name: business.name || business.business_name || '',
+            phone: business.phone || '',
+            business_name: business.name || business.business_name || '',
+            industry: business.industry || business.category || '',
+            city: business.city || '',
+            country: business.country || 'Kuwait',
+            created_at: business.created_at || new Date().toISOString()
+          }, documentsWithUrls);
+          
+          console.log('[owner-form] Profile and documents synced to admin dashboard');
+        }
       }
     } catch (adminError) {
-      console.error('[owner-form] Error syncing to admin dashboard:', adminError);
-      // Don't fail the save if admin sync fails
+      // Silently ignore - signup-to-admin.js is optional
+      console.log('[owner-form] Admin sync not available (optional feature)');
     }
     
     // Mark account as updated after fixing documents (for admin dashboard)

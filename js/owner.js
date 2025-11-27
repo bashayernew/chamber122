@@ -245,6 +245,9 @@ async function loadAndDisplayBusiness(businessId = null) {
   }
 }
 
+// Export the function for use in owner.html
+export { loadAndDisplayBusiness };
+
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
