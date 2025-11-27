@@ -14,6 +14,16 @@ function saveUsers(users) {
   }
 }
 
+// Convert file to base64
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 // Save documents to localStorage
 function saveDocuments(documents) {
   try {
@@ -76,7 +86,7 @@ export function saveSignupToAdmin(userData) {
 /**
  * Save documents to admin system
  */
-export function saveDocumentsToAdmin(userId, businessId, documents) {
+export async function saveDocumentsToAdmin(userId, businessId, documents) {
   try {
     const allDocs = [];
     
@@ -92,8 +102,10 @@ export function saveDocumentsToAdmin(userId, businessId, documents) {
       'signature_auth': 'signature_auth' // Keep signature authorization separate
     };
     
-    // Convert documents object to array
-    Object.entries(documents || {}).forEach(([key, fileData]) => {
+    // Convert documents object to array - process async to convert files to base64
+    const docEntries = Object.entries(documents || {});
+    
+    for (const [key, fileData] of docEntries) {
       if (fileData) {
         // Map the key to admin document type
         const adminDocType = docMapping[key] || key;
@@ -115,44 +127,70 @@ export function saveDocumentsToAdmin(userId, businessId, documents) {
           }
           
           // Extract file URL from various possible sources
-          // Prioritize real URLs over blob URLs
-          let fileUrl = fileData.url || fileData.signedUrl || fileData.path || fileData.publicUrl || fileData.public_url || '#';
+          // Prioritize base64 data URLs, then real URLs, then convert File objects to base64
+          let fileUrl = fileData.base64 || fileData.url || fileData.signedUrl || fileData.path || fileData.publicUrl || fileData.public_url || '';
           
-          // If we have a file object but no URL, we'll save it with a placeholder
-          // The admin dashboard can show it as "uploaded but URL pending"
+          // If we have a file object, convert it to base64 for storage
           const hasFile = fileData.file && fileData.file instanceof File;
+          let base64Data = null;
           
-          // IMPORTANT: Save documents even if they only have file objects (no URL yet)
-          // This ensures they appear in admin dashboard immediately during signup
-          // The URL will be updated later when the file is actually uploaded to backend
+          if (hasFile) {
+            try {
+              console.log(`[signup-to-admin] Converting file to base64 for ${adminDocType}...`);
+              base64Data = await fileToBase64(fileData.file);
+              fileUrl = base64Data; // Use base64 as the file URL
+              console.log(`[signup-to-admin] ✅ Converted ${adminDocType} to base64 (${Math.round(base64Data.length / 1024)}KB)`);
+            } catch (err) {
+              console.error(`[signup-to-admin] Error converting file to base64 for ${adminDocType}:`, err);
+              // Fall back to existing URL or placeholder
+            }
+          }
           
           // Skip blob URLs - they're temporary and won't work later
           if (fileUrl.startsWith('blob:')) {
-            console.log(`[signup-to-admin] Blob URL for ${adminDocType}, will use placeholder`);
-            // If we have a file, save it with placeholder URL - admin can see it was uploaded
-            if (hasFile) {
-              fileUrl = `pending_upload_${adminDocType}_${Date.now()}`;
-              console.log(`[signup-to-admin] ✅ Using placeholder URL for ${adminDocType} (file exists, URL will be updated later)`);
+            console.log(`[signup-to-admin] Blob URL for ${adminDocType}, trying to convert...`);
+            // If we have a file, convert it to base64
+            if (hasFile && !base64Data) {
+              try {
+                base64Data = await fileToBase64(fileData.file);
+                fileUrl = base64Data;
+                console.log(`[signup-to-admin] ✅ Converted blob URL to base64 for ${adminDocType}`);
+              } catch (err) {
+                console.error(`[signup-to-admin] Error converting blob to base64:`, err);
+                fileUrl = `pending_upload_${adminDocType}_${Date.now()}`;
+              }
             } else {
               // Try to get from other sources
-              fileUrl = fileData.path || fileData.publicUrl || fileData.public_url || '#';
-              if (fileUrl.startsWith('blob:')) {
-                // Still save with placeholder if we have file name at least
+              fileUrl = fileData.path || fileData.publicUrl || fileData.public_url || '';
+              if (!fileUrl || fileUrl.startsWith('blob:')) {
+                // If we have file name but no valid URL, use placeholder
                 if (fileName) {
                   fileUrl = `pending_upload_${adminDocType}_${Date.now()}`;
-                  console.log(`[signup-to-admin] ✅ Using placeholder URL for ${adminDocType} (has file name: ${fileName})`);
+                  console.log(`[signup-to-admin] Using placeholder URL for ${adminDocType} (has file name: ${fileName})`);
                 } else {
                   console.warn(`[signup-to-admin] No real URL, file, or file name for ${adminDocType}, skipping`);
-                  return; // Skip this document if no real URL, no file, and no file name
+                  continue; // Skip this document
                 }
               }
             }
           }
           
-          // If still no valid URL but we have a file or file name, use placeholder
-          if ((!fileUrl || fileUrl === '#') && (hasFile || fileName)) {
+          // If still no valid URL but we have a file, try to convert it
+          if ((!fileUrl || fileUrl === '#') && hasFile && !base64Data) {
+            try {
+              base64Data = await fileToBase64(fileData.file);
+              fileUrl = base64Data;
+              console.log(`[signup-to-admin] ✅ Converted file to base64 for ${adminDocType}`);
+            } catch (err) {
+              console.error(`[signup-to-admin] Error converting file:`, err);
+              fileUrl = `pending_upload_${adminDocType}_${Date.now()}`;
+            }
+          }
+          
+          // If still no valid URL but we have file name, use placeholder
+          if ((!fileUrl || fileUrl === '#') && fileName && !hasFile) {
             fileUrl = `pending_upload_${adminDocType}_${Date.now()}`;
-            console.log(`[signup-to-admin] ✅ Using placeholder URL for ${adminDocType} (has file or file name)`);
+            console.log(`[signup-to-admin] Using placeholder URL for ${adminDocType} (has file name only)`);
           }
           
           // Extract file size
@@ -196,6 +234,8 @@ export function saveDocumentsToAdmin(userId, businessId, documents) {
             business_id: businessId || userId,
             kind: adminDocType,
             file_url: fileUrl,
+            base64: base64Data || (fileUrl && fileUrl.startsWith('data:') ? fileUrl : null), // Store base64 separately
+            url: fileUrl.startsWith('data:') ? fileUrl : null, // Also store in url field if it's base64
             file_name: fileName,
             file_size: fileSize,
             uploaded_at: new Date().toISOString(),
@@ -211,7 +251,7 @@ export function saveDocumentsToAdmin(userId, businessId, documents) {
           });
         }
       }
-    });
+    }
     
     if (allDocs.length > 0) {
       const existingDocs = JSON.parse(localStorage.getItem('chamber122_documents') || '[]');
