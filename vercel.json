@@ -38,6 +38,18 @@
     {
       "source": "/owner-form",
       "destination": "/owner-form.html"
+    },
+    {
+      "source": "/about",
+      "destination": "/about.html"
+    },
+    {
+      "source": "/contact",
+      "destination": "/contact.html"
+    },
+    {
+      "source": "/bulletin",
+      "destination": "/bulletin.html"
     }
   ]
 }

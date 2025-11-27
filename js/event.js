@@ -324,6 +324,15 @@
       if (!user) {
         throw new Error('User not authenticated');
       }
+      
+      // Check if account is suspended
+      const { isAccountSuspended } = await import('./api.js');
+      if (await isAccountSuspended()) {
+        alert('Your account has been suspended. You cannot post events. Please contact support if you have any questions or would like to appeal this decision.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+        return;
+      }
 
       // Get user's business_id
       const { data: business, error: bizError } = await sb
@@ -489,10 +498,9 @@
   // Initialize events page
   function initEventsPage() {
     console.log('Initializing events page...');
-    waitForSupabase(() => {
-      loadEvents();
-      setupEventListeners();
-    });
+    // Remove Supabase dependency - initialize directly
+    loadEvents();
+    setupEventListeners();
   }
 
   // Make functions available globally
