@@ -5,7 +5,10 @@ import { renderEventsGrid } from './lib/events.render.js';
 
 // Safe helpers to avoid null.trim crashes
 const qs = (sel) => document.querySelector(sel);
-const val = (sel) => (qs(sel)?.value ?? '').trim();
+const val = (sel) => {
+  const el = qs(sel);
+  return el && el.value ? el.value.trim() : '';
+};
 
 // Convert datetime-local string to ISO
 const iso = (s) => s ? new Date(s).toISOString() : null;
