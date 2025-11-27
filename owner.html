@@ -451,8 +451,8 @@
               await sendMessage(business.owner_id, subject, body);
               
               closeMessageModal();
-              alert('Message sent successfully!');
-              window.location.href = '/inbox.html';
+              // Redirect to inbox with chat open
+              window.location.href = `/inbox.html?chat=${business.owner_id}`;
             } catch (err) {
               console.error('[owner] Error sending message:', err);
               alert('Error sending message: ' + (err.message || 'Please try again'));
