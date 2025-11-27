@@ -1,5 +1,10 @@
 // js/api.js - Backend API helper (replaces Supabase calls)
-const API_BASE = '/api';
+// Support both local development and production backend
+// Set VITE_API_URL or REACT_APP_API_URL environment variable in Vercel for production
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE_URL) || 
+                 (typeof process !== 'undefined' && process.env?.VITE_API_URL) ||
+                 (typeof process !== 'undefined' && process.env?.REACT_APP_API_URL) ||
+                 '/api'; // Default to relative path (same domain)
 const TOKEN_KEY = 'session_token';
 
 // Token management
