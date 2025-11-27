@@ -835,18 +835,19 @@ async function saveProfile(ev) {
     
     // Save to localStorage instead of API
     const { getCurrentUser: getCurrentUserFromAuth, getBusinessByOwner, updateBusiness, saveBusinesses, getAllBusinesses, generateId } = await import('/js/auth-localstorage.js');
-    const user = getCurrentUser();
+    const user = getCurrentUserFromAuth();
     if (!user) {
       throw new Error('Not authenticated');
     }
     
     // Convert FormData to object
     const businessData = {};
+    const galleryFiles = [];
+    
     for (const [key, value] of fd.entries()) {
       if (key.endsWith('[]')) {
         // Handle array fields (gallery)
         const fieldName = key.replace('[]', '');
-        if (!businessData[fieldName]) businessData[fieldName] = [];
         if (value instanceof File) {
           // Convert file to base64
           const base64 = await new Promise((resolve) => {
@@ -854,9 +855,7 @@ async function saveProfile(ev) {
             reader.onload = () => resolve(reader.result);
             reader.readAsDataURL(value);
           });
-          businessData[fieldName].push(base64);
-        } else {
-          businessData[fieldName].push(value);
+          galleryFiles.push(base64);
         }
       } else if (value instanceof File) {
         // Convert file to base64
@@ -865,10 +864,27 @@ async function saveProfile(ev) {
           reader.onload = () => resolve(reader.result);
           reader.readAsDataURL(value);
         });
-        businessData[key] = base64;
+        // Store files with appropriate field names
+        if (key === 'logo') {
+          businessData.logo_url = base64;
+        } else {
+          // Document files - store in a documents object
+          if (!businessData.documents) businessData.documents = {};
+          businessData.documents[key] = base64;
+        }
       } else {
-        businessData[key] = value;
+        // Regular form fields
+        if (key === 'gallery[]') {
+          // Skip - handled above
+        } else {
+          businessData[key] = value;
+        }
       }
+    }
+    
+    // Set gallery URLs
+    if (galleryFiles.length > 0) {
+      businessData.gallery_urls = galleryFiles;
     }
     
     // Get existing business or create new
@@ -905,47 +921,23 @@ async function saveProfile(ev) {
     console.log('[owner-form] Profile saved successfully to localStorage:', result);
     console.log('[owner-form] Updated business data:', result.business);
     
-    // Mark account as updated after fixing documents (for admin dashboard)
-    try {
-      const user = await getCurrentUser();
-      if (user && user.id) {
-        markAccountUpdatedAfterIssue(user.id);
-      }
-    } catch (err) {
-      console.warn('[owner-form] Could not mark account as updated:', err);
-    }
-    
-    // Extract document URLs from backend response and sync to admin dashboard
+    // Sync documents to admin dashboard
     const documentsWithUrls = {};
-    const media = result.media || [];
-    
-    // Map uploaded document files to their URLs from backend response
-    for (const [docType, file] of Object.entries(uploadedDocuments)) {
-      // Find the media item with matching document_type
-      const mediaItem = media.find(m => 
-        (m.document_type || m.type || m.kind) === docType
-      );
-      
-      if (mediaItem) {
-        const fileUrl = mediaItem.public_url || mediaItem.url || mediaItem.publicUrl || mediaItem.path;
+    if (businessData.documents) {
+      for (const [docType, base64] of Object.entries(businessData.documents)) {
         documentsWithUrls[docType] = {
-          url: fileUrl,
-          name: file.name,
-          size: file.size,
-          signedUrl: fileUrl,
-          path: fileUrl
+          url: base64,
+          name: docType + '.png',
+          size: 0,
+          signedUrl: base64,
+          path: base64
         };
-        console.log(`[owner-form] Document ${docType} URL from backend:`, fileUrl);
-      } else {
-        console.warn(`[owner-form] Could not find media item for document type: ${docType}`);
       }
     }
     
     // Sync profile and document updates to admin dashboard
     try {
       const { interceptSignup } = await import('/js/signup-to-admin.js');
-      const user = await getCurrentUser();
-      const business = result.business;
       
       if (user && business) {
         // Update user profile in admin system with uploaded document URLs
@@ -970,7 +962,6 @@ async function saveProfile(ev) {
     
     // Mark account as updated after fixing documents (for admin dashboard)
     try {
-      const user = await getCurrentUser();
       if (user && user.id) {
         markAccountUpdatedAfterIssue(user.id);
       }
