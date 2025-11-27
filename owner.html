@@ -178,18 +178,6 @@
     <div id="bl-previous" class="tab-pane hidden"></div>
   </section>
 
-  <!-- Registrations Section (visible to owner for their events, and to logged-in users for their own registrations) -->
-  <section id="registrations-section" class="card mt-8" style="display: none;">
-    <h2 class="section-title" id="registrations-title">Registrations</h2>
-    <p style="color: #AFAFAF; margin-bottom: 20px;" id="registrations-description">View registrations for your events and bulletins</p>
-    <div id="registrations-container">
-      <div style="text-align: center; padding: 40px; color: #AFAFAF;">
-        <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 16px;"></i>
-        <p>Loading registrations...</p>
-      </div>
-    </div>
-  </section>
-  
 </section>
 <!-- View-mode logic -->
   <!-- Main dependencies -->
@@ -522,45 +510,7 @@
             console.log('[owner] Sample bulletin:', data.bulletins.ongoing[0]);
           }
 
-          // Load registrations if owner viewing own profile (for their events/bulletins)
-      if (isOwnerViewing) {
-        try {
-          const { loadRegistrations, renderRegistrations } = await import('/assets/js/registrations.js');
-          const registrationsSection = document.getElementById('registrations-section');
-          const registrationsContainer = document.getElementById('registrations-container');
-          const registrationsTitle = document.getElementById('registrations-title');
-          const registrationsDescription = document.getElementById('registrations-description');
-          
-          if (registrationsSection && registrationsContainer) {
-            registrationsSection.style.display = 'block';
-            if (registrationsTitle) registrationsTitle.textContent = 'Registrations';
-            if (registrationsDescription) registrationsDescription.textContent = 'View registrations for your events and bulletins';
-            
-            // Load and display registrations
-            window.reloadRegistrations = async () => {
-              try {
-                const regData = await loadRegistrations();
-                renderRegistrations(registrationsContainer, regData.all);
-              } catch (err) {
-                console.error('[owner] Error loading registrations:', err);
-                registrationsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #AFAFAF;">Error loading registrations</div>';
-              }
-            };
-            
-            await window.reloadRegistrations();
-          }
-        } catch (err) {
-          console.warn('[owner] Could not load registrations:', err);
-        }
-      } else {
-        // Hide owner registrations section for non-owners
-        const registrationsSection = document.getElementById('registrations-section');
-        if (registrationsSection) {
-          registrationsSection.style.display = 'none';
-        }
-      }
-      
-      // My Registrations section removed - now only shown on /registrations.html page
+      // Registrations section removed - now only shown on /registrations.html page
 
       // Show registration buttons for non-owners viewing the profile
           const showReg = !isOwner;
