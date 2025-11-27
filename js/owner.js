@@ -33,11 +33,27 @@ async function loadAndDisplayBusiness(businessId = null) {
       business = getBusinessByOwner(user.id);
       
       if (!business) {
-        console.log('[owner] No business found - redirecting to form');
-        if (confirm('No business profile found. Would you like to create one?')) {
-          window.location.href = '/owner-form.html';
+        console.log('[owner] No business found for user:', user.id);
+        console.log('[owner] All businesses in localStorage:', getAllBusinesses().map(b => ({ id: b.id, owner_id: b.owner_id, name: b.name || b.business_name })));
+        
+        // Check if there's a business with a different owner_id format
+        const allBusinesses = getAllBusinesses();
+        const altBusiness = allBusinesses.find(b => 
+          (b.owner_id === user.id) || 
+          (b.user_id === user.id) ||
+          (b.owner_user_id === user.id)
+        );
+        
+        if (altBusiness) {
+          console.log('[owner] Found business with alternative owner_id format:', altBusiness);
+          business = altBusiness;
+        } else {
+          console.log('[owner] No business found - redirecting to form');
+          if (confirm('No business profile found. Would you like to create one?')) {
+            window.location.href = '/owner-form.html';
+          }
+          return;
         }
-        return;
       }
     }
     

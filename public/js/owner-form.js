@@ -1004,7 +1004,19 @@ async function saveProfile(ev) {
       });
     }
     
+    // Verify business was saved before redirecting
+    const savedBusiness = getBusinessByOwner(user.id);
+    if (!savedBusiness) {
+      console.error('[owner-form] Business was not saved correctly!');
+      alert('Error: Business was not saved. Please try again.');
+      return;
+    }
+    
+    console.log('[owner-form] Business verified in localStorage:', savedBusiness.id);
     alert('Profile saved successfully! Redirecting to profile...');
+    
+    // Small delay to ensure localStorage is fully written
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     // Always redirect to owner.html with cache-busting parameter to force reload
     // Use location.replace to prevent back button issues
