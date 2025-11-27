@@ -140,7 +140,7 @@ const adminDashboard = {
     const users = allUsers; // Show all users including admin
     const nonAdminUsers = users.filter(u => u.role !== 'admin');
     
-    const container = document.getElementById('users-container') || document.getElementById('users-table-body');
+    const container = document.getElementById('users-container');
     if (!container) {
       console.error('[admin] Users container not found');
       return;
@@ -174,14 +174,10 @@ const adminDashboard = {
     
     // Apply status filter
     if (filterStatus !== 'all') {
-      if (filterStatus === 'admin') {
-        filteredUsers = filteredUsers.filter(u => u.role === 'admin');
-      } else {
-        filteredUsers = filteredUsers.filter(u => (u.status || 'pending') === filterStatus);
-      }
+      filteredUsers = filteredUsers.filter(u => (u.status || 'pending') === filterStatus);
     }
     
-    // Render users in card format
+    // Render users in card format with all details
     if (filteredUsers.length === 0) {
       container.innerHTML = '<div style="text-align: center; padding: 40px; color: #6b7280;">No users found.</div>';
       return;
@@ -201,30 +197,30 @@ const adminDashboard = {
         <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 24px; margin-bottom: 16px;">
           <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
             <div style="flex: 1;">
-              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                <h3 style="margin: 0; color: #fff; font-size: 18px;">${user.email || 'No email'}</h3>
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                <h3 style="margin: 0; color: #fff; font-size: 18px; font-weight: 600;">${user.email || 'No email'}</h3>
                 ${roleBadge}
                 <span class="status-badge ${statusClass}">${user.status || 'pending'}</span>
               </div>
-              <div style="color: #6b7280; font-size: 14px; margin-bottom: 12px;">
-                <div><strong>Role:</strong> ${user.role || 'msme'}</div>
-                ${user.name ? `<div><strong>Name:</strong> ${user.name}</div>` : ''}
-                ${user.phone ? `<div><strong>Phone:</strong> ${user.phone}</div>` : ''}
-                ${business ? `<div><strong>Business:</strong> ${business.name || business.business_name || 'N/A'}</div>` : ''}
-                ${user.business_name ? `<div><strong>Business Name:</strong> ${user.business_name}</div>` : ''}
-                ${user.industry ? `<div><strong>Industry:</strong> ${user.industry}</div>` : ''}
-                ${user.city ? `<div><strong>City:</strong> ${user.city}</div>` : ''}
-                ${user.country ? `<div><strong>Country:</strong> ${user.country}</div>` : ''}
-                <div><strong>Created:</strong> ${createdDate}</div>
-                ${updatedDate !== 'N/A' ? `<div><strong>Updated:</strong> ${updatedDate}</div>` : ''}
+              <div style="color: #9ca3af; font-size: 14px; line-height: 1.8;">
+                <div><strong style="color: #d1d5db;">Role:</strong> <span style="color: #9ca3af;">${user.role || 'msme'}</span></div>
+                ${user.name ? `<div><strong style="color: #d1d5db;">Name:</strong> <span style="color: #9ca3af;">${user.name}</span></div>` : ''}
+                ${user.phone ? `<div><strong style="color: #d1d5db;">Phone:</strong> <span style="color: #9ca3af;">${user.phone}</span></div>` : ''}
+                ${business ? `<div><strong style="color: #d1d5db;">Business:</strong> <span style="color: #9ca3af;">${business.name || business.business_name || 'N/A'}</span></div>` : ''}
+                ${user.business_name ? `<div><strong style="color: #d1d5db;">Business Name:</strong> <span style="color: #9ca3af;">${user.business_name}</span></div>` : ''}
+                ${user.industry ? `<div><strong style="color: #d1d5db;">Industry:</strong> <span style="color: #9ca3af;">${user.industry}</span></div>` : ''}
+                ${user.city ? `<div><strong style="color: #d1d5db;">City:</strong> <span style="color: #9ca3af;">${user.city}</span></div>` : ''}
+                ${user.country ? `<div><strong style="color: #d1d5db;">Country:</strong> <span style="color: #9ca3af;">${user.country}</span></div>` : ''}
+                <div><strong style="color: #d1d5db;">Created:</strong> <span style="color: #9ca3af;">${createdDate}</span></div>
+                ${updatedDate !== 'N/A' ? `<div><strong style="color: #d1d5db;">Updated:</strong> <span style="color: #9ca3af;">${updatedDate}</span></div>` : ''}
               </div>
             </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              ${user.role !== 'admin' && user.status !== 'approved' ? `<button onclick="adminDashboard.approveUser('${user.id}')" class="btn-action btn-approve" title="Approve" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #10b981; color: #fff;"><i class="fas fa-check"></i> Approve</button>` : ''}
-              ${user.role !== 'admin' && user.status !== 'suspended' ? `<button onclick="adminDashboard.suspendUser('${user.id}')" class="btn-action btn-suspend" title="Suspend" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #ef4444; color: #fff;"><i class="fas fa-ban"></i> Suspend</button>` : ''}
-              ${user.role !== 'admin' ? `<button onclick="adminDashboard.viewUserDocuments('${user.id}', '${user.email}')" class="btn-action btn-view" title="View Documents" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #3b82f6; color: #fff;"><i class="fas fa-file"></i> Documents</button>` : ''}
-              <button onclick="adminDashboard.sendMessageToUser('${user.id}', '${user.email}')" class="btn-action btn-message" title="Send Message" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #f2c64b; color: #111;"><i class="fas fa-envelope"></i> Message</button>
-              ${user.role !== 'admin' ? `<button onclick="adminDashboard.deleteUser('${user.id}')" class="btn-action btn-delete" title="Delete" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #dc2626; color: #fff;"><i class="fas fa-trash"></i> Delete</button>` : ''}
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: start;">
+              ${user.role !== 'admin' && user.status !== 'approved' ? `<button onclick="adminDashboard.approveUser('${user.id}')" class="btn-action btn-approve" title="Approve" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #10b981; color: #fff; font-size: 13px;"><i class="fas fa-check"></i> Approve</button>` : ''}
+              ${user.role !== 'admin' && user.status !== 'suspended' ? `<button onclick="adminDashboard.suspendUser('${user.id}')" class="btn-action btn-suspend" title="Suspend" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #ef4444; color: #fff; font-size: 13px;"><i class="fas fa-ban"></i> Suspend</button>` : ''}
+              ${user.role !== 'admin' ? `<button onclick="adminDashboard.viewUserDocuments('${user.id}', '${user.email}')" class="btn-action btn-view" title="View Documents" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #3b82f6; color: #fff; font-size: 13px;"><i class="fas fa-file"></i> Documents</button>` : ''}
+              <button onclick="adminDashboard.sendMessageToUser('${user.id}', '${user.email}')" class="btn-action btn-message" title="Send Message" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #f2c64b; color: #111; font-size: 13px;"><i class="fas fa-envelope"></i> Message</button>
+              ${user.role !== 'admin' ? `<button onclick="adminDashboard.deleteUser('${user.id}')" class="btn-action btn-delete" title="Delete" style="padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: #dc2626; color: #fff; font-size: 13px;"><i class="fas fa-trash"></i> Delete</button>` : ''}
             </div>
           </div>
         </div>
