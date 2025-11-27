@@ -12,8 +12,8 @@ import {
   generateId
 } from './auth-localstorage.js';
 
-// Ensure admin account exists
-function ensureAdminAccount() {
+// Ensure admin account exists (exported for use in admin.html)
+export function ensureAdminAccount() {
   const users = getAllUsers();
   let admin = users.find(u => u.role === 'admin');
   
@@ -45,12 +45,12 @@ function ensureAdminAccount() {
 function checkAdminAccess() {
   const user = getCurrentUser();
   if (!user) {
-    window.location.href = '/auth.html#login';
+    // Don't redirect - let the login form show
     return false;
   }
   if (!isAdmin()) {
     alert('Access denied. Admin privileges required.');
-    window.location.href = '/index.html';
+    window.location.href = '/admin.html';
     return false;
   }
   return true;
@@ -1260,7 +1260,7 @@ const adminDashboard = {
   logout() {
     if (confirm('Logout from admin dashboard?')) {
       logout();
-      window.location.href = '/index.html';
+      window.location.href = '/admin.html';
     }
   }
 };

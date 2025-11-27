@@ -581,34 +581,61 @@
         }
 
         container.innerHTML = conversations.map(conv => {
-          const otherUser = allUsers.find(u => u.id === conv.userId);
-          const userName = conv.userName || otherUser?.email || 'Unknown User';
-          const userEmail = conv.userEmail || otherUser?.email || '';
-          const lastMessage = conv.lastMessage?.body || conv.lastMessage?.subject || 'No messages yet';
-          const lastMessageTime = conv.lastMessageTime ? formatTime(conv.lastMessageTime) : '';
-          const unreadCount = conv.unreadCount || 0;
-          const isActive = currentChatUserId === conv.userId;
+          if (conv.isGroup) {
+            // Group conversation
+            const lastMessage = conv.lastMessage?.body || conv.lastMessage?.subject || 'No messages yet';
+            const lastMessageTime = conv.lastMessageTime ? formatTime(conv.lastMessageTime) : '';
+            const unreadCount = conv.unreadCount || 0;
+            const isActive = currentChatGroupId === conv.groupId;
 
-          return `
-            <div class="conversation-item ${isActive ? 'active' : ''}" 
-                 onclick="openChat('${conv.userId}')" 
-                 data-user-id="${conv.userId}">
-              <div class="conversation-avatar">
-                ${otherUser?.logo_url ? 
-                  `<img src="${escapeHtml(otherUser.logo_url)}" alt="${escapeHtml(userName)}">` : 
-                  `<span>${userName.charAt(0).toUpperCase()}</span>`
-                }
+            return `
+              <div class="conversation-item ${isActive ? 'active' : ''}" 
+                   onclick="openGroupChat('${conv.groupId}')" 
+                   data-group-id="${conv.groupId}">
+                <div class="conversation-avatar" style="background: linear-gradient(135deg, #0095f6 0%, #1877f2 100%);">
+                  <i class="fas fa-users" style="font-size: 24px;"></i>
+                </div>
+                <div class="conversation-content">
+                  <div class="conversation-name">${escapeHtml(conv.userName)} <span class="group-badge">GROUP</span></div>
+                  <div class="conversation-preview">${escapeHtml(lastMessage)}</div>
+                </div>
+                <div class="conversation-meta">
+                  ${lastMessageTime ? `<div class="conversation-time">${lastMessageTime}</div>` : ''}
+                  ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+                </div>
               </div>
-              <div class="conversation-content">
-                <div class="conversation-name">${escapeHtml(userName)}</div>
-                <div class="conversation-preview">${escapeHtml(lastMessage)}</div>
+            `;
+          } else {
+            // Individual conversation
+            const otherUser = allUsers.find(u => u.id === conv.userId);
+            const userName = conv.userName || otherUser?.email || 'Unknown User';
+            const userEmail = conv.userEmail || otherUser?.email || '';
+            const lastMessage = conv.lastMessage?.body || conv.lastMessage?.subject || 'No messages yet';
+            const lastMessageTime = conv.lastMessageTime ? formatTime(conv.lastMessageTime) : '';
+            const unreadCount = conv.unreadCount || 0;
+            const isActive = currentChatUserId === conv.userId;
+
+            return `
+              <div class="conversation-item ${isActive ? 'active' : ''}" 
+                   onclick="openChat('${conv.userId}')" 
+                   data-user-id="${conv.userId}">
+                <div class="conversation-avatar">
+                  ${otherUser?.logo_url ? 
+                    `<img src="${escapeHtml(otherUser.logo_url)}" alt="${escapeHtml(userName)}">` : 
+                    `<span>${userName.charAt(0).toUpperCase()}</span>`
+                  }
+                </div>
+                <div class="conversation-content">
+                  <div class="conversation-name">${escapeHtml(userName)}</div>
+                  <div class="conversation-preview">${escapeHtml(lastMessage)}</div>
+                </div>
+                <div class="conversation-meta">
+                  ${lastMessageTime ? `<div class="conversation-time">${lastMessageTime}</div>` : ''}
+                  ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+                </div>
               </div>
-              <div class="conversation-meta">
-                ${lastMessageTime ? `<div class="conversation-time">${lastMessageTime}</div>` : ''}
-                ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
-              </div>
-            </div>
-          `;
+            `;
+          }
         }).join('');
         console.log('[inbox] Conversations rendered successfully');
       } catch (error) {
@@ -633,6 +660,7 @@
         if (!user) return;
 
         currentChatUserId = userId;
+        currentChatGroupId = null; // Clear group chat
         
         // Update active conversation
         document.querySelectorAll('.conversation-item').forEach(item => {
@@ -669,6 +697,7 @@
         document.getElementById('chat-messages').style.display = 'flex';
         document.getElementById('chat-input-container').style.display = 'flex';
         document.getElementById('chat-input-container').setAttribute('data-chat-user-id', userId);
+        document.getElementById('chat-input-container').removeAttribute('data-chat-group-id');
 
         // Load and display messages
         await loadChatMessages(userId);
@@ -676,6 +705,130 @@
         console.error('[inbox] Error opening chat:', error);
       }
     };
+
+    // Open group chat
+    window.openGroupChat = async function(groupId) {
+      try {
+        const user = getCurrentUser();
+        if (!user) return;
+
+        currentChatGroupId = groupId;
+        currentChatUserId = null; // Clear individual chat
+        
+        // Update active conversation
+        document.querySelectorAll('.conversation-item').forEach(item => {
+          item.classList.remove('active');
+          if (item.getAttribute('data-group-id') === groupId) {
+            item.classList.add('active');
+          }
+        });
+
+        // Get group info
+        const groups = getAllGroups();
+        const group = groups.find(g => g.id === groupId);
+        if (!group) {
+          alert('Group not found');
+          return;
+        }
+
+        // Update chat header
+        const headerAvatar = document.getElementById('chat-header-avatar');
+        const headerName = document.getElementById('chat-header-name');
+        
+        if (headerAvatar) {
+          headerAvatar.innerHTML = '<i class="fas fa-users" style="font-size: 20px;"></i>';
+        }
+        if (headerName) {
+          headerName.textContent = group.name;
+        }
+
+        // Show chat UI
+        document.getElementById('chat-empty-state').style.display = 'none';
+        document.getElementById('chat-header').style.display = 'flex';
+        document.getElementById('chat-messages').style.display = 'flex';
+        document.getElementById('chat-input-container').style.display = 'flex';
+        document.getElementById('chat-input-container').setAttribute('data-chat-group-id', groupId);
+        document.getElementById('chat-input-container').removeAttribute('data-chat-user-id');
+
+        // Load and display group messages
+        await loadGroupMessages(groupId);
+      } catch (error) {
+        console.error('[inbox] Error opening group chat:', error);
+      }
+    };
+
+    // Load group messages
+    async function loadGroupMessages(groupId) {
+      try {
+        const user = getCurrentUser();
+        if (!user) return;
+
+        const groupMessages = getGroupMessages(groupId);
+
+        // Sort by date (oldest first)
+        groupMessages.sort((a, b) => {
+          return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+        });
+
+        // Mark messages as read
+        groupMessages.forEach(msg => {
+          if (msg.fromUserId !== user.id && !msg.read_at) {
+            markMessageAsRead(msg.id);
+          }
+        });
+
+        // Display messages
+        const messagesContainer = document.getElementById('chat-messages');
+        if (!messagesContainer) return;
+
+        if (groupMessages.length === 0) {
+          messagesContainer.innerHTML = `
+            <div style="text-align: center; color: #a8a8a8; padding: 40px;">
+              <p>No messages yet. Start the conversation!</p>
+            </div>
+          `;
+        } else {
+          await loadAllUsers();
+          messagesContainer.innerHTML = groupMessages.map(msg => {
+            const isSent = msg.fromUserId === user.id;
+            const messageTime = formatTime(msg.created_at);
+            const messageBody = msg.body || msg.subject || '';
+            
+            const senderUser = allUsers.find(u => u.id === msg.fromUserId);
+            const senderName = senderUser ? (senderUser.name || senderUser.email) : 'Unknown';
+            const senderLogo = senderUser?.logo_url || '';
+
+            return `
+              <div class="message ${isSent ? 'sent' : 'received'}">
+                ${!isSent ? `
+                  <div class="message-avatar">
+                    ${senderLogo ? 
+                      `<img src="${escapeHtml(senderLogo)}" alt="${escapeHtml(senderName)}">` : 
+                      `<span>${senderName.charAt(0).toUpperCase()}</span>`
+                    }
+                  </div>
+                ` : ''}
+                <div>
+                  ${!isSent ? `<div style="font-size: 11px; color: #a8a8a8; margin-bottom: 4px; font-weight: 600;">${escapeHtml(senderName)}</div>` : ''}
+                  <div class="message-bubble">${escapeHtml(messageBody)}</div>
+                  <div class="message-time">${messageTime}</div>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          // Scroll to bottom
+          setTimeout(() => {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          }, 100);
+        }
+
+        // Reload conversations to update unread count
+        loadConversations();
+      } catch (error) {
+        console.error('[inbox] Error loading group messages:', error);
+      }
+    }
 
     // Load chat messages
     async function loadChatMessages(userId) {
@@ -685,8 +838,9 @@
 
         const allMessages = getMessagesForUser(user.id);
         const chatMessages = allMessages.filter(m => 
-          (m.fromUserId === user.id && m.toUserId === userId) ||
-          (m.fromUserId === userId && m.toUserId === user.id)
+          !m.groupId && // Exclude group messages
+          ((m.fromUserId === user.id && m.toUserId === userId) ||
+          (m.fromUserId === userId && m.toUserId === user.id))
         );
 
         // Sort by date (oldest first)
