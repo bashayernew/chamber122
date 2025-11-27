@@ -155,31 +155,21 @@ const adminDashboard = {
       console.log('[admin] ========== LOADING USERS ==========');
       let allUsers = getAllUsers();
       console.log('[admin] Found users in localStorage:', allUsers.length);
-      console.log('[admin] Users data:', JSON.stringify(allUsers, null, 2));
       
-      // Debug: Check localStorage directly
+      // Show loading state
+      const container = document.getElementById('users-container');
+      if (container) {
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #6b7280;"><i class="fas fa-spinner fa-spin"></i> Loading users...</div>';
+      }
+      
+      // Force reload from localStorage
       const rawStorage = localStorage.getItem('chamber122_users');
-      console.log('[admin] Raw localStorage data:', rawStorage);
-      console.log('[admin] Parsed users:', allUsers);
-      
-      // If no users found, create a test user for demonstration
-      if (allUsers.length === 0 || (allUsers.length === 1 && allUsers[0].role === 'admin')) {
-        console.warn('[admin] No users found (except admin). Creating demo user...');
+      if (rawStorage) {
         try {
-          const { signup } = await import('./auth-localstorage.js');
-          const demoUser = signup('demo@example.com', 'demo123456', {
-            name: 'Demo User',
-            business_name: 'Demo Business',
-            phone: '12345678',
-            city: 'Kuwait City',
-            country: 'Kuwait',
-            industry: 'General'
-          });
-          console.log('[admin] Demo user created:', demoUser);
-          // Reload users
-          allUsers = getAllUsers();
-        } catch (error) {
-          console.error('[admin] Error creating demo user:', error);
+          allUsers = JSON.parse(rawStorage);
+          console.log('[admin] Reloaded users from localStorage:', allUsers.length);
+        } catch (e) {
+          console.error('[admin] Error parsing users:', e);
         }
       }
       
@@ -408,8 +398,12 @@ const adminDashboard = {
   
   sendStatusMessage(userId, userEmail, status, message) {
     const currentUser = getCurrentUser();
-    if (!currentUser) return;
+    if (!currentUser) {
+      console.error('[admin] Cannot send status message - no current user');
+      return;
+    }
     
+    // Send to inbox messages
     const inboxMessages = JSON.parse(localStorage.getItem('ch122_inbox_messages') || '[]');
     const statusMessage = {
       id: generateId(),
@@ -426,6 +420,29 @@ const adminDashboard = {
     
     inboxMessages.push(statusMessage);
     localStorage.setItem('ch122_inbox_messages', JSON.stringify(inboxMessages));
+    
+    // Also send to user messages for inbox compatibility
+    const userMessages = JSON.parse(localStorage.getItem('ch122_user_messages') || '[]');
+    userMessages.push({
+      id: statusMessage.id,
+      fromUserId: currentUser.id,
+      fromUserEmail: currentUser.email,
+      fromUserName: 'Admin',
+      toUserId: userId,
+      toUserEmail: userEmail,
+      toUserName: userEmail,
+      subject: statusMessage.subject,
+      body: statusMessage.body,
+      created_at: statusMessage.created_at,
+      read_at: null,
+      unread: true
+    });
+    localStorage.setItem('ch122_user_messages', JSON.stringify(userMessages));
+    
+    console.log('[admin] Status message sent to user:', userId, status);
+    
+    // Dispatch event to update inbox badge
+    window.dispatchEvent(new CustomEvent('inbox-updated'));
   },
   
   deleteUser(userId) {
@@ -1013,40 +1030,106 @@ const adminDashboard = {
   },
   
   reportDocument(userId, userEmail, docType) {
-    const issue = prompt(`Report issue with ${docType} document for ${userEmail}:\n\nDescribe the issue:`);
-    if (!issue) return;
+    // Create modal for custom message input
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+    modal.innerHTML = `
+      <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 24px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3 style="color: #fff; margin: 0; font-size: 20px;">Report Document Issue</h3>
+          <button id="close-report-modal" style="background: none; border: none; color: #a8a8a8; font-size: 24px; cursor: pointer; padding: 0; width: 32px; height: 32px;">&times;</button>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <p style="color: #a8a8a8; margin: 0 0 8px 0; font-size: 14px;"><strong>User:</strong> ${userEmail}</p>
+          <p style="color: #a8a8a8; margin: 0; font-size: 14px;"><strong>Document:</strong> ${docType.replace(/_/g, ' ')}</p>
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; color: #fff; font-size: 14px; font-weight: 500; margin-bottom: 8px;">Issue Description *</label>
+          <textarea id="report-issue-text" placeholder="Describe the issue with this document. The user will receive this message in their inbox..." rows="6" style="width: 100%; padding: 12px; background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 8px; color: #fff; font-size: 14px; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button id="cancel-report" style="padding: 10px 20px; background: #2a2a2a; border: 1px solid #3a3a3a; color: #fff; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">Cancel</button>
+          <button id="send-report" style="padding: 10px 24px; background: #f59e0b; color: #111; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600;">Send Report</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
     
-    const currentUser = getCurrentUser();
-    if (!currentUser) return;
-    
-    // Send report message to user with fix action
-    const inboxMessages = JSON.parse(localStorage.getItem('ch122_inbox_messages') || '[]');
-    const reportMessage = {
-      id: generateId(),
-      from: 'admin',
-      fromUserId: currentUser.id,
-      toUserId: userId,
-      user_id: userId,
-      subject: `Document Issue: ${docType}`,
-      body: `We found an issue with your ${docType} document:\n\n${issue}\n\nPlease update your document in your profile.`,
-      created_at: new Date().toISOString(),
-      unread: true,
-      read_at: null,
-      action: {
-        type: 'fix_document',
-        docType: docType,
-        redirectUrl: '/owner-form.html#documents'
-      }
+    const closeModal = () => {
+      document.body.removeChild(modal);
     };
     
-    inboxMessages.push(reportMessage);
-    localStorage.setItem('ch122_inbox_messages', JSON.stringify(inboxMessages));
+    document.getElementById('close-report-modal').onclick = closeModal;
+    document.getElementById('cancel-report').onclick = closeModal;
+    modal.onclick = (e) => {
+      if (e.target === modal) closeModal();
+    };
     
-    // Dispatch event to update inbox badge
-    window.dispatchEvent(new CustomEvent('inbox-updated'));
-    
-    alert('Report sent to user! They will receive a message with a link to fix the document.');
-    this.loadDocuments();
+    document.getElementById('send-report').onclick = () => {
+      const issueText = document.getElementById('report-issue-text').value.trim();
+      if (!issueText) {
+        alert('Please describe the issue.');
+        return;
+      }
+      
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        alert('You must be logged in to send reports.');
+        closeModal();
+        return;
+      }
+      
+      // Send report message to user with fix action
+      const inboxMessages = JSON.parse(localStorage.getItem('ch122_inbox_messages') || '[]');
+      const reportMessage = {
+        id: generateId(),
+        from: 'admin',
+        fromUserId: currentUser.id,
+        toUserId: userId,
+        user_id: userId,
+        subject: `Document Issue: ${docType.replace(/_/g, ' ')}`,
+        body: `We found an issue with your ${docType.replace(/_/g, ' ')} document:\n\n${issueText}\n\nPlease update your document in your profile.`,
+        created_at: new Date().toISOString(),
+        unread: true,
+        read_at: null,
+        action: {
+          type: 'fix_document',
+          docType: docType,
+          redirectUrl: '/owner-form.html#documents'
+        }
+      };
+      
+      inboxMessages.push(reportMessage);
+      localStorage.setItem('ch122_inbox_messages', JSON.stringify(inboxMessages));
+      
+      // Also save to user messages for inbox compatibility
+      const userMessages = JSON.parse(localStorage.getItem('ch122_user_messages') || '[]');
+      userMessages.push({
+        id: reportMessage.id,
+        fromUserId: currentUser.id,
+        fromUserEmail: currentUser.email,
+        fromUserName: 'Admin',
+        toUserId: userId,
+        toUserEmail: userEmail,
+        toUserName: userEmail,
+        subject: reportMessage.subject,
+        body: reportMessage.body,
+        created_at: reportMessage.created_at,
+        read_at: null,
+        unread: true
+      });
+      localStorage.setItem('ch122_user_messages', JSON.stringify(userMessages));
+      
+      // Dispatch event to update inbox badge
+      window.dispatchEvent(new CustomEvent('inbox-updated'));
+      
+      alert('Report sent to user! They will receive this message in their inbox with a link to fix the document.');
+      closeModal();
+      this.loadDocuments();
+      if (this.currentSection === 'users') {
+        this.loadUsers();
+      }
+    };
   },
   
   // Settings
