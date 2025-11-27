@@ -1156,6 +1156,82 @@ const adminDashboard = {
     }
   },
   
+  async viewCommunityMessages(communityId) {
+    try {
+      const CommunitiesAPI = await import('./communities.api.js');
+      const { getAllUsers } = await import('./auth-localstorage.js');
+      const { getAllBusinesses } = await import('./auth-localstorage.js');
+      
+      const messagesData = await CommunitiesAPI.getCommunityMessages(communityId);
+      const messages = messagesData.messages || [];
+      const users = getAllUsers();
+      const businesses = getAllBusinesses();
+      
+      // Sort messages by date
+      messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      
+      let messageHtml = messages.map(msg => {
+        // Find sender
+        const senderBusiness = businesses.find(b => b.id === msg.msme_id || b.owner_id === msg.msme_id);
+        const senderUser = users.find(u => u.id === msg.msme_id);
+        const senderName = senderBusiness ? (senderBusiness.name || senderBusiness.business_name) : 
+                          (senderUser ? (senderUser.name || senderUser.email) : msg.msme_name || 'Unknown');
+        const date = msg.created_at ? new Date(msg.created_at).toLocaleString() : 'N/A';
+        const isImage = msg.image_url || (msg.body && msg.body.startsWith('data:image'));
+        const isLocation = msg.location;
+        const imageUrl = msg.image_url || (msg.body && msg.body.startsWith('data:image') ? msg.body : null);
+        const textBody = isImage && imageUrl === msg.body ? '' : msg.body;
+        
+        return `
+          <div style="padding: 16px; border-bottom: 1px solid #2a2a2a;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <strong style="color: #fff;">${this.escapeHtml(senderName)}</strong>
+              <span style="color: #6b7280; font-size: 12px;">${date}</span>
+            </div>
+            ${imageUrl ? 
+              `<img src="${this.escapeHtml(imageUrl)}" style="max-width: 300px; max-height: 300px; border-radius: 8px; margin-bottom: 8px; display: block; cursor: pointer;" onclick="window.open('${this.escapeHtml(imageUrl)}', '_blank')" />` :
+              ''
+            }
+            ${isLocation ? 
+              `<div style="margin-bottom: 8px;">
+                <a href="https://www.google.com/maps?q=${this.escapeHtml(msg.location.lat)},${this.escapeHtml(msg.location.lng)}" target="_blank" style="color: #0095f6; text-decoration: none; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(255,255,255,0.1); border-radius: 6px;">
+                  <i class="fas fa-map-marker-alt"></i> <span>View Location on Map</span>
+                </a>
+              </div>` :
+              ''
+            }
+            ${textBody ? `<div style="color: #a8a8a8; white-space: pre-wrap;">${this.escapeHtml(textBody)}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+      
+      if (messages.length === 0) {
+        messageHtml = '<div style="text-align: center; padding: 40px; color: #6b7280;">No messages in this community yet.</div>';
+      }
+      
+      const communityData = await CommunitiesAPI.getCommunity(communityId);
+      const community = communityData.community;
+      
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;';
+      modal.innerHTML = `
+        <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; max-width: 800px; width: 100%; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column;">
+          <div style="padding: 24px; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="color: #fff; margin: 0;">Messages in "${this.escapeHtml(community.name)}"</h2>
+            <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="background: #2a2a2a; color: #fff; border: none; border-radius: 8px; width: 32px; height: 32px; cursor: pointer; font-size: 18px;">×</button>
+          </div>
+          <div style="overflow-y: auto; padding: 20px; flex: 1;">
+            ${messageHtml}
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    } catch (error) {
+      console.error('[admin] Error viewing community messages:', error);
+      alert('Error loading community messages: ' + error.message);
+    }
+  },
+  
   async viewCommunity(communityId) {
     try {
       // Import communities API
