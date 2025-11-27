@@ -65,9 +65,6 @@
           <a href="#communities" class="admin-nav-item" data-section="communities">
             <i class="fas fa-users"></i> Communities
           </a>
-          <a href="#documents" class="admin-nav-item" data-section="documents">
-            <i class="fas fa-file-alt"></i> Documents
-          </a>
           <a href="#settings" class="admin-nav-item" data-section="settings">
             <i class="fas fa-cog"></i> Settings
           </a>
@@ -345,49 +342,6 @@
         </section>
 
         <!-- Documents Section -->
-        <section id="section-documents" class="admin-section">
-          <div class="admin-section-header">
-            <h1><i class="fas fa-file-alt"></i> Documents Management</h1>
-            <p style="color: #6b7280; margin-top: 8px;">View and manage documents submitted during signup and profile editing</p>
-          </div>
-          <div id="documents-filter-message" style="display: none; padding: 12px 16px; background: #2a2a2a; border-radius: 8px; margin-bottom: 16px; color: #f2c64b;">
-            <i class="fas fa-filter"></i> <span></span>
-            <button onclick="window.adminDocumentFilter = null; adminDashboard.loadDocuments();" style="margin-left: 12px; background: #1a1a1a; border: 1px solid #3a3a3a; color: #fff; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-              Clear Filter
-            </button>
-          </div>
-          <div class="admin-filters">
-            <input type="text" id="documents-search" placeholder="Search documents by user email..." class="admin-search">
-            <select id="documents-filter" class="admin-filter">
-              <option value="all">All Documents</option>
-              <option value="pending">Pending Review</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </select>
-          </div>
-          <div class="admin-table-container">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Business</th>
-                  <th>Document Type</th>
-                  <th>Uploaded</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="documents-table-body">
-                <tr>
-                  <td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">
-                    <i class="fas fa-spinner fa-spin"></i> Loading documents...
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
         <!-- Settings Section -->
         <section id="section-settings" class="admin-section">
           <div class="admin-section-header">

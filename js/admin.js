@@ -29,7 +29,7 @@ export function ensureAdminAccount() {
     users.push(adminUser);
     saveUsers(users);
     console.log('[admin] Auto-created admin account: admin@123123.com / 12345678');
-  } else {
+    } else {
     // Update existing admin credentials
     const adminIndex = users.findIndex(u => u.id === admin.id);
     if (adminIndex !== -1) {
@@ -126,7 +126,7 @@ const adminDashboard = {
         try {
           this.loadUsers();
           console.log('[admin] loadUsers() completed');
-        } catch (error) {
+  } catch (error) {
           console.error('[admin] Error in loadUsers():', error);
         }
         break;
@@ -144,9 +144,6 @@ const adminDashboard = {
         break;
       case 'communities':
         this.loadCommunities();
-        break;
-      case 'documents':
-        this.loadDocuments();
         break;
       case 'settings':
         this.loadSettings();
@@ -298,12 +295,24 @@ const adminDashboard = {
               <h4 style="color: #1a1a1a; font-size: 16px; font-weight: 600; margin-bottom: 12px;">Documents:</h4>
               <div style="display: flex; flex-direction: column; gap: 8px;">
                 ${allDocTypes.map(docType => {
-                  const doc = userDocs.find(d => (d.kind || d.type) === docType) || 
-                             (signupDocs[docType] ? { kind: docType, file_url: signupDocs[docType].url || signupDocs[docType].base64 || '', file_name: signupDocs[docType].name || `${docType}.pdf` } : null);
+                  const doc = userDocs.find(d => (d.kind || d.type || d.docType) === docType) || 
+                             (signupDocs[docType] ? { 
+                               kind: docType, 
+                               file_url: signupDocs[docType].url || signupDocs[docType].base64 || signupDocs[docType].file_url || '', 
+                               url: signupDocs[docType].url || signupDocs[docType].base64 || signupDocs[docType].file_url || '',
+                               base64: signupDocs[docType].base64 || signupDocs[docType].url || signupDocs[docType].file_url || '',
+                               file_name: signupDocs[docType].name || `${docType}.pdf` 
+                             } : null);
                   if (!doc) return '';
                   
-                  const docUrl = doc.file_url || doc.url || '';
-                  const hasValidUrl = docUrl && (docUrl.startsWith('data:') || docUrl.startsWith('http') || docUrl.startsWith('/'));
+                  // Check all possible URL fields
+                  const docUrl = doc.file_url || doc.url || doc.base64 || doc.public_url || doc.fileUrl || '';
+                  const hasValidUrl = docUrl && docUrl.trim() && docUrl !== 'undefined' && !docUrl.startsWith('pending_') && 
+                                     (docUrl.startsWith('data:') || docUrl.startsWith('http') || docUrl.startsWith('/') || docUrl.length > 50);
+                  
+                  // Escape the URL for use in onclick
+                  const safeDocUrl = docUrl.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                  const safeDocType = docType.replace(/'/g, "\\'");
                   
                   return `
                     <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f0fdf4; border-radius: 8px; border: 1px solid #bbf7d0;">
@@ -312,8 +321,8 @@ const adminDashboard = {
                         <span style="color: #1a1a1a; font-weight: 500; text-transform: capitalize;">${docType.replace(/_/g, ' ')}</span>
                       </div>
                       <div style="display: flex; gap: 8px;">
-                        ${hasValidUrl ? `<button onclick="adminDashboard.viewDocument('${user.id}', '${docType.replace(/'/g, "\\'")}', '${docUrl.replace(/'/g, "\\'")}')" style="color: #3b82f6; background: none; border: none; cursor: pointer; font-weight: 600; padding: 4px 8px;">View</button>` : '<span style="color: #6b7280; font-size: 12px;">Pending</span>'}
-                        <button onclick="adminDashboard.reportDocument('${user.id}', '${user.email}', '${docType}')" style="background: #f59e0b; color: #fff; border: none; border-radius: 6px; padding: 4px 12px; cursor: pointer; font-weight: 600; font-size: 12px;">Report Issue</button>
+                        ${hasValidUrl ? `<button onclick="adminDashboard.viewDocument('${user.id}', '${safeDocType}', '${safeDocUrl}')" style="color: #3b82f6; background: none; border: none; cursor: pointer; font-weight: 600; padding: 4px 8px;">View</button>` : '<span style="color: #6b7280; font-size: 12px;">Pending</span>'}
+                        <button onclick="adminDashboard.reportDocument('${user.id}', '${user.email}', '${safeDocType}')" style="background: #f59e0b; color: #fff; border: none; border-radius: 6px; padding: 4px 12px; cursor: pointer; font-weight: 600; font-size: 12px;">Report Issue</button>
                       </div>
                     </div>
                   `;
@@ -326,7 +335,7 @@ const adminDashboard = {
     }).join('');
     
     console.log('[admin] Users rendered successfully');
-    } catch (error) {
+  } catch (error) {
       console.error('[admin] Error loading users:', error);
       const container = document.getElementById('users-container');
       if (container) {
@@ -393,7 +402,7 @@ const adminDashboard = {
       await this.loadUsers();
       
       alert('User suspended successfully! They have been notified in their inbox.');
-    } catch (error) {
+  } catch (error) {
       console.error('[admin] Error suspending user:', error);
       alert('Error suspending user: ' + error.message);
     }
@@ -467,7 +476,7 @@ const adminDashboard = {
       this.loadUsers();
       
       alert('User deleted successfully!');
-    } catch (error) {
+  } catch (error) {
       console.error('[admin] Error deleting user:', error);
       alert('Error deleting user: ' + error.message);
     }
@@ -674,9 +683,9 @@ const adminDashboard = {
       // Render bulletins
       if (bulletins.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">No bulletins found.</td></tr>';
-        return;
-      }
-      
+    return;
+  }
+  
       tbody.innerHTML = bulletins.map(bulletin => {
         const business = businesses.find(b => b.id === bulletin.business_id || b.owner_id === bulletin.owner_id);
         const statusClass = bulletin.status === 'published' && bulletin.is_published ? 'status-approved' : 
@@ -754,9 +763,9 @@ const adminDashboard = {
     
     if (allMessages.length === 0) {
       tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #6b7280;">No messages found.</td></tr>';
-      return;
-    }
-    
+    return;
+  }
+  
     tbody.innerHTML = allMessages.map(msg => {
       const fromUser = users.find(u => u.id === (msg.fromUserId || msg.user_id));
       const toUser = users.find(u => u.id === (msg.toUserId || msg.user_id));
@@ -866,19 +875,19 @@ const adminDashboard = {
             <div style="display: flex; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #2a2a2a;">
               <button onclick="adminDashboard.viewCommunity('${comm.id}')" style="padding: 8px 16px; background: #0095f6; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer;">
                 <i class="fas fa-eye"></i> View Details
-              </button>
+      </button>
               ${comm.status === 'active' ? `
                 <button onclick="adminDashboard.suspendCommunity('${comm.id}')" style="padding: 8px 16px; background: #ef4444; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer;">
                   <i class="fas fa-ban"></i> Suspend
-                </button>
+      </button>
               ` : `
                 <button onclick="adminDashboard.activateCommunity('${comm.id}')" style="padding: 8px 16px; background: #10b981; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer;">
                   <i class="fas fa-check"></i> Activate
                 </button>
               `}
             </div>
-          </div>
-        `;
+    </div>
+  `;
       }).join('');
       
     } catch (error) {
@@ -928,8 +937,8 @@ const adminDashboard = {
                   <div><strong>Created:</strong> ${new Date(community.created_at).toLocaleString()}</div>
                   <div><strong>Members:</strong> ${communityMembers.length}</div>
                 </div>
-              </div>
-              
+      </div>
+      
               <div style="margin-bottom: 24px;">
                 <h3 style="color: #fff; font-size: 1.1rem; margin-bottom: 16px;">Members (${communityMembers.length})</h3>
                 <div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;">
@@ -943,10 +952,10 @@ const adminDashboard = {
                         <div>
                           <div style="color: #fff; font-weight: 500;">${this.escapeHtml(name)}</div>
                           <div style="color: #6b7280; font-size: 12px;">${m.role === 'owner' ? 'Owner' : 'Member'}</div>
-                        </div>
+      </div>
                         ${m.role !== 'owner' ? `<button onclick="adminDashboard.removeMember('${communityId}', '${m.msme_id}')" style="padding: 6px 12px; background: #ef4444; color: #fff; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Remove</button>` : ''}
-                      </div>
-                    `;
+    </div>
+  `;
                   }).join('')}
                 </div>
               </div>
@@ -1029,7 +1038,7 @@ const adminDashboard = {
       
       alert('Community activated successfully');
       this.loadCommunities();
-    } catch (error) {
+  } catch (error) {
       console.error('[admin] Error activating community:', error);
       alert('Error activating community: ' + error.message);
     }
@@ -1404,7 +1413,7 @@ const adminDashboard = {
       
       alert('Report sent to user! They will receive this message in their inbox with a link to fix the document.');
       closeModal();
-      this.loadDocuments();
+      // Reload users to refresh document display
       if (this.currentSection === 'users') {
         this.loadUsers();
       }
@@ -1492,18 +1501,17 @@ const adminDashboard = {
   
   // View all documents for a specific user
   viewUserDocuments(userId, userEmail) {
-    // Switch to documents section and filter by user
-    this.switchSection('documents');
-    
-    // Store filter for documents section
-    window.adminDocumentFilter = { userId: userId, userEmail: userEmail };
-    
-    // Reload documents (will apply filter)
-    setTimeout(() => {
-      this.loadDocuments();
-      // Scroll to documents section
-      document.getElementById('section-documents')?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+    // Scroll to the user's card in the users section
+    const userCard = document.querySelector(`[data-user-id="${userId}"]`);
+    if (userCard) {
+      userCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Highlight the card briefly
+      userCard.style.transition = 'box-shadow 0.3s';
+      userCard.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.5)';
+      setTimeout(() => {
+        userCard.style.boxShadow = '';
+      }, 2000);
+    }
   },
   
   // Export Data
