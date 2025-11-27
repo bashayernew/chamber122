@@ -2,7 +2,7 @@
 // All functions now use localStorage instead of API calls
 
 import {
-  getCurrentUser,
+  getCurrentUser as getCurrentUserFromAuth,
   getCurrentSession,
   getAllUsers,
   getAllBusinesses,
@@ -36,8 +36,7 @@ function createResponse(data, ok = true) {
 // Get current user (replaces /api/auth/me)
 export async function getCurrentUser() {
   try {
-    const user = requireAuth();
-    return user;
+    return getCurrentUserFromAuth();
   } catch (e) {
     return null;
   }
