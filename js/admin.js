@@ -305,14 +305,35 @@ const adminDashboard = {
                              } : null);
                   if (!doc) return '';
                   
-                  // Check all possible URL fields
-                  const docUrl = doc.file_url || doc.url || doc.base64 || doc.public_url || doc.fileUrl || '';
-                  const hasValidUrl = docUrl && docUrl.trim() && docUrl !== 'undefined' && !docUrl.startsWith('pending_') && 
-                                     (docUrl.startsWith('data:') || docUrl.startsWith('http') || docUrl.startsWith('/') || docUrl.length > 50);
+                  // Check all possible URL fields - prioritize base64 data URLs
+                  let docUrl = doc.base64 || doc.file_url || doc.url || doc.public_url || doc.fileUrl || '';
                   
-                  // Escape the URL for use in onclick
-                  const safeDocUrl = docUrl.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                  // If we have signup docs, check for base64 there too
+                  if (!docUrl && signupDocs[docType]) {
+                    docUrl = signupDocs[docType].base64 || signupDocs[docType].url || signupDocs[docType].file_url || '';
+                  }
+                  
+                  // Validate URL - must be base64 data URL, HTTP URL, or valid file path
+                  const hasValidUrl = docUrl && docUrl.trim() && 
+                                     docUrl !== 'undefined' && 
+                                     !docUrl.startsWith('pending_') && 
+                                     !docUrl.startsWith('blob:') &&
+                                     (docUrl.startsWith('data:') || 
+                                      docUrl.startsWith('http://') || 
+                                      docUrl.startsWith('https://') ||
+                                      (docUrl.length > 100 && docUrl.includes('base64')));
+                  
+                  // For onclick, we need to escape properly and handle long base64 strings
+                  // Store in a data attribute instead of inline onclick for long URLs
+                  const docId = `doc_${user.id}_${docType}`;
                   const safeDocType = docType.replace(/'/g, "\\'");
+                  
+                  // Store document URL in a data attribute to avoid issues with long base64 strings
+                  if (hasValidUrl && docUrl.length > 500) {
+                    // For very long URLs (base64), store in window object
+                    if (!window.adminDocCache) window.adminDocCache = {};
+                    window.adminDocCache[docId] = docUrl;
+                  }
                   
                   return `
                     <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f0fdf4; border-radius: 8px; border: 1px solid #bbf7d0;">
@@ -321,7 +342,13 @@ const adminDashboard = {
                         <span style="color: #1a1a1a; font-weight: 500; text-transform: capitalize;">${docType.replace(/_/g, ' ')}</span>
                       </div>
                       <div style="display: flex; gap: 8px;">
-                        ${hasValidUrl ? `<button onclick="adminDashboard.viewDocument('${user.id}', '${safeDocType}', '${safeDocUrl}')" style="color: #3b82f6; background: none; border: none; cursor: pointer; font-weight: 600; padding: 4px 8px;">View</button>` : '<span style="color: #6b7280; font-size: 12px;">Pending</span>'}
+                        ${hasValidUrl ? 
+                          (docUrl.length > 500 ? 
+                            `<button onclick="adminDashboard.viewDocumentFromCache('${user.id}', '${safeDocType}', '${docId}')" style="color: #3b82f6; background: none; border: none; cursor: pointer; font-weight: 600; padding: 4px 8px;">View</button>` :
+                            `<button onclick="adminDashboard.viewDocument('${user.id}', '${safeDocType}', ${JSON.stringify(docUrl)})" style="color: #3b82f6; background: none; border: none; cursor: pointer; font-weight: 600; padding: 4px 8px;">View</button>`
+                          ) : 
+                          '<span style="color: #6b7280; font-size: 12px;">Pending</span>'
+                        }
                         <button onclick="adminDashboard.reportDocument('${user.id}', '${user.email}', '${safeDocType}')" style="background: #f59e0b; color: #fff; border: none; border-radius: 6px; padding: 4px 12px; cursor: pointer; font-weight: 600; font-size: 12px;">Report Issue</button>
                       </div>
                     </div>
@@ -1259,21 +1286,34 @@ const adminDashboard = {
     modal.id = 'document-viewer-modal';
     modal.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;';
     
-    // Ensure docUrl is a string
-    const urlString = String(docUrl || '');
+    // Ensure docUrl is a string and handle different formats
+    let urlString = String(docUrl || '').trim();
+    
+    // If it's a blob URL or invalid file path, try to get the actual data
+    if (urlString.startsWith('blob:') || (urlString.startsWith('/') && !urlString.startsWith('//'))) {
+      console.warn('[admin] Invalid document URL format:', urlString);
+      alert('Document URL is not accessible. The document may need to be re-uploaded.');
+      return;
+    }
+    
+    // Check if it's a base64 data URL
+    const isBase64 = urlString.startsWith('data:');
     
     // Determine if it's an image or PDF
     const isImage = urlString.startsWith('data:image') || 
                    urlString.match(/\.(jpg|jpeg|png|gif|webp)$/i) ||
-                   (urlString.startsWith('data:') && urlString.includes('image'));
-    const isPDF = urlString.match(/\.pdf$/i) || urlString.includes('application/pdf') || urlString.startsWith('data:application/pdf');
+                   (isBase64 && urlString.includes('image'));
+    const isPDF = urlString.match(/\.pdf$/i) || 
+                  urlString.includes('application/pdf') || 
+                  (isBase64 && urlString.includes('pdf'));
     
     // Escape HTML in docType
     const safeDocType = String(docType || 'Document').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     
-    // For base64 data URLs, use them directly in src/href
-    // For other URLs, escape quotes
-    const safeUrl = urlString;
+    // For base64 data URLs, use them directly
+    // For HTTP URLs, use them as-is
+    // Don't try to load local file paths
+    const canDisplay = isBase64 || urlString.startsWith('http://') || urlString.startsWith('https://');
     
     modal.innerHTML = `
       <div style="background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; max-width: 90%; max-height: 90%; overflow: auto; position: relative;">
@@ -1282,13 +1322,21 @@ const adminDashboard = {
           <button id="close-doc-modal" style="background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">&times;</button>
         </div>
         <div style="padding: 20px;">
-          ${isImage ? 
-            `<img src="${safeUrl}" style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;" onerror="this.parentElement.innerHTML='<div style=\\'padding: 40px; text-align: center; color: #6b7280;\\'><p>Failed to load image.</p><a href=\\'${safeUrl.replace(/'/g, '\\&#39;')}\\' target=\\'_blank\\' style=\\'color: #f2c64b; text-decoration: underline;\\'>Open in new tab</a></div>'" />` :
+          ${!canDisplay ? 
+            `<div style="padding: 40px; text-align: center; color: #ef4444;">
+              <p style="margin-bottom: 16px;">Document URL is not accessible.</p>
+              <p style="color: #6b7280; font-size: 14px;">The document may need to be re-uploaded by the user.</p>
+            </div>` :
+            isImage ? 
+            `<img src="${urlString}" style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;" onerror="this.parentElement.innerHTML='<div style=\\'padding: 40px; text-align: center; color: #6b7280;\\'><p>Failed to load image.</p><p style=\\'font-size: 12px; margin-top: 8px;\\'>The document may be corrupted or in an unsupported format.</p></div>'" />` :
             isPDF ?
-            `<iframe src="${safeUrl}" style="width: 100%; min-height: 600px; border: none; border-radius: 8px;" onerror="this.parentElement.innerHTML='<div style=\\'padding: 40px; text-align: center; color: #6b7280;\\'><p>Failed to load PDF.</p><a href=\\'${safeUrl.replace(/'/g, '\\&#39;')}\\' target=\\'_blank\\' style=\\'color: #f2c64b; text-decoration: underline;\\'>Open in new tab</a></div>'"></iframe>` :
+            `<iframe src="${urlString}" style="width: 100%; min-height: 600px; border: none; border-radius: 8px;" onerror="this.parentElement.innerHTML='<div style=\\'padding: 40px; text-align: center; color: #6b7280;\\'><p>Failed to load PDF.</p><p style=\\'font-size: 12px; margin-top: 8px;\\'>Try opening in a new tab instead.</p><a href=\\'${urlString.replace(/'/g, '\\&#39;')}\\' target=\\'_blank\\' style=\\'color: #f2c64b; text-decoration: underline; margin-top: 12px; display: inline-block;\\'>Open in new tab</a></div>'"></iframe>
+            <div style="margin-top: 12px; text-align: center;">
+              <a href="${urlString}" target="_blank" style="color: #f2c64b; text-decoration: underline; font-size: 14px;">Open PDF in new tab</a>
+            </div>` :
             `<div style="padding: 40px; text-align: center; color: #6b7280;">
               <p>Document preview not available for this file type.</p>
-              <a href="${safeUrl}" target="_blank" style="color: #f2c64b; text-decoration: underline;">Open in new tab</a>
+              <a href="${urlString}" target="_blank" style="color: #f2c64b; text-decoration: underline; margin-top: 12px; display: inline-block;">Download or open in new tab</a>
             </div>`
           }
         </div>
