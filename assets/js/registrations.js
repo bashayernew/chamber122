@@ -239,6 +239,75 @@ export function renderRegistrations(container, registrations) {
   }).join('');
 
   container.innerHTML = html;
+  
+  // Setup message form handlers
+  setupMessageForms(container);
+}
+
+// Setup message form handlers
+function setupMessageForms(container) {
+  const forms = container.querySelectorAll('.registration-message-form');
+  forms.forEach(form => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const form = e.target;
+      const input = form.querySelector('.message-input');
+      const button = form.querySelector('.send-message-btn');
+      const statusDiv = form.parentElement.querySelector('.message-status');
+      const messageText = input.value.trim();
+      
+      if (!messageText) {
+        return;
+      }
+      
+      const registrantEmail = form.dataset.registrantEmail;
+      const registrationId = form.dataset.registrationId;
+      
+      // Disable form
+      button.disabled = true;
+      button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+      statusDiv.style.display = 'none';
+      
+      try {
+        // Import messaging functions
+        const { sendMessage } = await import('/js/messaging.js');
+        const { getAllUsers } = await import('/js/auth-localstorage.js');
+        
+        // Find user by email
+        const allUsers = getAllUsers();
+        const registrantUser = allUsers.find(u => u.email === registrantEmail);
+        
+        if (!registrantUser) {
+          throw new Error('User not found. They may need to create an account first.');
+        }
+        
+        // Send message
+        const subject = `Re: Registration Response`;
+        await sendMessage(registrantUser.id, subject, messageText);
+        
+        // Success
+        input.value = '';
+        statusDiv.style.display = 'block';
+        statusDiv.style.color = '#10b981';
+        statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> Message sent successfully!';
+        
+        // Hide success message after 3 seconds
+        setTimeout(() => {
+          statusDiv.style.display = 'none';
+        }, 3000);
+        
+      } catch (error) {
+        console.error('[registrations] Error sending message:', error);
+        statusDiv.style.display = 'block';
+        statusDiv.style.color = '#ef4444';
+        statusDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message || 'Failed to send message'}`;
+      } finally {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+      }
+    });
+  });
 }
 
 // updateRegistrationStatus function removed - no approve/reject buttons needed
