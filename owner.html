@@ -631,6 +631,88 @@
           }
         }
       });
+      
+      // Event management functions for owner controls
+      window.draftEvent = async function(eventId) {
+        try {
+          const { updateEventStatus } = await import('/js/api.js');
+          await updateEventStatus(eventId, 'draft');
+          alert('Event saved as draft');
+          window.location.reload();
+        } catch (err) {
+          console.error('[owner] Error saving event as draft:', err);
+          alert('Failed to save event as draft');
+        }
+      };
+      
+      window.publishEvent = async function(eventId) {
+        try {
+          const { updateEventStatus } = await import('/js/api.js');
+          await updateEventStatus(eventId, 'published');
+          alert('Event published');
+          window.location.reload();
+        } catch (err) {
+          console.error('[owner] Error publishing event:', err);
+          alert('Failed to publish event');
+        }
+      };
+      
+      window.editEvent = async function(eventId) {
+        window.location.href = `/events.html?edit=${eventId}`;
+      };
+      
+      window.deleteEvent = async function(eventId) {
+        try {
+          const { deleteEventById } = await import('/js/api.js');
+          await deleteEventById(eventId);
+          alert('Event deleted');
+          window.location.reload();
+        } catch (err) {
+          console.error('[owner] Error deleting event:', err);
+          alert('Failed to delete event');
+        }
+      };
+      
+      // Bulletin management functions for owner controls
+      window.draftBulletin = async function(bulletinId) {
+        try {
+          const { updateBulletinStatus } = await import('/js/api.js');
+          await updateBulletinStatus(bulletinId, 'draft');
+          alert('Bulletin saved as draft');
+          window.location.reload();
+        } catch (err) {
+          console.error('[owner] Error saving bulletin as draft:', err);
+          alert('Failed to save bulletin as draft');
+        }
+      };
+      
+      window.publishBulletin = async function(bulletinId) {
+        try {
+          const { updateBulletinStatus } = await import('/js/api.js');
+          await updateBulletinStatus(bulletinId, 'published');
+          alert('Bulletin published');
+          window.location.reload();
+        } catch (err) {
+          console.error('[owner] Error publishing bulletin:', err);
+          alert('Failed to publish bulletin');
+        }
+      };
+      
+      window.editBulletin = async function(bulletinId) {
+        window.location.href = `/bulletin.html?edit=${bulletinId}`;
+      };
+      
+      window.deleteBulletin = async function(bulletinId) {
+        try {
+          const { deleteBulletinById } = await import('/js/api.js');
+          await deleteBulletinById(bulletinId);
+          alert('Bulletin deleted');
+          window.location.reload();
+        } catch (err) {
+          console.error('[owner] Error deleting bulletin:', err);
+          alert('Failed to delete bulletin');
+        }
+      };
     })();
   </script>
 

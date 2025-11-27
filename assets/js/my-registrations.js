@@ -13,19 +13,36 @@ export async function loadMyRegistrations() {
 
     // Load event registrations
     const eventRegistrationsStr = localStorage.getItem('chamber122_event_registrations');
-    const eventRegistrations = eventRegistrationsStr ? JSON.parse(eventRegistrationsStr) : [];
+    let eventRegistrations = [];
+    try {
+      if (eventRegistrationsStr) {
+        const parsed = JSON.parse(eventRegistrationsStr);
+        eventRegistrations = Array.isArray(parsed) ? parsed : [];
+      }
+    } catch (e) {
+      console.warn('[my-registrations] Error parsing event registrations:', e);
+      eventRegistrations = [];
+    }
     console.log('[my-registrations] All event registrations:', eventRegistrations.length);
     const myEventRegistrations = eventRegistrations.filter(r => {
       const matchesUserId = r.user_id === userId;
       const matchesEmail = r.email === user.email;
-      console.log('[my-registrations] Checking registration:', { regUserId: r.user_id, userId, matchesUserId, regEmail: r.email, userEmail: user.email, matchesEmail });
       return matchesUserId || matchesEmail;
     });
     console.log('[my-registrations] My event registrations:', myEventRegistrations.length);
 
     // Load bulletin registrations
     const bulletinRegistrationsStr = localStorage.getItem('chamber122_bulletin_registrations');
-    const bulletinRegistrations = bulletinRegistrationsStr ? JSON.parse(bulletinRegistrationsStr) : [];
+    let bulletinRegistrations = [];
+    try {
+      if (bulletinRegistrationsStr) {
+        const parsed = JSON.parse(bulletinRegistrationsStr);
+        bulletinRegistrations = Array.isArray(parsed) ? parsed : [];
+      }
+    } catch (e) {
+      console.warn('[my-registrations] Error parsing bulletin registrations:', e);
+      bulletinRegistrations = [];
+    }
     console.log('[my-registrations] All bulletin registrations:', bulletinRegistrations.length);
     const myBulletinRegistrations = bulletinRegistrations.filter(r => {
       const matchesUserId = r.user_id === userId;
