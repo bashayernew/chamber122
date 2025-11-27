@@ -679,6 +679,10 @@
           await updateEventStatus(eventId, 'draft');
           console.log('[owner] Event saved as draft:', eventId);
           await reloadEventsAndBulletins();
+          // Trigger refresh on public pages if refresh function exists
+          if (window.refreshEventsAndBulletins) {
+            window.refreshEventsAndBulletins();
+          }
         } catch (err) {
           console.error('[owner] Error saving event as draft:', err);
           alert('Failed to save event as draft: ' + (err.message || 'Unknown error'));
@@ -691,6 +695,10 @@
           await updateEventStatus(eventId, 'published');
           console.log('[owner] Event published:', eventId);
           await reloadEventsAndBulletins();
+          // Trigger refresh on public pages if refresh function exists
+          if (window.refreshEventsAndBulletins) {
+            window.refreshEventsAndBulletins();
+          }
         } catch (err) {
           console.error('[owner] Error publishing event:', err);
           alert('Failed to publish event: ' + (err.message || 'Unknown error'));
@@ -723,6 +731,10 @@
           await updateBulletinStatus(bulletinId, 'draft');
           console.log('[owner] Bulletin saved as draft:', bulletinId);
           await reloadEventsAndBulletins();
+          // Trigger refresh on public pages if refresh function exists
+          if (window.refreshEventsAndBulletins) {
+            window.refreshEventsAndBulletins();
+          }
         } catch (err) {
           console.error('[owner] Error saving bulletin as draft:', err);
           alert('Failed to save bulletin as draft: ' + (err.message || 'Unknown error'));
@@ -735,6 +747,10 @@
           await updateBulletinStatus(bulletinId, 'published');
           console.log('[owner] Bulletin published:', bulletinId);
           await reloadEventsAndBulletins();
+          // Trigger refresh on public pages if refresh function exists
+          if (window.refreshEventsAndBulletins) {
+            window.refreshEventsAndBulletins();
+          }
         } catch (err) {
           console.error('[owner] Error publishing bulletin:', err);
           alert('Failed to publish bulletin: ' + (err.message || 'Unknown error'));
